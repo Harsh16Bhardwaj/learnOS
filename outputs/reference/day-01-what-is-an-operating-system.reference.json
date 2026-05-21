@@ -1,0 +1,67 @@
+{
+  "day": 1,
+  "topic": "What is an Operating System?",
+  "difficulty": "Beginner",
+  "core_summary": [
+    "An operating system is system software that manages computer hardware resources and provides services and abstractions for application programs. It acts as an intermediary between users, applications, and hardware. Its main responsibilities include CPU management, memory management, file management, device management, security, and providing interfaces such as system calls and user shells.",
+    "In interviews, say it simply: the OS is both a resource manager and an abstraction provider."
+  ],
+  "key_definitions": {},
+  "mental_model": "Think of the operating system as the building manager of a large technical campus. Applications are teams that want rooms, electricity, network access, printers, storage, and meeting slots. Hardware resources are limited shared facilities. If every team directly controlled the power lines, elevators, locks, and room assignments, the campus would become unsafe and chaotic. The manager does not do every team's work, but it allocates space, enforces rules, resolves conflicts, hides maintenance complexity, and keeps the whole campus usable. That is the OS. A process asks for memory instead of grabbing physical RAM. A program asks to read a file instead of controlling the disk motor. A browser asks for network I/O instead of directly programming the network card. The OS exposes simple, stable interfaces while internally dealing with messy hardware details.",
+  "core_examples": [
+    {
+      "name": "Opening an application",
+      "point": "The OS loads executable code, creates a process, assigns memory, schedules CPU time, and services I/O."
+    },
+    {
+      "name": "Reading a file",
+      "point": "The app requests bytes while the OS handles permissions, metadata lookup, filesystem mapping, and device access."
+    }
+  ],
+  "practical_uses": [],
+  "pitfalls": [
+    "Misconception: The OS is just the desktop or graphical interface.",
+    "Misconception: The kernel and the OS are exactly the same thing.",
+    "Misconception: Applications directly control hardware.",
+    "Misconception: The OS only matters when multiple programs are running."
+  ],
+  "misconceptions": [
+    "Misconception: The OS is just the desktop or graphical interface.",
+    "Misconception: The kernel and the OS are exactly the same thing.",
+    "Misconception: Applications directly control hardware.",
+    "Misconception: The OS only matters when multiple programs are running.",
+    "Misconception: More abstraction always means less performance.",
+    "Misconception: A system call is just a normal function call."
+  ],
+  "tricky_questions": [
+    {
+      "question": "Is the graphical desktop the operating system?",
+      "answer": ""
+    },
+    {
+      "question": "If only one program is running, is an OS unnecessary?",
+      "answer": ""
+    },
+    {
+      "question": "Is every function that reads a file a system call?",
+      "answer": ""
+    },
+    {
+      "question": "Does kernel mode mean a physically different CPU is used?",
+      "answer": ""
+    },
+    {
+      "question": "Is the kernel always the entire OS?",
+      "answer": ""
+    }
+  ],
+  "interview_ready_answer": {
+    "short": "30-second answer:",
+    "medium": "An operating system is system software that manages hardware resources and provides services to applications. It controls CPU scheduling, memory, files, devices, and security. It also gives programs abstractions like processes, files, and virtual memory so they do not need to deal with raw hardware directly."
+  },
+  "revision_history": {
+    "times_revised": 1,
+    "last_revised_on_day": 2,
+    "revision_strength": "R2"
+  }
+}

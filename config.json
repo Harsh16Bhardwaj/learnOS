@@ -1,17 +1,20 @@
 {
-  "timezone": "Asia/Calcutta",
-  "scheduleTime": "07:00",
-  "learnerEmail": "set-me@example.com",
-  "siteUrl": "",
-  "site": {
-    "title": "LearnOS Daily",
-    "subtitle": "A codex-native operating systems interview prep feed delivered one day at a time."
-  },
-  "mail": {
-    "subjectTemplate": "Day {{day}} OS Interview Prep — {{topic}}"
-  },
-  "git": {
-    "commitTemplate": "chore: publish day {{day}} OS prep"
-  }
+    "timezone":  "Asia/Calcutta",
+    "scheduleTime":  "07:00",
+    "learnerEmail":  "bhardwajharshmait27@gmail.com",
+    "siteUrl":  "",
+    "site":  {
+                 "title":  "LearnOS Daily",
+                 "subtitle":  "A codex-native operating systems interview prep feed delivered one day at a time."
+             },
+    "mail":  {
+                 "subjectTemplate":  "Day {{day}} OS Interview Prep — {{topic}}"
+             },
+    "git":  {
+                "commitTemplate":  "chore: publish day {{day}} OS prep"
+            },
+    "artifacts":  {
+                      "referenceDir":  "outputs/reference",
+                      "retainMarkdown":  true
+                  }
 }
-

@@ -13,6 +13,7 @@ Generate exactly one Operating Systems interview-prep lesson for today, finalize
 - Do not add citations.
 - Do not introduce a database, auth, or catch-up logic.
 - Generate one day only.
+- Keep root `index.html` as the GitHub Pages entrypoint.
 
 ## Steps
 
@@ -27,7 +28,12 @@ Generate exactly one Operating Systems interview-prep lesson for today, finalize
 9. If finalize fails because the article is structurally incomplete, repair the Markdown and run the finalize command again.
 10. Do not manually edit `counter.json` or the site files yourself unless the local scripts explicitly fail and you are repairing them.
 
+## Artifact architecture
+
+- Internal pipeline artifacts: Markdown + rendered HTML.
+- Primary user-facing artifacts: `site/days/*.html`, `outputs/pdf/*.pdf`, `outputs/reference/*.reference.json`.
+- Revision crispiness levels are driven by reference memory history (`R1` / `R2` / `R3`).
+
 ## Output quality
 
 The article must feel interview-ready, practical, and internally coherent. Avoid shallow notes and random bullet dumping.
-

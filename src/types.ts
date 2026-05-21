@@ -29,12 +29,18 @@ export interface AppConfig {
   git: {
     commitTemplate: string;
   };
+  artifacts?: {
+    referenceDir?: string;
+    retainMarkdown?: boolean;
+  };
 }
 
 export interface RevisionTarget {
   day: number;
   title: string;
   reason: string;
+  revisionLevel: "R1" | "R2" | "R3";
+  timesRevised: number;
 }
 
 export interface PrepareResult {
@@ -56,6 +62,7 @@ export interface FinalizeResult {
   pdfPath: string;
   sitePath: string;
   homepagePath: string;
+  referencePath: string;
   email: {
     attempted: boolean;
     delivered: boolean;
@@ -67,4 +74,3 @@ export interface FinalizeResult {
     message: string;
   };
 }
-

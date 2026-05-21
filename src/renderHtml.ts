@@ -40,14 +40,16 @@ export function renderArticleHtml(args: {
   today: string;
   revisionTargets: RevisionTarget[];
 }): string {
-  const articleHtml = markdown.render(args.markdownSource);
+  let articleHtml = markdown.render(args.markdownSource);
+  articleHtml = articleHtml.replace(/^<h1[^>]*>[\s\S]*?<\/h1>\s*/i, "");
+
   const revisionSummary =
     args.revisionTargets.length === 0
       ? "<span>Fresh track start. No older revision items yet.</span>"
       : args.revisionTargets
           .map(
             (target) =>
-              `<span>Day ${formatDay(target.day)} · ${quoteHtml(target.title)} · ${quoteHtml(target.reason)}</span>`
+              `<span>Day ${formatDay(target.day)} - ${quoteHtml(target.title)} - ${target.revisionLevel} - ${quoteHtml(target.reason)}</span>`
           )
           .join("");
 
@@ -60,192 +62,196 @@ export function renderArticleHtml(args: {
     <style>
       :root {
         color-scheme: dark;
-        --bg: #07111d;
-        --bg-soft: #0c1829;
-        --panel: rgba(11, 22, 37, 0.9);
-        --panel-strong: rgba(14, 26, 44, 0.96);
-        --border: rgba(148, 163, 184, 0.16);
-        --text: #e5edf6;
-        --muted: #9fb0c3;
-        --accent: #79e4f1;
-        --accent-strong: #bcf8ff;
-        --shadow: 0 28px 64px rgba(2, 6, 23, 0.5);
+        --bg: #070707;
+        --surface: #101010;
+        --surface-soft: #151515;
+        --border: #262626;
+        --text: #d8d8d8;
+        --muted: #8f8f8f;
+        --faint: #5f5f5f;
+        --cyan: #67e8f9;
+        --amber: #f4c95d;
+        --violet: #b79cff;
+        --green: #8ee6a3;
+      }
+
+      @page {
+        size: A4;
+        margin: 18mm 17mm 20mm 17mm;
       }
 
       * { box-sizing: border-box; }
-      html { scroll-behavior: smooth; }
       body {
         margin: 0;
-        background:
-          radial-gradient(circle at top, rgba(121, 228, 241, 0.12), transparent 30%),
-          linear-gradient(180deg, #08111d 0%, #04080f 100%);
+        background: var(--bg);
         color: var(--text);
-        font-family: "Segoe UI", "SF Pro Display", "Helvetica Neue", sans-serif;
+        font-family: "JetBrains Mono", "IBM Plex Mono", "Roboto Mono", monospace;
+        font-size: 9.8px;
+        line-height: 1.62;
       }
 
       .page {
-        width: min(1120px, calc(100vw - 32px));
+        width: min(980px, calc(100vw - 24px));
         margin: 0 auto;
-        padding: 28px 0 72px;
-      }
-
-      .hero,
-      .article {
-        border: 1px solid var(--border);
-        border-radius: 28px;
-        background: var(--panel);
-        box-shadow: var(--shadow);
-        backdrop-filter: blur(22px);
+        padding: 12px 0 20px;
       }
 
       .hero {
-        padding: 34px;
-        margin-bottom: 22px;
-      }
-
-      .hero-top {
-        display: flex;
-        align-items: start;
-        justify-content: space-between;
-        gap: 24px;
-        flex-wrap: wrap;
+        margin-bottom: 14px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 12px;
       }
 
       .eyebrow {
-        margin: 0 0 16px;
-        font-size: 12px;
+        margin: 0 0 8px;
+        font-size: 8px;
         text-transform: uppercase;
-        letter-spacing: 0.22em;
-        color: var(--accent);
+        letter-spacing: 0.16em;
+        color: var(--faint);
       }
 
       h1 {
         margin: 0;
-        font-size: clamp(2.1rem, 5vw, 3.8rem);
-        line-height: 1;
-        font-weight: 650;
+        font-size: 24px;
+        line-height: 1.18;
+        letter-spacing: -0.04em;
+        color: #f2f2f2;
+        break-after: avoid;
+      }
+
+      .meta-line {
+        margin-top: 8px;
+        font-size: 8.8px;
+        color: var(--muted);
       }
 
       .subtitle {
-        max-width: 720px;
-        margin: 18px 0 0;
+        max-width: 760px;
+        margin: 8px 0 0;
         color: var(--muted);
-        line-height: 1.8;
-      }
-
-      .meta-grid {
-        display: grid;
-        gap: 14px;
-        min-width: 260px;
-      }
-
-      .meta-card {
-        padding: 16px 18px;
-        background: var(--panel-strong);
-        border: 1px solid rgba(148, 163, 184, 0.12);
-        border-radius: 18px;
-      }
-
-      .meta-card .label {
-        display: block;
-        color: var(--muted);
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        font-size: 0.78rem;
-      }
-
-      .meta-card strong {
-        display: block;
-        margin-top: 8px;
-        font-size: 1rem;
+        line-height: 1.55;
       }
 
       .revision-strip {
-        margin-top: 22px;
+        margin-top: 10px;
         display: flex;
         flex-wrap: wrap;
-        gap: 10px;
+        gap: 6px;
       }
 
       .revision-strip span {
         display: inline-flex;
-        padding: 10px 14px;
+        padding: 4px 8px;
         border-radius: 999px;
-        background: rgba(121, 228, 241, 0.08);
-        border: 1px solid rgba(121, 228, 241, 0.2);
-        color: var(--accent-strong);
-        font-size: 0.92rem;
+        background: rgba(142, 230, 163, 0.08);
+        border: 1px solid rgba(142, 230, 163, 0.22);
+        color: var(--green);
+        font-size: 8px;
       }
 
-      .article {
-        padding: 30px;
-      }
-
-      .article h1,
       .article h2,
       .article h3,
       .article h4 {
-        line-height: 1.2;
+        line-height: 1.3;
+        break-after: avoid;
       }
 
       .article h2 {
-        margin-top: 42px;
-        padding-top: 18px;
-        border-top: 1px solid rgba(148, 163, 184, 0.12);
-        font-size: 1.7rem;
+        margin-top: 24px;
+        margin-bottom: 8px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 5px;
+        font-size: 15px;
+        color: #f2f2f2;
+      }
+
+      .section-opener {
+        margin-top: 30px;
+        margin-bottom: 14px;
+        padding: 12px 14px;
+        background: var(--surface);
+        border-left: 3px solid var(--cyan);
+        border-radius: 8px;
+        break-inside: avoid;
+      }
+
+      .section-kicker {
+        font-size: 8px;
+        color: var(--cyan);
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+      }
+
+      .section-summary {
+        font-size: 9.2px;
+        color: #9ca3af;
+        line-height: 1.55;
       }
 
       .article h3 {
-        margin-top: 28px;
-        font-size: 1.2rem;
+        margin-top: 16px;
+        margin-bottom: 6px;
+        font-size: 12px;
+        color: var(--cyan);
       }
 
       .article p,
       .article li {
         color: var(--text);
-        line-height: 1.82;
+      }
+
+      p {
+        orphans: 3;
+        widows: 3;
       }
 
       .article ul,
       .article ol {
-        padding-left: 1.25rem;
+        padding-left: 1.15rem;
       }
 
       .article blockquote {
-        margin: 20px 0;
-        padding: 16px 18px;
-        border-left: 3px solid var(--accent);
-        background: rgba(121, 228, 241, 0.06);
-        border-radius: 0 18px 18px 0;
-        color: #d8eef6;
+        margin: 12px 0;
+        padding: 10px 12px;
+        border-left: 3px solid var(--amber);
+        background: rgba(244, 201, 93, 0.06);
+        border-radius: 8px;
+        color: #ddd4bd;
+        break-inside: avoid;
       }
 
       .article pre,
       .article code {
-        font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+        font-family: "JetBrains Mono", "IBM Plex Mono", monospace;
       }
 
       .article pre {
-        overflow-x: auto;
-        padding: 18px;
-        border-radius: 18px;
-        background: #030811;
-        border: 1px solid rgba(148, 163, 184, 0.12);
+        background: #030303;
+        border: 1px solid #242424;
+        border-radius: 8px;
+        padding: 12px;
+        font-size: 8.8px;
+        line-height: 1.55;
+        overflow-wrap: break-word;
+        white-space: pre-wrap;
+        break-inside: avoid;
       }
 
       .article code {
-        padding: 0.15rem 0.35rem;
-        border-radius: 8px;
-        background: rgba(15, 23, 42, 0.82);
+        color: var(--cyan);
+        background: transparent;
+        padding: 0;
       }
 
       .diagram-card {
-        margin: 22px 0;
-        padding: 18px;
-        background: rgba(2, 8, 23, 0.7);
-        border-radius: 22px;
-        border: 1px solid rgba(148, 163, 184, 0.12);
+        margin: 14px 0;
+        padding: 14px;
+        background: var(--surface);
+        border-radius: 10px;
+        border: 1px solid var(--border);
         overflow-x: auto;
+        break-inside: avoid;
       }
 
       .mermaid {
@@ -255,87 +261,142 @@ export function renderArticleHtml(args: {
 
       .table-wrap {
         overflow-x: auto;
-        margin: 22px 0;
+        margin: 14px 0;
+        break-inside: avoid;
       }
 
       table {
         width: 100%;
         border-collapse: collapse;
+        font-size: 8.8px;
       }
 
       th,
       td {
-        padding: 12px 14px;
-        border: 1px solid rgba(148, 163, 184, 0.14);
+        padding: 7px;
+        border-bottom: 1px solid #202020;
         text-align: left;
       }
 
       th {
-        background: rgba(121, 228, 241, 0.08);
+        color: var(--cyan);
+        font-weight: 600;
+        border-bottom: 1px solid #333;
+      }
+
+      td {
+        color: #cfcfcf;
       }
 
       a {
-        color: var(--accent-strong);
+        color: var(--cyan);
       }
 
-      @media (max-width: 860px) {
-        .page {
-          width: min(100vw - 18px, 1120px);
-        }
+      .definition-block,
+      .revision-block,
+      .takeaway-block {
+        background: var(--surface);
+        border-radius: 8px;
+        padding: 12px 14px;
+        margin: 12px 0;
+        break-inside: avoid;
+      }
 
-        .hero,
-        .article {
-          padding: 22px;
-          border-radius: 22px;
-        }
+      .definition-block {
+        border-left: 3px solid var(--violet);
+      }
+
+      .revision-block {
+        background: rgba(142, 230, 163, 0.06);
+        border: 1px solid rgba(142, 230, 163, 0.22);
+      }
+
+      .takeaway-block {
+        border-left: 3px solid var(--green);
+      }
+
+      .trap-item {
+        background: rgba(244, 201, 93, 0.06);
+        border-left: 3px solid var(--amber);
+        border-radius: 8px;
+        padding: 10px 13px;
+        margin: 8px 0;
+        break-inside: avoid;
       }
     </style>
   </head>
   <body>
     <main class="page">
       <section class="hero">
-        <div class="hero-top">
-          <div>
-            <p class="eyebrow">${quoteHtml(args.config.site.title)}</p>
-            <h1>Day ${formatDay(args.day)} · ${quoteHtml(args.topic.title)}</h1>
-            <p class="subtitle">${quoteHtml(args.config.site.subtitle)}</p>
-          </div>
-          <div class="meta-grid">
-            <div class="meta-card">
-              <span class="label">Difficulty</span>
-              <strong>${quoteHtml(args.topic.difficulty)}</strong>
-            </div>
-            <div class="meta-card">
-              <span class="label">Generated</span>
-              <strong>${quoteHtml(args.today)}</strong>
-            </div>
-            <div class="meta-card">
-              <span class="label">Prerequisites</span>
-              <strong>${quoteHtml(args.topic.prerequisites)}</strong>
-            </div>
-          </div>
-        </div>
+        <p class="eyebrow">${quoteHtml(args.config.site.title)} / DAY ${formatDay(args.day)}</p>
+        <h1>${quoteHtml(args.topic.title)}</h1>
+        <p class="meta-line">40 min read - 5 min revision - ${quoteHtml(args.topic.difficulty)} - Prerequisites: ${quoteHtml(args.topic.prerequisites)}</p>
+        <p class="subtitle">${quoteHtml(args.topic.interviewWhy)}</p>
         <div class="revision-strip">${revisionSummary}</div>
       </section>
       <article class="article">${articleHtml}</article>
     </main>
-    <script type="module">
-      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
-      mermaid.initialize({
-        startOnLoad: true,
-        theme: "dark",
-        securityLevel: "loose",
-        themeVariables: {
-          background: "#08111f",
-          mainBkg: "#0c1829",
-          primaryColor: "#102238",
-          primaryTextColor: "#e5edf6",
-          primaryBorderColor: "#79e4f1",
-          lineColor: "#bcf8ff",
-          secondaryColor: "#102238",
-          tertiaryColor: "#0a1524"
+    <script>
+      (() => {
+        const article = document.querySelector(".article");
+        if (!article) return;
+        const chapterMap = {
+          "Opening Intuition": ["01", "Opening Intuition", "Why this concept exists in real systems before formal definition."],
+          "Interview Definition": ["02", "Interview Definition", "A clean interview-ready explanation with precise language."],
+          "Mental Model": ["03", "Mental Model", "A compact analogy that maps theory to practical recall."],
+          "Layer 1: What happens at a high level?": ["04", "Core Theory", "What the OS manages and how abstraction/resource management fit together."],
+          "Layer 2: What happens inside the OS?": ["05", "System Internals", "Kernel boundaries, data structures, and service flow inside the OS."],
+          "Step-by-Step Flow": ["06", "Step-by-Step Flow", "Concrete execution sequence you can narrate in interviews."],
+          "Practical System Relevance": ["07", "Practical Examples", "How the concept appears in Linux, Windows, Android, servers, and cloud."],
+          "Common Misconceptions": ["08", "Common Misconceptions", "High-frequency mistakes and what to say instead."],
+          "Tricky Interview Corners": ["09", "Tricky Interview Corners", "Edge cases and deeper follow-up traps interviewers probe."],
+          "Interview Questions": ["10", "Interview Questions", "Layered practice questions from basic to advanced."],
+          "5-Minute Revision Column": ["11", "5-Minute Revision Column", "Compressed spaced-repetition recall from prior targets."],
+          "Final Takeaway": ["12", "Final Takeaway", "The final memory model and what you should be able to answer now."]
+        };
+
+        const wrapAfterHeading = (title, className) => {
+          const heading = Array.from(article.querySelectorAll("h2")).find((el) => el.textContent?.trim() === title);
+          if (!heading) return;
+          const wrap = document.createElement("div");
+          wrap.className = className;
+          let node = heading.nextElementSibling;
+          while (node && node.tagName !== "H2") {
+            const next = node.nextElementSibling;
+            wrap.appendChild(node);
+            node = next;
+          }
+          heading.insertAdjacentElement("afterend", wrap);
+        };
+
+        wrapAfterHeading("Interview Definition", "definition-block");
+        wrapAfterHeading("5-Minute Revision Column", "revision-block");
+        wrapAfterHeading("Final Takeaway", "takeaway-block");
+        wrapAfterHeading("What You Should Be Able To Answer Now", "takeaway-block");
+
+        article.querySelectorAll("h2").forEach((heading) => {
+          const text = heading.textContent?.trim() ?? "";
+          const chapter = chapterMap[text];
+          if (!chapter) return;
+          const opener = document.createElement("div");
+          opener.className = "section-opener";
+          opener.innerHTML = "<div class=\\"section-kicker\\">SECTION " + chapter[0] + " / " + chapter[1].toUpperCase() + "</div><div class=\\"section-summary\\">" + chapter[2] + "</div>";
+          heading.insertAdjacentElement("beforebegin", opener);
+        });
+
+        const misconceptions = Array.from(article.querySelectorAll("h2")).find(
+          (el) => el.textContent?.trim() === "Common Misconceptions"
+        );
+        if (misconceptions) {
+          let node = misconceptions.nextElementSibling;
+          while (node && node.tagName !== "H2") {
+            if (node.tagName === "OL") {
+              node.querySelectorAll("li").forEach((li) => li.classList.add("trap-item"));
+            }
+            node = node.nextElementSibling;
+          }
         }
-      });
+      })();
     </script>
   </body>
 </html>`;
@@ -349,7 +410,7 @@ export function renderHomePage(args: {
   readHref: string;
 }): string {
   const published = Boolean(args.topic);
-  const heading = published ? `Day ${formatDay(args.currentDay)} · ${args.topic?.title}` : "No lesson published yet";
+  const heading = published ? `Day ${formatDay(args.currentDay)} - ${args.topic?.title}` : "No lesson published yet";
   const copy = published
     ? `The latest lesson is ready in the fallback site. If mail delivery misses, the current reading page stays accessible here without losing the day.`
     : `The automation shell is ready. Once the first daily lesson is generated, this page will point directly to the newest reading page.`;

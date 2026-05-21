@@ -1,7 +1,8 @@
 {
-  "currentDay": 2,
-  "lastGeneratedDate": "2026-05-20",
+  "currentDay": 3,
+  "lastGeneratedDate": "2026-05-21",
   "completedDays": [
-    1
+    1,
+    2
   ]
 }

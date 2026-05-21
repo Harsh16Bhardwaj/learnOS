@@ -1,0 +1,66 @@
+{
+  "day": 2,
+  "topic": "Computer System Architecture for OS",
+  "difficulty": "Beginner",
+  "core_summary": [
+    "Computer system architecture for operating systems describes the organization of the CPU, main memory, storage, I/O devices, buses, device controllers, interrupts, DMA, and boot firmware that allow the OS to manage hardware safely and efficiently. The OS uses this architecture to run programs, handle I/O, respond to device events, protect resources, and start the system. In interviews, explain it as the hardware foundation that makes OS abstractions such as processes, files, and device access possible."
+  ],
+  "key_definitions": {},
+  "mental_model": "Think of the computer as a technical campus. The CPU is the main work desk where instructions are executed. RAM is the working table where active papers are kept. Storage is the archive room where long-term records live. I/O devices are external departments such as printers, keyboards, network links, and displays. Device controllers are department managers who know the specific details of their devices. The OS is the operations manager that decides who can use the desk, where papers should be placed, which department request is urgent, and how work should resume after an interruption. The important detail is that the CPU does not directly understand every device's mechanical or electrical details. It talks to controllers through registers, memory-mapped I/O, ports, interrupts, and drivers. This separation lets the OS provide a uniform interface even though the hardware below it is very different.",
+  "core_examples": [
+    {
+      "name": "Opening an application",
+      "point": "The OS loads executable code, creates a process, assigns memory, schedules CPU time, and services I/O."
+    },
+    {
+      "name": "Reading a file",
+      "point": "The app requests bytes while the OS handles permissions, metadata lookup, filesystem mapping, and device access."
+    }
+  ],
+  "practical_uses": [],
+  "pitfalls": [
+    "A CPU alone is the whole computer.",
+    "Interrupts are errors.",
+    "Polling is always bad.",
+    "DMA means the CPU is not involved at all."
+  ],
+  "misconceptions": [
+    "A CPU alone is the whole computer.",
+    "Interrupts are errors.",
+    "Polling is always bad.",
+    "DMA means the CPU is not involved at all.",
+    "Storage and memory are the same because both store data.",
+    "Booting begins with the OS."
+  ],
+  "tricky_questions": [
+    {
+      "question": "If a device raises an interrupt, does that always mean something went wrong?",
+      "answer": ""
+    },
+    {
+      "question": "Does DMA mean the device can safely write anywhere in memory?",
+      "answer": ""
+    },
+    {
+      "question": "Is polling always worse than interrupts?",
+      "answer": ""
+    },
+    {
+      "question": "Does the OS start running immediately when power is applied?",
+      "answer": ""
+    },
+    {
+      "question": "Is a device driver the same as the physical device?",
+      "answer": ""
+    }
+  ],
+  "interview_ready_answer": {
+    "short": "### 30-second answer",
+    "medium": "Computer system architecture is the hardware organization that the OS manages: CPU, memory, storage, I/O devices, buses, controllers, interrupts, DMA, and firmware. The OS uses this architecture to run programs, protect resources, handle I/O, and respond to hardware events efficiently."
+  },
+  "revision_history": {
+    "times_revised": 0,
+    "last_revised_on_day": null,
+    "revision_strength": "R1"
+  }
+}

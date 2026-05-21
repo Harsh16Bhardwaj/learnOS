@@ -11,13 +11,21 @@ import {
   readJson
 } from "./utils.js";
 import { computeRevisionTargets } from "./generateRevision.js";
+import { readReference } from "./referenceMemory.js";
 
 export function readCounter(): CounterState {
   return readJson<CounterState>(path.join(ROOT_DIR, "counter.json"));
 }
 
 export function readConfig(): AppConfig {
-  return readJson<AppConfig>(path.join(ROOT_DIR, "config.json"));
+  const config = readJson<AppConfig>(path.join(ROOT_DIR, "config.json"));
+  return {
+    ...config,
+    artifacts: {
+      referenceDir: config.artifacts?.referenceDir ?? "outputs/reference",
+      retainMarkdown: config.artifacts?.retainMarkdown ?? true
+    }
+  };
 }
 
 export function prepareDay(topics: Topic[]): PrepareResult {
@@ -52,7 +60,10 @@ export function prepareDay(topics: Topic[]): PrepareResult {
     today,
     day: topic.day,
     topic,
-    revisionTargets: computeRevisionTargets(topic.day, counter.completedDays, topics),
+    revisionTargets: computeRevisionTargets(topic.day, counter.completedDays, topics, (candidate) => {
+      const reference = readReference(candidate, config);
+      return reference?.revision_history?.times_revised ?? 0;
+    }),
     markdownPath: path.join(OUTPUT_MARKDOWN_DIR, `${topic.slug}.md`),
     htmlPath: path.join(OUTPUT_HTML_DIR, `${topic.slug}.html`),
     pdfPath: path.join(OUTPUT_PDF_DIR, `${topic.slug}.pdf`),
@@ -81,4 +92,3 @@ export function formatPrepareResult(result: PrepareResult): string {
     2
   );
 }
-

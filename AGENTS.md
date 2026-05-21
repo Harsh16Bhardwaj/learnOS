@@ -1912,6 +1912,56 @@ After MVP:
 
 ---
 
+## Artifact Output Rules
+
+For each generated day, create the following primary artifacts:
+
+- `site/days/day-XX-<slug>.html` - human-readable web version
+- `outputs/pdf/day-XX-<slug>.pdf` - polished PDF version
+- `outputs/reference/day-XX-<slug>.reference.json` - compact AI-readable memory file
+
+Keep Markdown as an internal pipeline input for compatibility with `finalize --markdown`, but do not treat it as the main user-facing artifact.
+
+Root `index.html` is the public entrypoint for GitHub Pages and must point to `./site/days/...`.
+
+Each `.reference.json` should include:
+
+- day
+- topic
+- difficulty
+- core_summary
+- key_definitions
+- mental_model
+- core_examples
+- practical_uses
+- pitfalls
+- misconceptions
+- tricky_questions
+- interview_ready_answer
+- revision_history
+
+---
+
+## Revision Crispiness Rules
+
+Each topic has revision history in its `reference.json`.
+
+### R1 - Recall Revision
+
+Use when `times_revised = 0`.
+
+### R2 - Compression Revision
+
+Use when `times_revised = 1`.
+
+### R3 - Flash Revision
+
+Use when `times_revised >= 2`.
+
+The revision block should become sharper on every later revision rather than repeating full-length explanations.
+
+---
+
 ## Final Product Vision
 
 This project should become a personal OS interview preparation engine.

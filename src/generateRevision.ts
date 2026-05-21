@@ -1,6 +1,12 @@
 import { RevisionTarget, Topic } from "./types.js";
+import { toRevisionLevel } from "./referenceMemory.js";
 
-export function computeRevisionTargets(day: number, completedDays: number[], topics: Topic[]): RevisionTarget[] {
+export function computeRevisionTargets(
+  day: number,
+  completedDays: number[],
+  topics: Topic[],
+  readTimesRevised: (topic: Topic) => number
+): RevisionTarget[] {
   const candidates: Array<{ offset: number; reason: string }> = [
     { offset: 1, reason: "Previous day reinforcement" },
     { offset: 3, reason: "Three-day spaced recall" }
@@ -31,13 +37,15 @@ export function computeRevisionTargets(day: number, completedDays: number[], top
       continue;
     }
     uniqueDays.add(revisionDay);
+    const timesRevised = readTimesRevised(topic);
     targets.push({
       day: revisionDay,
       title: topic.title,
-      reason: candidate.reason
+      reason: candidate.reason,
+      timesRevised,
+      revisionLevel: toRevisionLevel(timesRevised)
     });
   }
 
   return targets.sort((left, right) => right.day - left.day);
 }
-

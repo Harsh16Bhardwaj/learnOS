@@ -11,15 +11,18 @@ import { formatPrepareResult, prepareDay, readConfig, readCounter } from "./sele
 import { FinalizeResult } from "./types.js";
 import {
   ROOT_DIR,
-  SITE_DIR,
   ensureDir,
-  isoToday,
   parseArgs,
   quoteHtml,
   readText,
   writeText
 } from "./utils.js";
 import { updateCounterForSuccess } from "./updateCounter.js";
+import {
+  buildReferenceFromMarkdown,
+  bumpRevisionHistoryForTargets,
+  writeReference
+} from "./referenceMemory.js";
 
 async function runPrepare(): Promise<void> {
   const topics = parseSyllabus();
@@ -33,10 +36,10 @@ async function runRenderHome(): Promise<void> {
   const topics = parseSyllabus();
   const latestDay = counter.completedDays[counter.completedDays.length - 1];
   const latestTopic = topics.find((topic) => topic.day === latestDay) ?? null;
-  const readHref = latestTopic ? `./days/${latestTopic.slug}.html` : "../outputs/markdown/";
+  const readHref = latestTopic ? `./site/days/${latestTopic.slug}.html` : "./outputs/markdown/";
 
   writeText(
-    path.join(SITE_DIR, "index.html"),
+    path.join(ROOT_DIR, "index.html"),
     renderHomePage({
       config,
       topic: latestTopic,
@@ -84,20 +87,34 @@ async function runFinalize(markdownPathInput: string): Promise<void> {
   writeText(prepareResult.sitePath, html);
 
   await buildPdf(prepareResult.htmlPath, prepareResult.pdfPath);
+
+  const reference = buildReferenceFromMarkdown({
+    topic: prepareResult.topic,
+    day: prepareResult.day,
+    markdownSource
+  });
+  const referencePath = writeReference(reference, prepareResult.topic, config);
+  bumpRevisionHistoryForTargets({
+    revisionTargets: prepareResult.revisionTargets,
+    topics,
+    config,
+    currentDay: prepareResult.day
+  });
+
   updateCounterForSuccess(prepareResult.day, prepareResult.today);
 
   const siteHref = config.siteUrl
-    ? `${config.siteUrl.replace(/\/$/, "")}/days/${prepareResult.topic.slug}.html`
-    : `./days/${prepareResult.topic.slug}.html`;
+    ? `${config.siteUrl.replace(/\/$/, "")}/site/days/${prepareResult.topic.slug}.html`
+    : `./site/days/${prepareResult.topic.slug}.html`;
 
   writeText(
-    path.join(SITE_DIR, "index.html"),
+    path.join(ROOT_DIR, "index.html"),
     renderHomePage({
       config,
       topic: prepareResult.topic,
       today: prepareResult.today,
       currentDay: prepareResult.day,
-      readHref: `./days/${prepareResult.topic.slug}.html`
+      readHref: `./site/days/${prepareResult.topic.slug}.html`
     })
   );
 
@@ -121,7 +138,8 @@ async function runFinalize(markdownPathInput: string): Promise<void> {
     htmlPath: prepareResult.htmlPath,
     pdfPath: prepareResult.pdfPath,
     sitePath: prepareResult.sitePath,
-    homepagePath: path.join(SITE_DIR, "index.html"),
+    homepagePath: path.join(ROOT_DIR, "index.html"),
+    referencePath,
     email,
     git
   };

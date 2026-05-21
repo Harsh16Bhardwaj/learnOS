@@ -6,6 +6,7 @@ export const ROOT_DIR = process.cwd();
 export const OUTPUT_MARKDOWN_DIR = path.join(ROOT_DIR, "outputs", "markdown");
 export const OUTPUT_HTML_DIR = path.join(ROOT_DIR, "outputs", "html");
 export const OUTPUT_PDF_DIR = path.join(ROOT_DIR, "outputs", "pdf");
+export const OUTPUT_REFERENCE_DIR = path.join(ROOT_DIR, "outputs", "reference");
 export const SITE_DIR = path.join(ROOT_DIR, "site");
 export const SITE_DAYS_DIR = path.join(SITE_DIR, "days");
 
@@ -86,4 +87,3 @@ export function runGit(args: string[]): string {
     stdio: ["ignore", "pipe", "pipe"]
   }).trim();
 }
-
