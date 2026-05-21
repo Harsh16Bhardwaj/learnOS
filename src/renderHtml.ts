@@ -408,6 +408,7 @@ export function renderHomePage(args: {
   today: string | null;
   currentDay: number;
   readHref: string;
+  lessons: Topic[];
 }): string {
   const published = Boolean(args.topic);
   const heading = published ? `Day ${formatDay(args.currentDay)} - ${args.topic?.title}` : "No lesson published yet";
@@ -415,6 +416,18 @@ export function renderHomePage(args: {
     ? `The latest lesson is ready in the fallback site. If mail delivery misses, the current reading page stays accessible here without losing the day.`
     : `The automation shell is ready. Once the first daily lesson is generated, this page will point directly to the newest reading page.`;
   const generatedLine = published && args.today ? `Published on ${args.today}` : "Waiting for the first publish cycle";
+  const lessonLinks =
+    args.lessons.length === 0
+      ? `<p class="empty">No lessons have been published yet.</p>`
+      : args.lessons
+          .map(
+            (lesson) => `<a class="lesson-link" href="./site/days/${quoteHtml(lesson.slug)}.html">
+              <span class="lesson-day">Day ${formatDay(lesson.day)}</span>
+              <span class="lesson-title">${quoteHtml(lesson.title)}</span>
+              <span class="lesson-meta">${quoteHtml(lesson.difficulty)}</span>
+            </a>`
+          )
+          .join("");
 
   return `<!doctype html>
 <html lang="en">
@@ -425,15 +438,15 @@ export function renderHomePage(args: {
     <style>
       :root {
         color-scheme: dark;
-        --bg: #08111f;
-        --panel: rgba(12, 22, 38, 0.84);
-        --panel-strong: rgba(18, 30, 50, 0.96);
-        --border: rgba(148, 163, 184, 0.16);
+        --bg: #090909;
+        --panel: #121212;
+        --panel-strong: #171717;
+        --border: rgba(229, 231, 235, 0.14);
         --text: #e5edf6;
-        --muted: #99a8ba;
-        --accent: #6ee7f2;
-        --accent-strong: #9be7ff;
-        --shadow: 0 20px 60px rgba(2, 6, 23, 0.45);
+        --muted: #a3a3a3;
+        --accent: #67e8f9;
+        --accent-strong: #f4c95d;
+        --shadow: 0 20px 60px rgba(0, 0, 0, 0.36);
       }
 
       * { box-sizing: border-box; }
@@ -442,13 +455,11 @@ export function renderHomePage(args: {
         min-height: 100vh;
         font-family: "Segoe UI", "SF Pro Display", "Helvetica Neue", sans-serif;
         color: var(--text);
-        background:
-          radial-gradient(circle at top, rgba(110, 231, 242, 0.13), transparent 28%),
-          linear-gradient(180deg, #09111d 0%, #050a12 100%);
+        background: linear-gradient(180deg, #101010 0%, #060606 100%);
       }
 
       .shell {
-        width: min(1040px, calc(100vw - 48px));
+        width: min(1080px, calc(100vw - 48px));
         margin: 0 auto;
         padding: 64px 0 72px;
       }
@@ -456,9 +467,8 @@ export function renderHomePage(args: {
       .hero,
       .panel {
         background: var(--panel);
-        backdrop-filter: blur(22px);
         border: 1px solid var(--border);
-        border-radius: 28px;
+        border-radius: 8px;
         box-shadow: var(--shadow);
       }
 
@@ -510,9 +520,9 @@ export function renderHomePage(args: {
         justify-content: center;
         margin-top: 24px;
         padding: 14px 22px;
-        border-radius: 999px;
+        border-radius: 6px;
         color: #031019;
-        background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+        background: var(--accent);
         text-decoration: none;
         font-weight: 700;
       }
@@ -522,7 +532,7 @@ export function renderHomePage(args: {
       }
       .mini-card {
         padding: 18px;
-        border-radius: 18px;
+        border-radius: 8px;
         background: var(--panel-strong);
         border: 1px solid rgba(148, 163, 184, 0.1);
       }
@@ -530,6 +540,55 @@ export function renderHomePage(args: {
         display: block;
         margin-top: 8px;
         font-size: 1.08rem;
+      }
+      .archive {
+        margin-top: 22px;
+      }
+      .archive-head {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 12px;
+      }
+      .archive h2 {
+        margin: 0;
+        font-size: 1.35rem;
+      }
+      .count {
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+      .lesson-list {
+        display: grid;
+        gap: 10px;
+      }
+      .lesson-link {
+        display: grid;
+        grid-template-columns: 96px 1fr auto;
+        gap: 16px;
+        align-items: center;
+        padding: 16px 18px;
+        border: 1px solid rgba(148, 163, 184, 0.14);
+        border-radius: 8px;
+        background: var(--panel-strong);
+        color: var(--text);
+        text-decoration: none;
+      }
+      .lesson-link:hover {
+        border-color: rgba(103, 232, 249, 0.42);
+      }
+      .lesson-day,
+      .lesson-meta {
+        color: var(--muted);
+        font-size: 0.86rem;
+      }
+      .lesson-title {
+        font-weight: 700;
+      }
+      .empty {
+        margin: 0;
+        color: var(--muted);
       }
       @media (max-width: 860px) {
         .shell {
@@ -543,6 +602,10 @@ export function renderHomePage(args: {
         }
         .grid {
           grid-template-columns: 1fr;
+        }
+        .lesson-link {
+          grid-template-columns: 1fr;
+          gap: 6px;
         }
       }
     </style>
@@ -575,6 +638,13 @@ export function renderHomePage(args: {
             <strong>Site stays readable even if SMTP fails</strong>
           </div>
         </aside>
+      </section>
+      <section class="panel archive">
+        <div class="archive-head">
+          <h2>Published Lessons</h2>
+          <span class="count">${args.lessons.length} / 40 days</span>
+        </div>
+        <div class="lesson-list">${lessonLinks}</div>
       </section>
     </main>
   </body>

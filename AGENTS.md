@@ -1922,7 +1922,7 @@ For each generated day, create the following primary artifacts:
 
 Keep Markdown as an internal pipeline input for compatibility with `finalize --markdown`, but do not treat it as the main user-facing artifact.
 
-Root `index.html` is the public entrypoint for GitHub Pages and must point to `./site/days/...`.
+Root `index.html` is the public entrypoint for GitHub Pages and must stay at the repository root. It should link all completed daily pages under `./site/days/...` by day number and title, so the homepage becomes a simple growing lesson index by the end of the course.
 
 Each `.reference.json` should include:
 

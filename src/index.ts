@@ -36,6 +36,9 @@ async function runRenderHome(): Promise<void> {
   const topics = parseSyllabus();
   const latestDay = counter.completedDays[counter.completedDays.length - 1];
   const latestTopic = topics.find((topic) => topic.day === latestDay) ?? null;
+  const lessons = counter.completedDays
+    .map((day) => topics.find((topic) => topic.day === day))
+    .filter((topic): topic is NonNullable<typeof topic> => Boolean(topic));
   const readHref = latestTopic ? `./site/days/${latestTopic.slug}.html` : "./outputs/markdown/";
 
   writeText(
@@ -45,7 +48,8 @@ async function runRenderHome(): Promise<void> {
       topic: latestTopic,
       today: counter.lastGeneratedDate,
       currentDay: latestDay ?? counter.currentDay,
-      readHref
+      readHref,
+      lessons
     })
   );
 }
@@ -102,6 +106,10 @@ async function runFinalize(markdownPathInput: string): Promise<void> {
   });
 
   updateCounterForSuccess(prepareResult.day, prepareResult.today);
+  const updatedCounter = readCounter();
+  const lessons = updatedCounter.completedDays
+    .map((day) => topics.find((topic) => topic.day === day))
+    .filter((topic): topic is NonNullable<typeof topic> => Boolean(topic));
 
   const siteHref = config.siteUrl
     ? `${config.siteUrl.replace(/\/$/, "")}/site/days/${prepareResult.topic.slug}.html`
@@ -114,7 +122,8 @@ async function runFinalize(markdownPathInput: string): Promise<void> {
       topic: prepareResult.topic,
       today: prepareResult.today,
       currentDay: prepareResult.day,
-      readHref: `./site/days/${prepareResult.topic.slug}.html`
+      readHref: `./site/days/${prepareResult.topic.slug}.html`,
+      lessons
     })
   );
 

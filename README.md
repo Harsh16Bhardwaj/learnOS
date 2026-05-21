@@ -14,7 +14,7 @@ This repository is a Codex-native daily Operating Systems interview-prep automat
     - `outputs/pdf/`
     - `outputs/reference/`
     - `site/days/`
-- Updates root `index.html` so GitHub Pages can load the latest lesson directly
+- Updates root `index.html` so GitHub Pages shows a growing index of all published lessons
 - Attempts SMTP delivery
 - Advances `counter.json` after content and site artifacts are generated
 - Commits and pushes the repo state at the end of the daily run
@@ -53,9 +53,18 @@ Required SMTP variables:
 
 The Codex automation should:
 
-1. Run `npm run prepare:day`
+1. Run with network access and write access to the full repo, including `.git/`
+2. Run `npm run prepare:day` or `npm.cmd run prepare:day` on Windows
 2. Read the emitted JSON context
 3. If the run is not skipped, generate the Markdown lesson into the provided path
-4. Run `npm run finalize:day -- --markdown <path>`
+4. Run `npm run finalize:day -- --markdown <path>` or `npm.cmd run finalize:day -- --markdown <path>` on Windows
+5. Confirm SMTP delivery and git publish status in the finalize result
 
 The repository code does not call any model API. Codex itself is the content generator.
+
+## GitHub Pages contract
+
+- Publish from the repository root.
+- Keep root `index.html` as the public homepage.
+- Keep daily lesson pages in `site/days/`.
+- Each finalize run rewrites `index.html` with links to every completed day.
