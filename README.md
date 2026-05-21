@@ -48,6 +48,7 @@ Required SMTP variables:
   - `R1`: `times_revised = 0`
   - `R2`: `times_revised = 1`
   - `R3`: `times_revised >= 2`
+- Revision lookback uses Day -1 and Day -3 daily, plus Day -5, Day -12, and Day -25 on matching interval days.
 
 ## Daily automation contract
 

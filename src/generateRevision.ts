@@ -20,8 +20,8 @@ export function computeRevisionTargets(
     candidates.push({ offset: 12, reason: "Twelve-day spaced recall" });
   }
 
-  if (day % 20 === 0) {
-    candidates.push({ offset: 20, reason: "Twenty-day spaced recall" });
+  if (day % 25 === 0) {
+    candidates.push({ offset: 25, reason: "Twenty-five-day spaced recall" });
   }
 
   const uniqueDays = new Set<number>();

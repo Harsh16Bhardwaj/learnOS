@@ -544,20 +544,20 @@ Example:
 Day 24 revision: Day 23, Day 21, Day 19, Day 12
 ```
 
-### 20-Day Revision
+### 25-Day Revision
 
-On days divisible by 20, include a slightly stronger revision block from:
+On days divisible by 25, include a slightly stronger revision block from:
 
 - Day -1
 - Day -3
 - Day -5
 - Day -12
-- Day -20
+- Day -25
 
 Example:
 
 ```txt
-Day 40 revision: Day 39, Day 37, Day 35, Day 28, Day 20
+Day 50 revision: Day 49, Day 47, Day 45, Day 38, Day 25
 ```
 
 ### Revision Priority
