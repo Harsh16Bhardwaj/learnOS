@@ -1,0 +1,930 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Day 05 - Program vs Process</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #070707;
+        --surface: #101010;
+        --surface-soft: #151515;
+        --border: #262626;
+        --text: #d8d8d8;
+        --muted: #8f8f8f;
+        --faint: #5f5f5f;
+        --cyan: #67e8f9;
+        --amber: #f4c95d;
+        --violet: #b79cff;
+        --green: #8ee6a3;
+      }
+
+      @page {
+        size: A4;
+        margin: 18mm 17mm 20mm 17mm;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "JetBrains Mono", "IBM Plex Mono", "Roboto Mono", monospace;
+        font-size: 9.8px;
+        line-height: 1.62;
+      }
+
+      .page {
+        width: min(980px, calc(100vw - 24px));
+        margin: 0 auto;
+        padding: 12px 0 20px;
+      }
+
+      .hero {
+        margin-bottom: 14px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 12px;
+      }
+
+      .eyebrow {
+        margin: 0 0 8px;
+        font-size: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        color: var(--faint);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 24px;
+        line-height: 1.18;
+        letter-spacing: -0.04em;
+        color: #f2f2f2;
+        break-after: avoid;
+      }
+
+      .meta-line {
+        margin-top: 8px;
+        font-size: 8.8px;
+        color: var(--muted);
+      }
+
+      .subtitle {
+        max-width: 760px;
+        margin: 8px 0 0;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .revision-strip {
+        margin-top: 10px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .revision-strip span {
+        display: inline-flex;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: rgba(142, 230, 163, 0.08);
+        border: 1px solid rgba(142, 230, 163, 0.22);
+        color: var(--green);
+        font-size: 8px;
+      }
+
+      .article h2,
+      .article h3,
+      .article h4 {
+        line-height: 1.3;
+        break-after: avoid;
+      }
+
+      .article h2 {
+        margin-top: 24px;
+        margin-bottom: 8px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 5px;
+        font-size: 15px;
+        color: #f2f2f2;
+      }
+
+      .section-opener {
+        margin-top: 30px;
+        margin-bottom: 14px;
+        padding: 12px 14px;
+        background: var(--surface);
+        border-left: 3px solid var(--cyan);
+        border-radius: 8px;
+        break-inside: avoid;
+      }
+
+      .section-kicker {
+        font-size: 8px;
+        color: var(--cyan);
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+      }
+
+      .section-summary {
+        font-size: 9.2px;
+        color: #9ca3af;
+        line-height: 1.55;
+      }
+
+      .article h3 {
+        margin-top: 16px;
+        margin-bottom: 6px;
+        font-size: 12px;
+        color: var(--cyan);
+      }
+
+      .article p,
+      .article li {
+        color: var(--text);
+      }
+
+      p {
+        orphans: 3;
+        widows: 3;
+      }
+
+      .article ul,
+      .article ol {
+        padding-left: 1.15rem;
+      }
+
+      .article blockquote {
+        margin: 12px 0;
+        padding: 10px 12px;
+        border-left: 3px solid var(--amber);
+        background: rgba(244, 201, 93, 0.06);
+        border-radius: 8px;
+        color: #ddd4bd;
+        break-inside: avoid;
+      }
+
+      .article pre,
+      .article code {
+        font-family: "JetBrains Mono", "IBM Plex Mono", monospace;
+      }
+
+      .article pre {
+        background: #030303;
+        border: 1px solid #242424;
+        border-radius: 8px;
+        padding: 12px;
+        font-size: 8.8px;
+        line-height: 1.55;
+        overflow-wrap: break-word;
+        white-space: pre-wrap;
+        break-inside: avoid;
+      }
+
+      .article code {
+        color: var(--cyan);
+        background: transparent;
+        padding: 0;
+      }
+
+      .diagram-card {
+        margin: 14px 0;
+        padding: 14px;
+        background: var(--surface);
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        overflow-x: auto;
+        break-inside: avoid;
+      }
+
+      .mermaid {
+        display: flex;
+        justify-content: center;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+        margin: 14px 0;
+        break-inside: avoid;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 8.8px;
+      }
+
+      th,
+      td {
+        padding: 7px;
+        border-bottom: 1px solid #202020;
+        text-align: left;
+      }
+
+      th {
+        color: var(--cyan);
+        font-weight: 600;
+        border-bottom: 1px solid #333;
+      }
+
+      td {
+        color: #cfcfcf;
+      }
+
+      a {
+        color: var(--cyan);
+      }
+
+      .definition-block,
+      .revision-block,
+      .takeaway-block {
+        background: var(--surface);
+        border-radius: 8px;
+        padding: 12px 14px;
+        margin: 12px 0;
+        break-inside: avoid;
+      }
+
+      .definition-block {
+        border-left: 3px solid var(--violet);
+      }
+
+      .revision-block {
+        background: rgba(142, 230, 163, 0.06);
+        border: 1px solid rgba(142, 230, 163, 0.22);
+      }
+
+      .takeaway-block {
+        border-left: 3px solid var(--green);
+      }
+
+      .trap-item {
+        background: rgba(244, 201, 93, 0.06);
+        border-left: 3px solid var(--amber);
+        border-radius: 8px;
+        padding: 10px 13px;
+        margin: 8px 0;
+        break-inside: avoid;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <p class="eyebrow">LearnOS Daily / DAY 05</p>
+        <h1>Program vs Process</h1>
+        <p class="meta-line">40 min read - 5 min revision - Beginner - Prerequisites: Days 01-04</p>
+        <p class="subtitle">Clarifies a common foundation question before scheduling and memory topics.</p>
+        <div class="revision-strip"><span>Day 04 - OS Structures and Services - R1 - Previous day reinforcement</span><span>Day 02 - Computer System Architecture for OS - R2 - Three-day spaced recall</span></div>
+      </section>
+      <article class="article"><p>Difficulty: Beginner<br>
+Fresh Learning: 40 minutes<br>
+Revision: 5 minutes<br>
+Prerequisites: Days 01-04: OS basics, computer architecture, kernel/user mode, system calls, and OS structures<br>
+Why this topic matters in interviews: Interviewers ask “program vs process” to check whether you understand what actually happens when software starts running. This topic also prepares you for process states, context switching, scheduling, virtual memory, and system calls.</p>
+<p>Imagine you download a music player installer. The file sits on your disk for weeks and does nothing. One day you double-click it. Suddenly the OS loads code into memory, creates bookkeeping data, gives it an address space, connects it to files and devices, schedules it on the CPU, and shows a window. The file did not magically become active by itself. The OS converted a passive program into an active process.</p>
+<p>This distinction looks simple, but it is one of the most important foundations in Operating Systems. A program is a stored set of instructions and data. A process is a running instance of that program, managed by the OS. One program can produce many processes. Two users can run the same browser executable, and each running browser instance has its own memory, open files, security identity, CPU state, and process metadata.</p>
+<p>If the OS did not distinguish between programs and processes, it could not safely run multiple applications at once. It would not know which memory belongs to which running instance, which process is waiting for I/O, which process owns a file descriptor, which process should receive a signal, or which process should be scheduled next. The process abstraction is how the OS turns static code into isolated, schedulable, controllable execution.</p>
+<h2>Interview Definition</h2>
+<p>A program is a passive file stored on disk that contains executable instructions and related data. A process is an active execution instance of a program, loaded into memory and managed by the operating system. A process has its own address space, execution state, resources, and Process Control Block. In interviews, say that a program is “what can run,” while a process is “what is currently running or ready to run.”</p>
+<h2>Mental Model</h2>
+<p>Think of a program as a recipe saved in a cookbook. It lists ingredients, steps, and instructions, but it does not cook anything by itself. A process is an actual cooking session in a kitchen. The cook has ingredients on the counter, utensils in use, a current step, a timer, and a kitchen manager tracking progress.</p>
+<p>The same recipe can be used by many cooks at the same time. Each cook follows the same instructions but has separate ingredients, separate progress, and possibly different outcomes. Similarly, one executable file can create many processes. Each process has its own memory layout, CPU register state, stack, heap, open files, permissions, and OS bookkeeping.</p>
+<p>The OS is the kitchen manager. It decides who gets access to the stove, prevents one cook from taking another cook’s ingredients, handles interruptions, and records enough state to pause one cooking session and resume another later. That record is the Process Control Block.</p>
+<h2>Layer 1: What happens at a high level?</h2>
+<p>At the highest level, a program becomes a process when the OS creates an execution environment for it.</p>
+<p>A program normally exists as an executable file on storage: for example, <code>chrome.exe</code>, <code>/bin/ls</code>, <code>node.exe</code>, or a compiled C program. The file contains machine instructions, metadata, static data, library references, and information that tells the loader how to place pieces of the program into memory.</p>
+<p>When a user or another process requests execution, the OS does several things:</p>
+<ol>
+<li>It validates the executable file and permissions.</li>
+<li>It creates a new process entry in OS data structures.</li>
+<li>It creates or maps an address space for that process.</li>
+<li>It loads or maps executable code and data into memory.</li>
+<li>It sets up the initial stack, arguments, environment variables, and runtime metadata.</li>
+<li>It creates a Process Control Block.</li>
+<li>It marks the process as ready to run.</li>
+<li>The scheduler eventually gives the process CPU time.</li>
+</ol>
+<p>The program is not “used up” by this. It remains on disk. If you launch the same executable again, the OS can create another process from the same program. Both processes may share read-only code pages internally for efficiency, but each process gets a separate execution identity.</p>
+<p>This is why a text editor can open multiple windows, a server can create worker processes, and a shell can run many commands over time. The executable is the template. The process is the running instance.</p>
+<h2>Layer 2: What happens inside the OS?</h2>
+<p>Inside the OS, a process is not just code in memory. It is a collection of state and resources tracked by kernel data structures.</p>
+<p>The OS must answer many questions about each running process:</p>
+<ul>
+<li>What is its process ID?</li>
+<li>Which user owns it?</li>
+<li>What memory regions are mapped into its address space?</li>
+<li>What is its current state: ready, running, waiting, terminated?</li>
+<li>Which CPU registers must be restored if it runs again?</li>
+<li>Which files, sockets, or pipes has it opened?</li>
+<li>What priority or scheduling policy does it have?</li>
+<li>Which parent process created it?</li>
+<li>What exit status should be reported when it finishes?</li>
+</ul>
+<p>This information is stored in and around the Process Control Block, commonly called the PCB. Different operating systems use different names and internal structures. Linux uses kernel task structures and related memory-management structures. Windows uses process and thread executive objects. The exact implementation differs, but the idea is the same: the OS needs a durable record of each process so it can manage execution safely.</p>
+<p>The process image is the in-memory representation of a process. It usually includes:</p>
+<ul>
+<li>Text section: executable code.</li>
+<li>Data section: initialized global and static variables.</li>
+<li>BSS section: uninitialized global and static variables.</li>
+<li>Heap: dynamically allocated memory.</li>
+<li>Stack: function calls, local variables, return addresses, and call frames.</li>
+<li>Memory-mapped regions: shared libraries, mapped files, shared memory, and runtime mappings.</li>
+</ul>
+<p>The process also has resource handles outside the raw memory image, such as open file descriptors, sockets, signal handlers, credentials, and scheduling metadata.</p>
+<h3>Program vs process in one sentence</h3>
+<p>A program is a stored instruction set; a process is the OS-managed execution context created from that instruction set.</p>
+<h2>Layer 3: What happens at hardware or kernel level?</h2>
+<p>At hardware and kernel level, the process abstraction depends on memory protection, CPU state, and controlled entry into the kernel.</p>
+<p>When a process runs, the CPU is executing instructions on behalf of that process. The CPU registers hold temporary values, the program counter points to the next instruction, the stack pointer points into the process stack, and the memory-management hardware translates the process’s virtual addresses into physical memory addresses.</p>
+<p>Modern systems do not normally let a process use raw physical addresses. Instead, each process sees a virtual address space. Address <code>0x400000</code> in one process is not necessarily the same physical memory as address <code>0x400000</code> in another process. The Memory Management Unit and page tables help enforce this separation.</p>
+<p>This isolation is the reason one buggy application usually cannot overwrite another application’s memory. It is also the reason a process can behave as if it owns a large private memory space, even though the OS is sharing physical RAM among many processes.</p>
+<p>The kernel also keeps CPU state for each process or thread. During scheduling, the OS may stop one process and later resume it. To resume correctly, it must restore enough execution state: program counter, stack pointer, CPU registers, scheduling state, memory map reference, and other architecture-specific details. This is why the PCB is essential. Without saved state, the OS could not pause and resume execution reliably.</p>
+<p>System calls connect this topic to Day 3. A process runs mostly in user mode. When it needs a protected service, such as opening a file or creating another process, it enters the kernel through a system call. The kernel checks permissions, updates process data structures, and returns control to user mode.</p>
+<h2>Layer 4: What can go wrong?</h2>
+<p>Several problems appear when learners blur the difference between program and process.</p>
+<p>First, they assume the executable file changes whenever the process changes. Usually it does not. If a process increments a variable, allocates heap memory, opens files, or crashes, the original executable file normally remains unchanged.</p>
+<p>Second, they assume one program always means one process. This is false. One program can create many processes. A web server may spawn worker processes. A browser may create separate processes for tabs, renderers, extensions, GPU work, and network services. A shell can start many processes from the same command over time.</p>
+<p>Third, they assume every process must have a completely separate copy of code in RAM. In practice, operating systems often share read-only code pages and shared library pages between processes. The processes still remain logically separate because their writable memory and execution state are isolated.</p>
+<p>Fourth, they confuse a process with a thread. A process owns an address space and resources. A thread is an execution path inside a process. Threads in the same process share memory, but separate processes normally do not share memory unless the OS explicitly maps shared memory.</p>
+<p>Finally, they ignore the PCB. In interviews, the PCB is often the bridge between simple definitions and real OS behavior. The PCB explains how the OS tracks, schedules, blocks, resumes, terminates, and accounts for processes.</p>
+<h2>Step-by-Step Flow</h2>
+<p>Here is a practical flow for launching a program and turning it into a process:</p>
+<ol>
+<li>The user double-clicks an application or types a command in a shell.</li>
+<li>The existing process, such as the shell or desktop environment, asks the OS to create or execute a new program.</li>
+<li>The kernel checks permissions and validates the executable format.</li>
+<li>The OS creates a new process entry and assigns a process ID.</li>
+<li>The OS creates a virtual address space for the process.</li>
+<li>The loader maps the executable’s text and data sections into memory.</li>
+<li>The OS sets up the stack with arguments, environment variables, and startup data.</li>
+<li>The OS initializes process metadata such as state, priority, parent process, credentials, and open handles.</li>
+<li>The process is placed into the ready queue.</li>
+<li>The scheduler chooses the process when CPU time is available.</li>
+<li>The dispatcher loads the process execution context.</li>
+<li>The CPU begins executing the process’s first user-mode instructions.</li>
+<li>The process may request OS services through system calls.</li>
+<li>When the process exits, the OS records its exit status and releases most resources.</li>
+</ol>
+<h2>Diagram Section</h2>
+<h3>Diagram 1: Program to process flow</h3>
+<div class="diagram-card"><div class="mermaid">flowchart TD
+    A[Executable file on disk] --&gt; B[Execution request]
+    B --&gt; C[Kernel validates file and permissions]
+    C --&gt; D[Create process and assign PID]
+    D --&gt; E[Create virtual address space]
+    E --&gt; F[Map text, data, heap, stack, libraries]
+    F --&gt; G[Create PCB and resource table]
+    G --&gt; H[Ready queue]
+    H --&gt; I[Scheduler selects process]
+    I --&gt; J[CPU executes user-mode instructions]
+</div></div><p>This diagram shows the key point: the executable file is only the starting material. The OS creates a process by adding memory mappings, execution state, resource tables, and scheduling identity.</p>
+<h3>Diagram 2: Typical process memory image</h3>
+<div class="diagram-card"><div class="mermaid">flowchart TB
+    A[High virtual addresses] --&gt; B[Stack: calls, local variables, return addresses]
+    B --&gt; C[Free gap / growth region]
+    C --&gt; D[Heap: dynamic allocations]
+    D --&gt; E[BSS: uninitialized globals]
+    E --&gt; F[Data: initialized globals]
+    F --&gt; G[Text: executable code]
+    G --&gt; H[Low virtual addresses]
+</div></div><p>The exact layout varies by OS, architecture, loader, and security settings, but the interview idea is stable: a process has a structured address space containing code, data, heap, stack, and mapped regions.</p>
+<h3>Diagram 3: One program, multiple processes</h3>
+<div class="diagram-card"><div class="mermaid">flowchart LR
+    P[Program file: editor.exe] --&gt; P1[Process 101: window A]
+    P --&gt; P2[Process 204: window B]
+    P --&gt; P3[Process 318: background helper]
+    P1 --&gt; M1[Own address space and PCB]
+    P2 --&gt; M2[Own address space and PCB]
+    P3 --&gt; M3[Own address space and PCB]
+</div></div><p>The same executable can be the source of multiple active process instances. The OS tracks each one separately.</p>
+<h2>Practical System Relevance</h2>
+<p>In Linux, when a command runs, the system usually involves a combination of <code>fork()</code> and <code>exec()</code> semantics. <code>fork()</code> creates a child process based on the current process, while <code>exec()</code> replaces the child’s program image with a new executable. The process identity and some inherited resources can continue, but the program being executed changes.</p>
+<p>For example, when you type <code>ls</code> in a shell, the shell does not become <code>ls</code> forever. It typically creates a child process. The child executes the <code>ls</code> program. The shell waits or continues depending on whether the command runs in the foreground or background.</p>
+<p>In Windows, process creation is exposed through APIs such as <code>CreateProcess</code>. The internal implementation differs from Unix-like systems, but the concept remains: the OS creates a process object, address space, thread, handles, security context, and scheduling state.</p>
+<p>Browsers make this topic concrete. A modern browser may use multiple processes for isolation. One process may manage the browser UI, others may run page renderers, a GPU process may handle graphics work, and utility processes may handle network or extension tasks. This design helps contain crashes and security problems. If a renderer process fails, the whole browser may not need to die.</p>
+<p>Servers use processes to isolate work. A web server can create worker processes so one worker’s crash does not necessarily kill the master process. Databases use process and thread designs carefully because isolation, memory sharing, IPC, and scheduling overhead all affect performance.</p>
+<p>Containers also depend on process identity. A container is not a full machine in the same way a virtual machine is. It usually runs processes isolated by OS features such as namespaces and cgroups. From the host’s perspective, containerized apps are still processes, but their view of process IDs, filesystems, networks, and resources may be restricted.</p>
+<p>Android uses process boundaries heavily for app isolation. Each app often runs in its own Linux process with a distinct user identity. This helps the system enforce permissions and reduce damage from faulty or malicious apps.</p>
+<h2>Code or Pseudocode Section</h2>
+<h3>C-like intuition: same program, separate process state</h3>
+<pre><code class="language-c">#include &lt;stdio.h&gt;
+#include &lt;unistd.h&gt;
+
+int main() {
+    int x = 10;
+    pid_t pid = fork();
+
+    if (pid == 0) {
+        x = 20;
+        printf(&quot;Child process: x = %d\n&quot;, x);
+    } else {
+        x = 30;
+        printf(&quot;Parent process: x = %d\n&quot;, x);
+    }
+
+    return 0;
+}
+</code></pre>
+<p>This example demonstrates a key idea: after <code>fork()</code>, parent and child are separate processes. They may begin with similar memory contents, but changes to ordinary variables happen in separate address spaces. The child changing <code>x</code> does not directly change the parent’s <code>x</code>.</p>
+<h3>Shell observation commands</h3>
+<pre><code class="language-bash">ps -ef
+ps -o pid,ppid,stat,comm
+top
+pstree
+</code></pre>
+<p>Use <code>ps</code> to observe process IDs, parent process IDs, status, and command names. Use <code>top</code> to see active processes competing for CPU and memory. Use <code>pstree</code> where available to see parent-child relationships.</p>
+<h3>Linux process memory observation</h3>
+<pre><code class="language-bash">cat /proc/&lt;pid&gt;/status
+cat /proc/&lt;pid&gt;/maps
+ls -l /proc/&lt;pid&gt;/fd
+</code></pre>
+<p>These commands show that a process is more than an executable. It has status, memory mappings, and open file descriptors. This is a practical way to connect the abstract PCB and process image ideas to real OS data.</p>
+<h2>Common Misconceptions</h2>
+<h3>Misconception 1: A program and a process are the same</h3>
+<p>They are related, but not the same. A program is passive and stored. A process is active and managed by the OS. A program can exist without running. A process cannot exist without execution state and OS bookkeeping.</p>
+<h3>Misconception 2: Running the same program twice uses the same process</h3>
+<p>Usually it creates separate processes. They may share read-only code pages internally, but each process has its own identity, address space, resources, and state.</p>
+<h3>Misconception 3: The process is only the code loaded into memory</h3>
+<p>The code is only one part. A process also includes stack, heap, data, memory mappings, CPU state, open files, credentials, scheduling metadata, and the PCB.</p>
+<h3>Misconception 4: The PCB is stored inside the user’s process memory</h3>
+<p>The PCB is kernel-managed metadata. User programs do not directly edit their PCB. They request changes through system calls, and the kernel updates its own structures.</p>
+<h3>Misconception 5: Each process always has a complete private physical copy of everything</h3>
+<p>Each process has a private virtual address space, but the OS can share physical pages for read-only code, shared libraries, copy-on-write pages, or explicit shared memory.</p>
+<h3>Misconception 6: A process and a thread are interchangeable terms</h3>
+<p>A process is a resource and isolation container. A thread is an execution path inside a process. Threads in the same process share the process address space.</p>
+<h3>Misconception 7: If a process is not currently running, it does not exist</h3>
+<p>A process can be ready, waiting, stopped, or suspended. It still exists as long as the OS keeps its process metadata and resources.</p>
+<h2>Tricky Interview Corners</h2>
+<h3>Why can one program create many processes?</h3>
+<p>Because the executable is a template. The OS can create multiple independent execution contexts from the same file. Each process gets a PID, address space, state, and resource table.</p>
+<h3>Why is process creation more expensive than a simple function call?</h3>
+<p>Process creation involves kernel work: creating metadata, address spaces, page tables or memory mappings, file-handle inheritance rules, security checks, scheduler integration, and sometimes copying or mapping memory. A function call only changes control flow inside the same process.</p>
+<h3>If parent and child after <code>fork()</code> look identical, are they the same process?</h3>
+<p>No. They are separate processes with different PIDs. They may initially have similar memory contents, and modern systems use copy-on-write to avoid copying every page immediately, but they have separate execution identities.</p>
+<h3>Can a process change its program?</h3>
+<p>Yes, on Unix-like systems <code>exec()</code> replaces the current process image with a new program. The process continues as an execution identity, but its code, data, heap, stack, and memory mappings are replaced according to the new executable.</p>
+<h3>Is a process always isolated from every other process?</h3>
+<p>It is normally isolated by default, but the OS can allow controlled sharing through shared memory, memory-mapped files, pipes, sockets, files, and other IPC mechanisms. Isolation is the default protection model, not a claim that sharing is impossible.</p>
+<h3>Why does the OS need both PID and PCB?</h3>
+<p>The PID is a user-visible identifier. The PCB is the kernel’s detailed record. The PID lets users and programs refer to a process; the PCB lets the OS actually manage it.</p>
+<h2>Comparison Tables</h2>
+<h3>Program vs Process</h3>
+<div class="table-wrap"><table><thead>
+<tr>
+<th>Feature</th>
+<th>Program</th>
+<th>Process</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Nature</td>
+<td>Passive</td>
+<td>Active</td>
+</tr>
+<tr>
+<td>Location</td>
+<td>Stored on disk or storage</td>
+<td>Loaded/mapped into memory and tracked by OS</td>
+</tr>
+<tr>
+<td>Has PID</td>
+<td>No</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Has address space</td>
+<td>No active address space</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Has CPU state</td>
+<td>No</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Can be scheduled</td>
+<td>No</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Example</td>
+<td><code>python.exe</code>, <code>/bin/ls</code></td>
+<td>A running Python interpreter, a running <code>ls</code> command</td>
+</tr>
+</tbody>
+</table></div><h3>Process image vs PCB</h3>
+<div class="table-wrap"><table><thead>
+<tr>
+<th>Feature</th>
+<th>Process Image</th>
+<th>Process Control Block</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Meaning</td>
+<td>In-memory view of process code/data/stack/heap</td>
+<td>Kernel metadata used to manage the process</td>
+</tr>
+<tr>
+<td>Contains</td>
+<td>Text, data, heap, stack, mapped regions</td>
+<td>PID, state, registers, scheduling info, resources</td>
+</tr>
+<tr>
+<td>Managed by</td>
+<td>Loader, runtime, memory manager</td>
+<td>Kernel</td>
+</tr>
+<tr>
+<td>User visible</td>
+<td>Partly, through memory behavior</td>
+<td>Indirectly, through OS tools and system calls</td>
+</tr>
+</tbody>
+</table></div><h3>Process vs Thread preview</h3>
+<div class="table-wrap"><table><thead>
+<tr>
+<th>Feature</th>
+<th>Process</th>
+<th>Thread</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Main role</td>
+<td>Resource ownership and isolation</td>
+<td>Execution path</td>
+</tr>
+<tr>
+<td>Address space</td>
+<td>Usually separate</td>
+<td>Shared within same process</td>
+</tr>
+<tr>
+<td>Creation cost</td>
+<td>Usually higher</td>
+<td>Usually lower</td>
+</tr>
+<tr>
+<td>Failure impact</td>
+<td>Often isolated from other processes</td>
+<td>Can corrupt/crash the whole process</td>
+</tr>
+<tr>
+<td>Interview shortcut</td>
+<td>“Container of resources”</td>
+<td>“Unit of execution”</td>
+</tr>
+</tbody>
+</table></div><h2>How to Explain This in an Interview</h2>
+<h3>30-second answer</h3>
+<p>A program is a passive executable file, while a process is an active running instance of that program. When the OS starts a program, it creates a process with a PID, address space, stack, heap, open resources, execution state, and PCB. The same program can create multiple processes, and each process is scheduled and managed separately.</p>
+<h3>2-minute answer</h3>
+<p>A program is stored code and data, such as an executable on disk. It does not consume CPU by itself and has no active execution state. A process is created when the OS loads or maps that program into memory and gives it an execution environment. The process has a virtual address space containing text, data, heap, stack, and mapped regions. It also has kernel-managed metadata such as PID, process state, scheduling information, CPU register state, parent process, credentials, and open files. This metadata is often summarized as the Process Control Block. The distinction matters because one program can produce many processes, and the OS must isolate, schedule, pause, resume, and terminate each process independently.</p>
+<h3>Deeper follow-up answer</h3>
+<p>At a deeper level, the process abstraction combines software loading, memory protection, CPU scheduling, and kernel bookkeeping. The loader maps the executable and libraries into a virtual address space. The MMU and page tables help ensure that one process cannot normally access another process’s memory. The scheduler treats the process or its threads as candidates for CPU time. During context switching, the OS saves and restores execution state using process and thread metadata. System calls allow the process to request protected services without directly controlling hardware. This is why “program vs process” is not just a definition question; it is the entry point to process lifecycle, scheduling, virtual memory, and protection.</p>
+<h2>Interview Questions</h2>
+<h3>Basic Questions</h3>
+<ol>
+<li>What is the difference between a program and a process?</li>
+<li>Can one program have multiple processes? Give an example.</li>
+<li>What is a Process Control Block?</li>
+<li>What is a process image?</li>
+<li>What are the typical memory sections of a process?</li>
+</ol>
+<h3>Intermediate Questions</h3>
+<ol start="6">
+<li>Why does a process need its own address space?</li>
+<li>How does the OS create a process from an executable file?</li>
+<li>What is the difference between process image and PCB?</li>
+<li>Why is process creation more expensive than a function call?</li>
+<li>What happens to parent and child memory after <code>fork()</code>?</li>
+</ol>
+<h3>Advanced Questions</h3>
+<ol start="11">
+<li>How can different processes share code pages but still remain isolated?</li>
+<li>What changes when a process calls <code>exec()</code>?</li>
+<li>Why is the PCB necessary for context switching?</li>
+<li>How do processes relate to containers?</li>
+<li>Why is a process usually considered a unit of resource ownership rather than just a unit of execution?</li>
+</ol>
+<h2>Follow-Up Questions</h2>
+<p>Q: What is the difference between a program and a process?<br>
+Follow-ups:</p>
+<ul>
+<li>Can the same executable create multiple processes?</li>
+<li>Does a program have a PID before it runs?</li>
+<li>Is a process only code in memory?</li>
+</ul>
+<p>Q: What is a PCB?<br>
+Follow-ups:</p>
+<ul>
+<li>What fields are typically stored in a PCB?</li>
+<li>Is the PCB directly editable by user programs?</li>
+<li>How does the PCB help context switching?</li>
+</ul>
+<p>Q: What is a process image?<br>
+Follow-ups:</p>
+<ul>
+<li>What are text, data, heap, and stack?</li>
+<li>Is the process image the same as the PCB?</li>
+<li>Where do shared libraries fit?</li>
+</ul>
+<p>Q: What happens when a program starts?<br>
+Follow-ups:</p>
+<ul>
+<li>What does the loader do?</li>
+<li>How is the stack initialized?</li>
+<li>When does the scheduler become involved?</li>
+</ul>
+<p>Q: Why are processes isolated?<br>
+Follow-ups:</p>
+<ul>
+<li>What role does virtual memory play?</li>
+<li>Can processes still share data?</li>
+<li>What could happen if one process could write arbitrary physical memory?</li>
+</ul>
+<p>Q: What is <code>fork()</code>?<br>
+Follow-ups:</p>
+<ul>
+<li>Are parent and child the same process?</li>
+<li>Why is copy-on-write useful?</li>
+<li>What is the difference between <code>fork()</code> and <code>exec()</code>?</li>
+</ul>
+<p>Q: How are process and thread different?<br>
+Follow-ups:</p>
+<ul>
+<li>Which one owns the address space?</li>
+<li>Which one is usually cheaper to switch?</li>
+<li>Why can a thread bug affect the whole process?</li>
+</ul>
+<p>Q: How do processes appear in real systems?<br>
+Follow-ups:</p>
+<ul>
+<li>Why do browsers use multiple processes?</li>
+<li>Why do servers create worker processes?</li>
+<li>How do containers isolate processes?</li>
+</ul>
+<h2>Trick Questions</h2>
+<ol>
+<li>
+<p>Q: If an executable file is deleted while a process is running, must the process immediately stop?<br>
+Expected answer: Not necessarily. The process may continue using already mapped code and resources, depending on OS and filesystem behavior. The directory entry and running mappings are separate concepts.</p>
+</li>
+<li>
+<p>Q: If two processes run the same program, do they always have two full physical copies of the code?<br>
+Expected answer: No. The OS can share read-only code pages while keeping each process’s writable memory and state separate.</p>
+</li>
+<li>
+<p>Q: Is a process that is waiting for I/O still using the CPU?<br>
+Expected answer: Usually no. It is blocked or waiting, and the scheduler can run another process.</p>
+</li>
+<li>
+<p>Q: Does <code>exec()</code> create a new process?<br>
+Expected answer: <code>exec()</code> replaces the current process image with a new program. It does not by itself create a separate new process.</p>
+</li>
+<li>
+<p>Q: Is the PID the same thing as the PCB?<br>
+Expected answer: No. PID is an identifier; PCB is the detailed kernel record.</p>
+</li>
+<li>
+<p>Q: Can a process exist without a program?<br>
+Expected answer: A process is always executing or prepared to execute some program image or kernel-defined task. However, after creation, the active process state is more than the original program file.</p>
+</li>
+<li>
+<p>Q: If a process has crashed, did the program file become corrupted?<br>
+Expected answer: Usually no. A process crash normally affects the running instance, not the executable file stored on disk.</p>
+</li>
+</ol>
+<h2>Practical Debugging / Observation</h2>
+<p>Use these commands to observe the concept directly on a Unix-like system:</p>
+<pre><code class="language-bash">ps -o pid,ppid,stat,comm
+</code></pre>
+<p>Look for PID and PPID. The process has an identity and a parent relationship.</p>
+<pre><code class="language-bash">ps -o pid,stat,vsz,rss,comm
+</code></pre>
+<p>Compare virtual size and resident set size. This helps show that process memory is tracked and that virtual memory is not the same as physical RAM currently resident.</p>
+<pre><code class="language-bash">cat /proc/$$/status
+</code></pre>
+<p>In a shell, <code>$$</code> expands to the shell’s process ID. The status file exposes process metadata such as PID, parent PID, state, memory, and capabilities.</p>
+<pre><code class="language-bash">cat /proc/$$/maps
+</code></pre>
+<p>This shows memory mappings for the shell process: executable regions, libraries, heap, stack, and mapped files.</p>
+<pre><code class="language-bash">ls -l /proc/$$/fd
+</code></pre>
+<p>This shows open file descriptors. It reinforces that a process includes resources, not only code.</p>
+<p>On Windows, Task Manager and Process Explorer show similar ideas: process IDs, parent relationships, memory usage, handles, threads, and loaded modules.</p>
+<h2>Mini Quiz</h2>
+<h3>MCQs</h3>
+<ol>
+<li>
+<p>A program is best described as:
+A. An active execution instance<br>
+B. A passive set of instructions and data<br>
+C. A kernel data structure only<br>
+D. A CPU register set</p>
+</li>
+<li>
+<p>Which item is most closely associated with a process?
+A. PID<br>
+B. File extension<br>
+C. Compiler warning<br>
+D. Source-code comment</p>
+</li>
+<li>
+<p>Which memory region usually stores function call frames?
+A. Text<br>
+B. Stack<br>
+C. BSS<br>
+D. File descriptor table</p>
+</li>
+<li>
+<p>What does the PCB mainly help the OS do?
+A. Draw the GUI<br>
+B. Track and manage process state<br>
+C. Compile source code<br>
+D. Encrypt every file</p>
+</li>
+<li>
+<p>Which statement is correct?
+A. One program can never create multiple processes<br>
+B. A process has no execution state<br>
+C. A process is an active OS-managed execution instance<br>
+D. A PID is the full process memory image</p>
+</li>
+</ol>
+<h3>Short-answer questions</h3>
+<ol>
+<li>Define process image.</li>
+<li>Name four typical fields or categories of information in a PCB.</li>
+<li>Explain why a process needs an address space.</li>
+</ol>
+<h3>Reasoning questions</h3>
+<ol>
+<li>A browser runs each tab in a different process. What benefit does this give?</li>
+<li>After <code>fork()</code>, parent and child both have a variable named <code>count</code>. The child changes <code>count</code>. Why does the parent’s value usually not change?</li>
+</ol>
+<h3>Answers</h3>
+<ol>
+<li>B</li>
+<li>A</li>
+<li>B</li>
+<li>B</li>
+<li>C</li>
+</ol>
+<p>Short answers:</p>
+<ol>
+<li>A process image is the in-memory representation of a process, including code, data, heap, stack, and mapped regions.</li>
+<li>PID, process state, CPU register state, scheduling info, memory-management info, open files, credentials, parent process, and accounting data.</li>
+<li>A process needs an address space so the OS can isolate memory, map code/data/stack/heap, and translate virtual addresses safely.</li>
+</ol>
+<p>Reasoning answers:</p>
+<ol>
+<li>Separate tab processes improve fault isolation and security. A crash or compromise in one renderer is less likely to kill or corrupt the entire browser.</li>
+<li>Parent and child are separate processes with separate virtual address spaces. Copy-on-write may initially share physical pages, but writes create private copies.</li>
+</ol>
+<h1>5-Minute Revision Column</h1>
+<p>Revision Targets:</p>
+<ul>
+<li>Day 4: OS Structures and Services - Previous day reinforcement - R1</li>
+<li>Day 2: Computer System Architecture for OS - Three-day spaced recall - R2</li>
+</ul>
+<h2>Day 4 - OS Structures and Services (R1 Recall Revision)</h2>
+<p>Core recall:</p>
+<ul>
+<li>OS structure means how the operating system organizes its kernel, drivers, services, system-call paths, user interfaces, and resource-management components.</li>
+<li>OS services are the actual capabilities provided by that structure: process management, memory management, file management, I/O, protection, security, networking, accounting, and error handling.</li>
+<li>Monolithic kernels keep many services in kernel space for speed and direct integration.</li>
+<li>Microkernels keep only minimal core functions in the kernel and move many services to user space for stronger isolation.</li>
+<li>Modular kernels, such as Linux-style designs, keep a monolithic core but allow loadable modules for drivers and features.</li>
+<li>Virtual machines isolate complete guest OS environments through a hypervisor.</li>
+</ul>
+<p>Key definitions:</p>
+<ul>
+<li>Monolithic kernel: kernel design where many OS services run in kernel space.</li>
+<li>Microkernel: design that keeps the kernel small and moves services such as drivers or filesystems into user-space servers.</li>
+<li>OS service: a function the OS provides to users, programs, or the system, such as file access or process creation.</li>
+</ul>
+<p>Common traps:</p>
+<ul>
+<li>Do not say microkernels are automatically faster because they are smaller. Extra communication can add overhead.</li>
+<li>Do not say a modular kernel is the same as a microkernel. Loadable kernel modules may still run in kernel space.</li>
+</ul>
+<p>Quick interview questions:</p>
+<ul>
+<li>Why does Linux support modules but still count as broadly monolithic?</li>
+<li>What tradeoff exists between monolithic performance and microkernel isolation?</li>
+</ul>
+<p>Mental model:
+The OS is like a hospital with many departments. A monolithic design keeps departments tightly connected in one central building. A microkernel design keeps only coordination in the center and moves many departments into separate buildings, improving isolation but increasing coordination cost.</p>
+<h2>Day 2 - Computer System Architecture for OS (R2 Compression Revision)</h2>
+<p>Core recall:</p>
+<ul>
+<li>CPU executes instructions; memory holds active code and data; storage keeps long-term files.</li>
+<li>I/O devices communicate through device controllers, not usually by direct application control.</li>
+<li>Interrupts let hardware notify the CPU about events instead of forcing constant polling.</li>
+<li>DMA moves bulk data between device and memory without making the CPU copy every byte.</li>
+<li>Firmware and bootloader start the chain that eventually loads the OS kernel.</li>
+</ul>
+<p>Key definitions:</p>
+<ul>
+<li>Interrupt: a signal that asks the CPU to pause normal execution and handle an event.</li>
+<li>DMA: Direct Memory Access, where a controller transfers data to or from memory with limited CPU involvement.</li>
+<li>Device controller: hardware interface that manages a specific device and communicates with the CPU/OS.</li>
+</ul>
+<p>Common traps:</p>
+<ul>
+<li>DMA does not mean the OS is irrelevant; the OS configures and coordinates the transfer.</li>
+<li>Interrupts are not always errors; they are normal mechanisms for I/O completion, timers, and hardware events.</li>
+</ul>
+<p>Quick interview questions:</p>
+<ul>
+<li>Why are interrupts often better than polling?</li>
+<li>What happens at a high level when a key is pressed?</li>
+</ul>
+<p>Mental model:
+The computer is an operations floor: CPU as worker, memory as desk, storage as archive, device controllers as clerks, interrupts as urgent notifications, and the OS as the manager coordinating safe access.</p>
+<h2>Final Takeaway</h2>
+<p>A program is a passive executable or instruction set. A process is the active, OS-managed execution instance created from that program. The process abstraction gives the OS a way to isolate memory, track resources, schedule CPU time, handle system calls, and safely run many applications at once. The process image explains what exists in memory; the PCB explains what the kernel tracks. If you understand this distinction, process states, scheduling, context switching, threads, and virtual memory become much easier to reason about.</p>
+<h2>What You Should Be Able To Answer Now</h2>
+<ul>
+<li>Explain the difference between a program and a process.</li>
+<li>Describe how the OS turns an executable into a running process.</li>
+<li>Identify the major parts of a process image.</li>
+<li>Explain what a PCB stores and why it matters.</li>
+<li>Describe why one program can create multiple processes.</li>
+<li>Explain how process isolation depends on address spaces.</li>
+<li>Compare process image, PCB, process, and thread at a basic level.</li>
+<li>Answer common interview follow-ups about <code>fork()</code>, <code>exec()</code>, PID, and memory sharing.</li>
+</ul>
+</article>
+    </main>
+    <script>
+      (() => {
+        const article = document.querySelector(".article");
+        if (!article) return;
+        const chapterMap = {
+          "Opening Intuition": ["01", "Opening Intuition", "Why this concept exists in real systems before formal definition."],
+          "Interview Definition": ["02", "Interview Definition", "A clean interview-ready explanation with precise language."],
+          "Mental Model": ["03", "Mental Model", "A compact analogy that maps theory to practical recall."],
+          "Layer 1: What happens at a high level?": ["04", "Core Theory", "What the OS manages and how abstraction/resource management fit together."],
+          "Layer 2: What happens inside the OS?": ["05", "System Internals", "Kernel boundaries, data structures, and service flow inside the OS."],
+          "Step-by-Step Flow": ["06", "Step-by-Step Flow", "Concrete execution sequence you can narrate in interviews."],
+          "Practical System Relevance": ["07", "Practical Examples", "How the concept appears in Linux, Windows, Android, servers, and cloud."],
+          "Common Misconceptions": ["08", "Common Misconceptions", "High-frequency mistakes and what to say instead."],
+          "Tricky Interview Corners": ["09", "Tricky Interview Corners", "Edge cases and deeper follow-up traps interviewers probe."],
+          "Interview Questions": ["10", "Interview Questions", "Layered practice questions from basic to advanced."],
+          "5-Minute Revision Column": ["11", "5-Minute Revision Column", "Compressed spaced-repetition recall from prior targets."],
+          "Final Takeaway": ["12", "Final Takeaway", "The final memory model and what you should be able to answer now."]
+        };
+
+        const wrapAfterHeading = (title, className) => {
+          const heading = Array.from(article.querySelectorAll("h2")).find((el) => el.textContent?.trim() === title);
+          if (!heading) return;
+          const wrap = document.createElement("div");
+          wrap.className = className;
+          let node = heading.nextElementSibling;
+          while (node && node.tagName !== "H2") {
+            const next = node.nextElementSibling;
+            wrap.appendChild(node);
+            node = next;
+          }
+          heading.insertAdjacentElement("afterend", wrap);
+        };
+
+        wrapAfterHeading("Interview Definition", "definition-block");
+        wrapAfterHeading("5-Minute Revision Column", "revision-block");
+        wrapAfterHeading("Final Takeaway", "takeaway-block");
+        wrapAfterHeading("What You Should Be Able To Answer Now", "takeaway-block");
+
+        article.querySelectorAll("h2").forEach((heading) => {
+          const text = heading.textContent?.trim() ?? "";
+          const chapter = chapterMap[text];
+          if (!chapter) return;
+          const opener = document.createElement("div");
+          opener.className = "section-opener";
+          opener.innerHTML = "<div class=\"section-kicker\">SECTION " + chapter[0] + " / " + chapter[1].toUpperCase() + "</div><div class=\"section-summary\">" + chapter[2] + "</div>";
+          heading.insertAdjacentElement("beforebegin", opener);
+        });
+
+        const misconceptions = Array.from(article.querySelectorAll("h2")).find(
+          (el) => el.textContent?.trim() === "Common Misconceptions"
+        );
+        if (misconceptions) {
+          let node = misconceptions.nextElementSibling;
+          while (node && node.tagName !== "H2") {
+            if (node.tagName === "OL") {
+              node.querySelectorAll("li").forEach((li) => li.classList.add("trap-item"));
+            }
+            node = node.nextElementSibling;
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>

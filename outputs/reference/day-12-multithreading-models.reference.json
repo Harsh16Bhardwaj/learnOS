@@ -1,0 +1,93 @@
+{
+  "day": 12,
+  "topic": "Multithreading Models",
+  "difficulty": "Intermediate",
+  "core_summary": [
+    "A multithreading model describes how user-level threads created by an application or runtime are mapped to kernel-level threads scheduled by the operating system. The main models are many-to-one, one-to-one, and many-to-many. These models determine whether threads can run in parallel, what happens when one thread blocks, how much scheduling overhead exists, and how much control the runtime has.",
+    "In an interview, say: user-level threads are managed by a user-space library or runtime, kernel-level threads are known to the OS scheduler, and the mapping between them decides the tradeoff between speed, parallelism, blocking behavior, and complexity."
+  ],
+  "key_definitions": {
+    "Multithreading model": "the mapping policy between application or runtime-managed user threads and operating-system-managed kernel threads.",
+    "User-level thread": "a thread-like execution unit managed mainly in user space by a library, language runtime, or application scheduler.",
+    "Kernel-level thread": "a schedulable execution context known to the OS kernel and placed onto CPU cores by the kernel scheduler.",
+    "Many-to-one model": "many user-level threads share one kernel-level thread.",
+    "One-to-one model": "each user-level thread maps to a distinct kernel-level thread.",
+    "Many-to-many model": "many user-level threads are multiplexed over multiple kernel-level threads.",
+    "Thread pool": "a bounded set of reusable worker threads that execute queued tasks.",
+    "Concurrency": "multiple tasks are in progress over overlapping time, even if only one runs at an instant."
+  },
+  "mental_model": "Think of user-level threads as work tickets created inside a company and kernel-level threads as licensed delivery drivers recognized by the city. If the company has many tickets but only one licensed driver, it can reorder tickets internally, but only one delivery can happen at a time. If every ticket gets its own driver, many deliveries can happen in parallel, but drivers are expensive to create and coordinate. If many tickets share a pool of drivers, the company can keep control over the work while still using multiple drivers when useful. That is the mental model: Many-to-one: many user tickets, one kernel driver.",
+  "core_examples": [
+    {
+      "name": "Opening an application",
+      "point": "The OS loads executable code, creates a process, assigns memory, schedules CPU time, and services I/O."
+    },
+    {
+      "name": "Reading a file",
+      "point": "The app requests bytes while the OS handles permissions, metadata lookup, filesystem mapping, and device access."
+    }
+  ],
+  "practical_uses": [
+    "In Linux, the kernel scheduler works with schedulable task-like execution contexts. Threads in the same process can share memory mappings and file tables, while still being scheduled independently. This makes Linux-style threading close to the one-to-one model from the programmer's perspective.",
+    "In Windows, processes contain one or more threads, and the scheduler schedules threads. A process is not &quot;running&quot; by itself in the same way; its threads run. This distinction is useful in interviews because it separates resource ownership from execution.",
+    "In Java, Thread objects traditionally map to operating-system threads on mainstream JVMs. Newer Java virtual threads provide a runtime-managed lightweight concurrency model where many virtual threads can be mounted on fewer carrier threads. The interview concept remains the same: logical threads and kernel-scheduled threads are not always one-to-one.",
+    "In Go, goroutines are lightweight user-level execution units scheduled by the Go runtime over OS threads. This is a practical many-to-many style design. It allows a large number of goroutines without creating an OS thread for every goroutine.",
+    "In Android, the main UI thread must stay responsive. Long CPU work or blocking I/O on that thread can freeze the app and cause an Application Not Responding condition. Background workers, executors, coroutines, or thread pools are used to keep UI work separate.",
+    "In databases, worker pools prevent unbounded thread creation. A database may use threads for client connections, query execution, logging, flushing, compaction, checkpointing, and background maintenance. Too many workers can increase lock contention and cache pressure.",
+    "In servers and cloud systems, thread pools are often combined with async I/O, event loops, and backpressure. The goal is not simply &quot;more threads&quot;; the goal is enough concurrency to keep resources busy without overwhelming CPU, memory, queues, and downstream services.",
+    "In containers, threads are still scheduled by the host kernel. A container does not get a private CPU scheduler in the ordinary sense. cgroups and quotas may limit CPU time, but kernel threads still compete on the host."
+  ],
+  "pitfalls": [
+    "Multithreading always means parallelism. Not necessarily. Concurrency means multiple tasks are in progress over time. Parallelism means simultaneous execution. A single-core CPU can run concurrent threads by time-slicing, but not truly run them at the same instant.",
+    "User-level threads and kernel-level threads are the same. User-level threads are managed by a runtime or library. Kernel-level threads are visible to the OS scheduler.",
+    "Many-to-one is always bad. It can be very fast for user-space switching and simple cooperative workloads, but it has serious blocking and parallelism limitations.",
+    "One-to-one is always best. It enables parallelism and better blocking behavior, but too many OS threads can be expensive."
+  ],
+  "misconceptions": [
+    "Multithreading always means parallelism. Not necessarily. Concurrency means multiple tasks are in progress over time. Parallelism means simultaneous execution. A single-core CPU can run concurrent threads by time-slicing, but not truly run them at the same instant.",
+    "User-level threads and kernel-level threads are the same. User-level threads are managed by a runtime or library. Kernel-level threads are visible to the OS scheduler.",
+    "Many-to-one is always bad. It can be very fast for user-space switching and simple cooperative workloads, but it has serious blocking and parallelism limitations.",
+    "One-to-one is always best. It enables parallelism and better blocking behavior, but too many OS threads can be expensive.",
+    "Thread pools are only an optimization. They are also a control mechanism. They limit concurrency, protect memory, reduce creation overhead, and make overload behavior more predictable.",
+    "More threads always improve throughput. If work is CPU-bound and there are already enough runnable threads to fill all cores, more threads can increase overhead and reduce throughput."
+  ],
+  "tricky_questions": [
+    {
+      "question": "If a program has 1,000 user-level threads, is it definitely using 1,000 CPU cores?",
+      "answer": "No. User-level threads may map to fewer kernel threads, and actual parallelism is limited by kernel scheduling and available CPU cores."
+    },
+    {
+      "question": "If a process has multiple threads, is the process itself scheduled?",
+      "answer": "In modern systems, schedulable entities are threads or task-like execution contexts. A process owns resources; its threads run."
+    },
+    {
+      "question": "Is many-to-one always slower than one-to-one?",
+      "answer": "No. User-level switching can be faster, but many-to-one has blocking and parallelism limitations."
+    },
+    {
+      "question": "If one thread blocks on I/O, does the whole process always block?",
+      "answer": "Not with kernel-level threads in a one-to-one style model. Other ready threads in the same process can run."
+    },
+    {
+      "question": "Does a thread pool increase the number of CPU cores?",
+      "answer": "No. It controls work execution and reuse. It does not create hardware capacity."
+    },
+    {
+      "question": "Can a single-core system have multithreading?",
+      "answer": "Yes. It can have concurrent threads through time-slicing, but not true simultaneous parallel execution."
+    },
+    {
+      "question": "Are coroutines exactly the same as OS threads?",
+      "answer": "No. Coroutines are typically runtime-managed lightweight units and may run on a smaller number of OS threads."
+    }
+  ],
+  "interview_ready_answer": {
+    "short": "### 30-second answer",
+    "medium": "Multithreading models describe how user-level threads map to kernel-level threads. In many-to-one, many user threads share one kernel thread, which is cheap but cannot use multiple cores and can block as a group. In one-to-one, every user thread maps to a kernel thread, enabling parallelism and independent blocking but increasing overhead. In many-to-many, many user threads are scheduled over several kernel threads, balancing lightweight concurrency with parallel execution."
+  },
+  "revision_history": {
+    "times_revised": 3,
+    "last_revised_on_day": 24,
+    "revision_strength": "R3"
+  }
+}

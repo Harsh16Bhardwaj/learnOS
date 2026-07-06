@@ -1,0 +1,85 @@
+{
+  "day": 21,
+  "topic": "Paging Basics",
+  "difficulty": "Intermediate",
+  "core_summary": [
+    "Paging is a memory-management scheme in which a process's logical address space is divided into fixed-size pages and physical memory is divided into fixed-size frames. The OS maintains a page table that maps each page number to a frame number. During address translation, the page number selects a page-table entry, and the offset is copied unchanged to form the final physical address."
+  ],
+  "key_definitions": {
+    "Day 20": "Contiguous Memory Allocation - R1 recall revision",
+    "Day 18": "Deadlocks Part 2 - R2 compression revision"
+  },
+  "mental_model": "Think of a process's memory as a numbered notebook and physical RAM as a set of equal-sized lockers. Page 0 of the notebook may be in locker 11, page 1 may be in locker 4, page 2 may be in locker 38, and so on. The process reads the notebook as if the pages are continuous. The OS and hardware use a directory, the page table, to find the real locker for each page. The key mental split is: The program thinks in pages and offsets.",
+  "core_examples": [
+    {
+      "name": "Opening an application",
+      "point": "The OS loads executable code, creates a process, assigns memory, schedules CPU time, and services I/O."
+    },
+    {
+      "name": "Reading a file",
+      "point": "The app requests bytes while the OS handles permissions, metadata lookup, filesystem mapping, and device access."
+    }
+  ],
+  "practical_uses": [
+    "In Linux, each process has a virtual address space. The kernel maintains page-table structures that map user virtual pages to physical frames, file-backed pages, shared pages, or unmapped regions. Tools such as pmap, /proc/&lt;pid&gt;/maps, and /proc/&lt;pid&gt;/smaps show the virtual memory regions of a process. They do not simply show one continuous chunk of physical RAM.",
+    "In Windows, processes also use virtual address spaces backed by page tables. The memory manager handles private pages, mapped files, shared libraries, copy-on-write pages, working sets, and page faults. The details differ from Linux, but the core idea remains: virtual pages map to physical frames or backing storage under OS control.",
+    "In Android, app isolation relies heavily on virtual memory and paging. Each app process gets its own address space. Shared libraries and framework code may be mapped efficiently, while private app data remains protected.",
+    "In browsers, renderer processes, GPU processes, network services, and extensions run with isolated address spaces. Paging supports this isolation. Shared memory can still be created deliberately for performance, but it is controlled by OS mechanisms rather than accidental raw memory access.",
+    "In databases, memory-mapped files and buffer pools interact with paging. A database may map a file into virtual memory, but the OS still manages pages and page faults. High-performance databases often manage their own buffer pools carefully because OS paging behavior can affect latency.",
+    "In containers, processes still rely on the host kernel's memory management. Namespaces change what processes can see, and cgroups limit resources, but page tables and physical frames are still managed by the host OS kernel.",
+    "In cloud systems, virtual machines add another layer: guest virtual addresses may translate to guest physical addresses, which the hypervisor maps to host physical memory. That is why hardware support for virtualization and efficient page-table handling matters."
+  ],
+  "pitfalls": [
+    "&quot;Paging means a process is stored continuously in RAM.&quot;",
+    "&quot;Page and frame mean the same thing.&quot;",
+    "&quot;Offset changes during address translation.&quot;",
+    "&quot;Paging removes all fragmentation.&quot;"
+  ],
+  "misconceptions": [
+    "&quot;Paging means a process is stored continuously in RAM.&quot;",
+    "&quot;Page and frame mean the same thing.&quot;",
+    "&quot;Offset changes during address translation.&quot;",
+    "&quot;Paging removes all fragmentation.&quot;",
+    "&quot;A page table stores actual data.&quot;",
+    "&quot;A page fault always means program crash.&quot;"
+  ],
+  "tricky_questions": [
+    {
+      "question": "If a process has consecutive virtual pages, must those pages be consecutive in physical memory?",
+      "answer": "No. The page table may map them to scattered frames."
+    },
+    {
+      "question": "Is a frame inside the process's logical address space?",
+      "answer": "No. A frame is a physical memory block."
+    },
+    {
+      "question": "Does paging eliminate all memory waste?",
+      "answer": "No. It removes external fragmentation for process placement, but internal fragmentation can still occur inside pages."
+    },
+    {
+      "question": "If page size is 4 KB, how many offset bits are needed?",
+      "answer": "12 bits, because 2^12 = 4096."
+    },
+    {
+      "question": "Does the page table translate offset to another offset?",
+      "answer": "No. It translates page number to frame number. The offset stays the same."
+    },
+    {
+      "question": "If a page-table entry is invalid, must the process be killed?",
+      "answer": "Not always. The OS may handle it as a valid page fault in demand paging, or it may terminate the process for illegal access."
+    },
+    {
+      "question": "Can two processes have the same virtual address but different physical addresses?",
+      "answer": "Yes. Separate page tables allow the same virtual address to map differently per process."
+    }
+  ],
+  "interview_ready_answer": {
+    "short": "### 30-second answer",
+    "medium": "Paging divides a process's logical memory into fixed-size pages and physical RAM into fixed-size frames. A page table maps each page to a frame. During address translation, the page number is replaced by the frame number, while the offset stays the same. This removes the need for a process to occupy one continuous physical memory block."
+  },
+  "revision_history": {
+    "times_revised": 2,
+    "last_revised_on_day": 24,
+    "revision_strength": "R3"
+  }
+}

@@ -1,0 +1,906 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Day 15 - Classical Synchronization Problems</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #070707;
+        --surface: #101010;
+        --surface-soft: #151515;
+        --border: #262626;
+        --text: #d8d8d8;
+        --muted: #8f8f8f;
+        --faint: #5f5f5f;
+        --cyan: #67e8f9;
+        --amber: #f4c95d;
+        --violet: #b79cff;
+        --green: #8ee6a3;
+      }
+
+      @page {
+        size: A4;
+        margin: 18mm 17mm 20mm 17mm;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "JetBrains Mono", "IBM Plex Mono", "Roboto Mono", monospace;
+        font-size: 9.8px;
+        line-height: 1.62;
+      }
+
+      .page {
+        width: min(980px, calc(100vw - 24px));
+        margin: 0 auto;
+        padding: 12px 0 20px;
+      }
+
+      .hero {
+        margin-bottom: 14px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 12px;
+      }
+
+      .eyebrow {
+        margin: 0 0 8px;
+        font-size: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        color: var(--faint);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 24px;
+        line-height: 1.18;
+        letter-spacing: -0.04em;
+        color: #f2f2f2;
+        break-after: avoid;
+      }
+
+      .meta-line {
+        margin-top: 8px;
+        font-size: 8.8px;
+        color: var(--muted);
+      }
+
+      .subtitle {
+        max-width: 760px;
+        margin: 8px 0 0;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .revision-strip {
+        margin-top: 10px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .revision-strip span {
+        display: inline-flex;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: rgba(142, 230, 163, 0.08);
+        border: 1px solid rgba(142, 230, 163, 0.22);
+        color: var(--green);
+        font-size: 8px;
+      }
+
+      .article h2,
+      .article h3,
+      .article h4 {
+        line-height: 1.3;
+        break-after: avoid;
+      }
+
+      .article h2 {
+        margin-top: 24px;
+        margin-bottom: 8px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 5px;
+        font-size: 15px;
+        color: #f2f2f2;
+      }
+
+      .section-opener {
+        margin-top: 30px;
+        margin-bottom: 14px;
+        padding: 12px 14px;
+        background: var(--surface);
+        border-left: 3px solid var(--cyan);
+        border-radius: 8px;
+        break-inside: avoid;
+      }
+
+      .section-kicker {
+        font-size: 8px;
+        color: var(--cyan);
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+      }
+
+      .section-summary {
+        font-size: 9.2px;
+        color: #9ca3af;
+        line-height: 1.55;
+      }
+
+      .article h3 {
+        margin-top: 16px;
+        margin-bottom: 6px;
+        font-size: 12px;
+        color: var(--cyan);
+      }
+
+      .article p,
+      .article li {
+        color: var(--text);
+      }
+
+      p {
+        orphans: 3;
+        widows: 3;
+      }
+
+      .article ul,
+      .article ol {
+        padding-left: 1.15rem;
+      }
+
+      .article blockquote {
+        margin: 12px 0;
+        padding: 10px 12px;
+        border-left: 3px solid var(--amber);
+        background: rgba(244, 201, 93, 0.06);
+        border-radius: 8px;
+        color: #ddd4bd;
+        break-inside: avoid;
+      }
+
+      .article pre,
+      .article code {
+        font-family: "JetBrains Mono", "IBM Plex Mono", monospace;
+      }
+
+      .article pre {
+        background: #030303;
+        border: 1px solid #242424;
+        border-radius: 8px;
+        padding: 12px;
+        font-size: 8.8px;
+        line-height: 1.55;
+        overflow-wrap: break-word;
+        white-space: pre-wrap;
+        break-inside: avoid;
+      }
+
+      .article code {
+        color: var(--cyan);
+        background: transparent;
+        padding: 0;
+      }
+
+      .diagram-card {
+        margin: 14px 0;
+        padding: 14px;
+        background: var(--surface);
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        overflow-x: auto;
+        break-inside: avoid;
+      }
+
+      .mermaid {
+        display: flex;
+        justify-content: center;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+        margin: 14px 0;
+        break-inside: avoid;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 8.8px;
+      }
+
+      th,
+      td {
+        padding: 7px;
+        border-bottom: 1px solid #202020;
+        text-align: left;
+      }
+
+      th {
+        color: var(--cyan);
+        font-weight: 600;
+        border-bottom: 1px solid #333;
+      }
+
+      td {
+        color: #cfcfcf;
+      }
+
+      a {
+        color: var(--cyan);
+      }
+
+      .definition-block,
+      .revision-block,
+      .takeaway-block {
+        background: var(--surface);
+        border-radius: 8px;
+        padding: 12px 14px;
+        margin: 12px 0;
+        break-inside: avoid;
+      }
+
+      .definition-block {
+        border-left: 3px solid var(--violet);
+      }
+
+      .revision-block {
+        background: rgba(142, 230, 163, 0.06);
+        border: 1px solid rgba(142, 230, 163, 0.22);
+      }
+
+      .takeaway-block {
+        border-left: 3px solid var(--green);
+      }
+
+      .trap-item {
+        background: rgba(244, 201, 93, 0.06);
+        border-left: 3px solid var(--amber);
+        border-radius: 8px;
+        padding: 10px 13px;
+        margin: 8px 0;
+        break-inside: avoid;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <p class="eyebrow">LearnOS Daily / DAY 15</p>
+        <h1>Classical Synchronization Problems</h1>
+        <p class="meta-line">40 min read - 5 min revision - Intermediate - Prerequisites: Day 14</p>
+        <p class="subtitle">Producer-consumer and dining philosophers are standard interview cases.</p>
+        <div class="revision-strip"><span>Day 14 - Mutex, Locks, and Semaphores - R1 - Previous day reinforcement</span><span>Day 12 - Multithreading Models - R2 - Three-day spaced recall</span><span>Day 10 - Scheduling Algorithms Part 2 - R3 - Five-day spaced recall</span></div>
+      </section>
+      <article class="article"><p>Difficulty: Intermediate<br>
+Fresh Learning: 40 minutes<br>
+Revision: 5 minutes<br>
+Prerequisites: Day 14 - Mutex, Locks, and Semaphores; critical sections; semaphores; basic thread scheduling<br>
+Why this topic matters in interviews: Producer-consumer, readers-writers, and dining philosophers are standard interview problems because they test whether you can use synchronization primitives to protect correctness without accidentally creating deadlock, starvation, or wasted CPU time.</p>
+<p>Imagine a logging service inside a busy server. Dozens of worker threads produce log records, but only one background thread writes them to disk in batches. If workers write directly to the file at the same time, lines may interleave or corrupt. If the writer checks the queue while it is empty and then sleeps forever, logs are lost. If producers keep adding faster than the writer can drain, memory grows without limit. This is not an artificial textbook story. It is the same shape as web request queues, browser event pipelines, database readers, printer spooling, and operating-system buffers.</p>
+<p>Classical synchronization problems are reusable patterns for reasoning about this kind of coordination. They are not important because interviewers want you to memorize old names. They are important because the same problems appear whenever multiple threads share a bounded resource, read mostly shared data, or compete for several locks. These problems force you to answer three questions:</p>
+<ul>
+<li>What shared state must be protected?</li>
+<li>Which condition must a thread wait for before it can proceed?</li>
+<li>Can the waiting rule cause deadlock, starvation, or poor throughput?</li>
+</ul>
+<p>Yesterday’s topic gave you the tools: mutexes, binary semaphores, counting semaphores, blocking waits, and ownership. Today is about using those tools in realistic coordination designs.</p>
+<h2>Interview Definition</h2>
+<p>Classical synchronization problems are well-known concurrency scenarios used to model common coordination challenges among threads or processes. Producer-consumer models bounded buffers, readers-writers models shared data with many readers and fewer writers, dining philosophers models circular waiting and deadlock, and sleeping barber models waiting-room capacity and service coordination. They help interviewers test whether you can combine mutual exclusion, condition synchronization, ordering, and fairness.</p>
+<p>In an interview, say: these problems are templates for reasoning about shared state. Producer-consumer is about buffer capacity and empty/full conditions. Readers-writers is about allowing concurrent reads but exclusive writes. Dining philosophers is about avoiding circular wait. The real skill is identifying the invariant, the waiting condition, and the failure mode.</p>
+<h2>Key Definitions</h2>
+<ul>
+<li>Producer-consumer problem: a synchronization problem where producer threads add items to a shared buffer and consumer threads remove items from it.</li>
+<li>Bounded buffer: a fixed-capacity queue or storage area shared by producers and consumers.</li>
+<li>Condition synchronization: coordination where a thread waits until a required condition becomes true, such as “buffer not empty” or “buffer not full.”</li>
+<li>Readers-writers problem: a synchronization problem where multiple readers may access shared data concurrently, but writers require exclusive access.</li>
+<li>Reader preference: a readers-writers policy that favors readers and can delay writers.</li>
+<li>Writer preference: a readers-writers policy that gives waiting writers priority and can delay readers.</li>
+<li>Dining philosophers problem: a deadlock-prone synchronization problem where each participant needs two shared resources and circular waiting may occur.</li>
+<li>Deadlock: a state where threads wait forever because each is holding a resource and waiting for another resource held by someone else.</li>
+<li>Starvation: a state where a thread could theoretically proceed, but is repeatedly delayed because others keep getting priority.</li>
+<li>Sleeping barber problem: a synchronization problem where a barber sleeps when there are no customers, customers wait if seats exist, and customers leave if the waiting room is full.</li>
+</ul>
+<h2>Mental Model</h2>
+<p>Think of synchronization problems as traffic rules at shared facilities.</p>
+<p>Producer-consumer is a delivery counter with limited shelves. Producers bring packages to the shelf. Consumers take packages from the shelf. If the shelf is full, producers must wait. If the shelf is empty, consumers must wait. A mutex protects the shelf data structure, while counting semaphores track available empty slots and filled slots.</p>
+<p>Readers-writers is a library reading room. Many students can read the same book copy if nobody is editing it. But when a librarian updates the book, nobody should read a half-updated version. Readers can share access; writers need exclusive access. The hard part is fairness: if readers keep arriving, a writer may never get a turn.</p>
+<p>Dining philosophers is a circular table where every person needs the fork on the left and the fork on the right. If everyone takes the left fork first and waits for the right fork, nobody can continue. The table becomes a deadlock even though every individual action looked locally reasonable.</p>
+<p>Sleeping barber is a service desk with limited waiting chairs. If no customers exist, the worker sleeps. A new customer wakes the worker. If all waiting chairs are full, later customers leave. This is a practical model for queues with finite capacity and worker wake-up behavior.</p>
+<p>The useful interview idea: each problem has a different invariant. Do not blindly use one lock everywhere. Identify the protected state, the wait condition, and the ordering rule.</p>
+<h2>Layer 1: What happens at a high level?</h2>
+<p>At a high level, these problems are about coordinating progress.</p>
+<p>In producer-consumer, two types of threads interact through a queue. Producers must not add when the queue is full. Consumers must not remove when the queue is empty. The data structure itself must not be modified concurrently without protection. That means the solution usually needs both mutual exclusion and capacity tracking.</p>
+<p>In readers-writers, the shared resource can tolerate many readers at once because reading does not change the data. But a writer changes the data, so it must run alone. The challenge is to maximize concurrency while preserving correctness. A simple exclusive mutex around every read and write is correct but too restrictive; it destroys the benefit of parallel reads.</p>
+<p>In dining philosophers, the issue is not a race on one variable. The issue is resource acquisition order. Each philosopher needs two resources. If the system allows every philosopher to hold one resource while waiting for the next, circular wait can form. This is a direct connection to deadlock conditions.</p>
+<p>In sleeping barber, the problem combines queue capacity, sleep/wake behavior, and customer loss. If there are no customers, the barber should not spin forever wasting CPU. If too many customers arrive, some must leave or be rejected. This maps well to real services under bounded queue load.</p>
+<h2>Layer 2: What happens inside the OS?</h2>
+<p>Inside an OS or runtime, synchronization problems turn into operations on shared memory, waiting queues, and scheduler decisions.</p>
+<p>A mutex protects short critical sections where shared metadata changes. For example, the producer-consumer buffer needs protected updates to the queue head, tail, count, and array slots. Without the mutex, two producers might write to the same slot or corrupt the queue pointers.</p>
+<p>Semaphores or condition variables represent waiting conditions. A producer does not simply check <code>count &lt; capacity</code> once and hope it remains true. It waits on a “not full” condition. A consumer waits on a “not empty” condition. When a producer adds an item, it signals that at least one filled slot exists. When a consumer removes an item, it signals that at least one empty slot exists.</p>
+<p>When a thread waits, the OS or runtime usually blocks it and puts it on a wait queue. It is no longer consuming CPU. When another thread signals the condition, one or more waiting threads become ready and can later be scheduled. This distinction matters in interviews: waiting on a blocking synchronization primitive is different from busy spinning.</p>
+<p>Fairness is often policy-dependent. A readers-writers lock may prefer readers, prefer writers, or use a fair queue. Different policies affect throughput and starvation. The OS does not magically know your application invariant; the synchronization primitive and algorithm encode that policy.</p>
+<h2>Layer 3: What happens at hardware or kernel level?</h2>
+<p>At the hardware level, the primitive building blocks are atomic operations and memory-ordering rules. A mutex or semaphore implementation may use instructions such as test-and-set, compare-and-swap, fetch-and-add, or exchange to update lock state atomically. These instructions prevent two CPU cores from both believing they acquired the same lock.</p>
+<p>However, classical synchronization problems are usually solved above that level. You do not manually implement atomic instructions in interviews unless asked. You use a mutex, semaphore, condition variable, monitor, or read-write lock. The underlying runtime may spin briefly, then block through a kernel mechanism such as a futex-like wait, event object, or scheduler wait queue.</p>
+<p>The hardware cache system also matters. Shared counters such as buffer count, reader count, and lock state bounce between CPU caches when many cores update them. That is why synchronization overhead can appear even when the critical section is small. A correct answer should mention that locks protect correctness but are not free.</p>
+<p>Kernel-level behavior becomes visible when waiting threads sleep and wake. A blocked consumer is not running on the CPU; it is waiting for a wake-up event. When a producer signals, the scheduler decides when the consumer actually runs. Signal does not mean “the waiting thread runs immediately”; it means “the waiting condition may now be satisfied and a waiter can be made ready.”</p>
+<h2>Layer 4: What can go wrong?</h2>
+<p>The main failure modes are race conditions, deadlock, starvation, missed wakeups, lost signals, and poor throughput.</p>
+<p>Race conditions happen when shared state is accessed without the correct mutual exclusion. In producer-consumer, this can corrupt the buffer. In readers-writers, this can expose a partially written value.</p>
+<p>Deadlock happens when threads wait forever in a cycle. Dining philosophers is the classic example: each philosopher holds one fork and waits for another. The same shape appears in real systems when code grabs <code>lockA</code> then <code>lockB</code> in one place and <code>lockB</code> then <code>lockA</code> somewhere else.</p>
+<p>Starvation happens when a policy is correct but unfair. Reader preference can starve writers if readers continuously arrive. Writer preference can delay readers heavily if a stream of writers keeps arriving.</p>
+<p>Missed wakeups happen when signaling and waiting are not protected by the same condition discipline. A thread may check a condition, get preempted, another thread signals, and then the first thread goes to sleep even though the condition already became true. This is why condition-variable code checks the condition under a mutex and usually waits in a loop.</p>
+<p>Poor throughput happens when the solution is correct but too coarse. One global lock may avoid races but serialize too much work. A busy wait may work in a tiny kernel path but waste CPU in normal application code.</p>
+<h2>Step-by-Step Flow</h2>
+<h3>Producer-consumer with a bounded buffer</h3>
+<ol>
+<li>Initialize a mutex to protect the buffer structure.</li>
+<li>Initialize <code>emptySlots</code> semaphore to buffer capacity.</li>
+<li>Initialize <code>filledSlots</code> semaphore to 0.</li>
+<li>A producer waits on <code>emptySlots</code> before adding.</li>
+<li>The producer locks the mutex.</li>
+<li>The producer inserts the item and updates queue metadata.</li>
+<li>The producer unlocks the mutex.</li>
+<li>The producer signals <code>filledSlots</code>.</li>
+<li>A consumer waits on <code>filledSlots</code> before removing.</li>
+<li>The consumer locks the mutex.</li>
+<li>The consumer removes the item and updates queue metadata.</li>
+<li>The consumer unlocks the mutex.</li>
+<li>The consumer signals <code>emptySlots</code>.</li>
+</ol>
+<p>The order matters. A producer should not lock the buffer and then wait forever for empty space while blocking consumers from removing items. In many designs, capacity waits happen before entering the buffer critical section.</p>
+<h3>Readers-writers with writer fairness</h3>
+<ol>
+<li>Track the number of active readers.</li>
+<li>Protect the reader count with a mutex.</li>
+<li>Use a write lock to give writers exclusive access.</li>
+<li>The first reader acquires the write lock so writers cannot enter.</li>
+<li>Later readers increment the reader count and proceed concurrently.</li>
+<li>Each reader decrements the count when leaving.</li>
+<li>The last reader releases the write lock.</li>
+<li>A writer acquires the write lock before modifying data.</li>
+<li>The writer updates the shared resource alone.</li>
+<li>The writer releases the write lock.</li>
+</ol>
+<p>This simple version can prefer readers. A fairer version adds a queue or turnstile so new readers do not continuously jump ahead of waiting writers.</p>
+<h3>Dining philosophers without deadlock</h3>
+<ol>
+<li>Place five philosophers around a table with five forks.</li>
+<li>Each philosopher needs both adjacent forks to eat.</li>
+<li>A naive philosopher picks up the left fork, then waits for the right fork.</li>
+<li>If all philosophers do this together, every fork is held and every philosopher waits.</li>
+<li>To prevent circular wait, impose an ordering rule.</li>
+<li>Example: always pick up the lower-numbered fork first, then the higher-numbered fork.</li>
+<li>Because resource acquisition order is consistent, a circular wait cannot form.</li>
+<li>After eating, the philosopher releases both forks.</li>
+</ol>
+<p>The important lesson is not the forks. The important lesson is lock ordering.</p>
+<h2>Diagram Section</h2>
+<h3>Producer-consumer coordination</h3>
+<div class="diagram-card"><div class="mermaid">flowchart LR
+    P1[Producer threads] --&gt;|wait emptySlots| E[Empty slot permits]
+    E --&gt;|lock mutex| B[Bounded buffer]
+    B --&gt;|unlock and signal filledSlots| F[Filled item permits]
+    F --&gt;|lock mutex| C1[Consumer threads]
+    C1 --&gt;|remove item and signal emptySlots| E
+</div></div><p>This diagram separates the two responsibilities: semaphores count buffer capacity and filled items, while the mutex protects actual queue mutation.</p>
+<h3>Readers-writers access rule</h3>
+<div class="diagram-card"><div class="mermaid">stateDiagram-v2
+    [*] --&gt; Idle
+    Idle --&gt; Reading: first reader enters
+    Reading --&gt; Reading: more readers enter
+    Reading --&gt; Idle: last reader leaves
+    Idle --&gt; Writing: writer enters
+    Writing --&gt; Idle: writer leaves
+    Reading --&gt; WriterWaiting: writer arrives
+    WriterWaiting --&gt; Writing: readers drain
+</div></div><p>Readers may share the resource with other readers, but writers need exclusive access. The <code>WriterWaiting</code> state is where fairness policy matters.</p>
+<h3>Dining philosophers deadlock pattern</h3>
+<div class="diagram-card"><div class="mermaid">flowchart TD
+    P0[Philosopher 0 holds Fork 0] --&gt;|waits for Fork 1| P1[Philosopher 1 holds Fork 1]
+    P1 --&gt;|waits for Fork 2| P2[Philosopher 2 holds Fork 2]
+    P2 --&gt;|waits for Fork 3| P3[Philosopher 3 holds Fork 3]
+    P3 --&gt;|waits for Fork 4| P4[Philosopher 4 holds Fork 4]
+    P4 --&gt;|waits for Fork 0| P0
+</div></div><p>This cycle is the core danger. Every participant is waiting for a resource held by the next participant.</p>
+<h2>Practical System Relevance</h2>
+<p>In Linux, producer-consumer patterns appear in kernel buffers, device-driver queues, network packet queues, pipes, logging paths, and work queues. The exact primitives vary by context: kernel code may use spinlocks where sleeping is not allowed and sleeping locks or wait queues when blocking is valid.</p>
+<p>In Windows, synchronization objects such as mutexes, semaphores, events, condition variables, and slim reader-writer locks support the same patterns. A reader-writer lock is useful for shared configuration, routing tables, or caches that are read often and written occasionally.</p>
+<p>In Android, producer-consumer appears between background worker threads and the main UI thread. Work is posted to queues, and the UI thread consumes messages in order. Long work on the UI thread blocks consumption and makes the app feel frozen.</p>
+<p>In browsers, event loops, task queues, rendering pipelines, network loaders, and storage systems all use producer-consumer shapes. JavaScript hides some shared-memory complexity on the main thread, but browser engines themselves are highly concurrent.</p>
+<p>In databases, readers-writers is central. Many transactions may read shared data, but writes need isolation. Real databases use sophisticated locks, latches, MVCC, and isolation levels, but the interview foundation starts with “readers can share, writers need exclusive access.”</p>
+<p>In servers and cloud systems, bounded buffers protect memory. A service that accepts unlimited queued work can crash under load. A bounded queue plus worker pool is a producer-consumer design with backpressure.</p>
+<p>In containers, the host kernel still schedules threads. A containerized service with a bounded worker queue still needs synchronization. CPU quotas can make poor synchronization worse because blocked or spinning threads compete within limited CPU time.</p>
+<h2>Code or Pseudocode Section</h2>
+<h3>Producer-consumer using semaphores</h3>
+<pre><code class="language-c">semaphore emptySlots = N;
+semaphore filledSlots = 0;
+mutex bufferLock;
+
+producer(item) {
+    wait(emptySlots);
+    lock(bufferLock);
+    enqueue(item);
+    unlock(bufferLock);
+    signal(filledSlots);
+}
+
+consumer() {
+    wait(filledSlots);
+    lock(bufferLock);
+    item = dequeue();
+    unlock(bufferLock);
+    signal(emptySlots);
+    process(item);
+}
+</code></pre>
+<p>This demonstrates the standard division of responsibility. <code>emptySlots</code> prevents overflow, <code>filledSlots</code> prevents underflow, and <code>bufferLock</code> prevents queue corruption.</p>
+<h3>Readers-writers sketch</h3>
+<pre><code class="language-c">int readerCount = 0;
+mutex readerCountLock;
+mutex resourceLock;
+
+reader() {
+    lock(readerCountLock);
+    readerCount++;
+    if (readerCount == 1) {
+        lock(resourceLock);
+    }
+    unlock(readerCountLock);
+
+    read_shared_data();
+
+    lock(readerCountLock);
+    readerCount--;
+    if (readerCount == 0) {
+        unlock(resourceLock);
+    }
+    unlock(readerCountLock);
+}
+
+writer() {
+    lock(resourceLock);
+    write_shared_data();
+    unlock(resourceLock);
+}
+</code></pre>
+<p>This version allows many concurrent readers and exclusive writers, but it can starve writers if readers keep arriving. Mention that limitation in interviews.</p>
+<h3>Observation commands</h3>
+<pre><code class="language-bash">top
+ps -L -p &lt;pid&gt;
+strace -f ./program
+perf top
+</code></pre>
+<p>Use <code>top</code> to watch CPU usage when a program spins instead of blocking. Use <code>ps -L</code> on Linux to list threads for a process. Use <code>strace -f</code> to observe blocking system calls such as futex waits in threaded programs. The exact output depends on the program, but the idea is to distinguish CPU-burning busy waits from blocking waits.</p>
+<h2>Common Misconceptions</h2>
+<ul>
+<li>“Producer-consumer is only about queues.” False. It is about bounded handoff between producers and consumers. Queues are the common implementation.</li>
+<li>“A mutex alone solves producer-consumer.” Not enough. A mutex protects the buffer, but producers also need to wait when full and consumers need to wait when empty.</li>
+<li>“Readers never need synchronization because they only read.” False. Readers need coordination with writers or they may observe inconsistent data.</li>
+<li>“Readers-writers is always faster than a normal mutex.” Not always. If writes are frequent or critical sections are tiny, reader-writer lock overhead can outweigh the benefit.</li>
+<li>“Dining philosophers is unrealistic.” The fork story is artificial, but circular wait across multiple locks is extremely real.</li>
+<li>“Deadlock and starvation are the same.” False. Deadlock is a cycle of permanent waiting. Starvation is unfair repeated delay even though progress is possible.</li>
+<li>“Signal means the waiting thread immediately runs.” False. It usually means a waiter becomes eligible to run; the scheduler still decides when.</li>
+<li>“Sleeping means the thread disappears.” False. It remains blocked in a wait queue and can be made ready when the condition changes.</li>
+</ul>
+<h2>Tricky Interview Corners</h2>
+<h3>Mutex plus condition is different from only mutex</h3>
+<p>A mutex answers “who can modify this state now?” A condition answers “is it meaningful for this thread to continue?” Producer-consumer needs both. Locking an empty queue does not create an item.</p>
+<h3>Waiting must be tied to a condition</h3>
+<p>Do not say “the thread waits because another thread tells it to.” Say the thread waits because a condition is false: buffer empty, buffer full, writer active, no waiting chair, or fork unavailable.</p>
+<h3>Condition checks should usually happen in a loop</h3>
+<p>In condition-variable style code, a waiting thread should re-check the condition after waking. Another thread may have consumed the item first, or the wake-up may be spurious depending on the primitive.</p>
+<h3>Avoid holding locks while doing slow work</h3>
+<p>In producer-consumer, the consumer should usually remove the item under lock, then process it after releasing the lock. Holding the buffer lock during slow processing blocks unrelated producers and consumers.</p>
+<h3>Reader preference can starve writers</h3>
+<p>If new readers can always enter while a writer waits, the writer may never get the lock. A fair solution blocks new readers once a writer is waiting or uses a queue.</p>
+<h3>Dining philosophers is solved by breaking a Coffman condition</h3>
+<p>Deadlock requires mutual exclusion, hold and wait, no preemption, and circular wait. Solutions often break circular wait with resource ordering, break hold-and-wait by acquiring both forks at once, or limit the number of philosophers trying to eat.</p>
+<h3>Bounded queues are a form of backpressure</h3>
+<p>When a queue is full, producers wait or reject work. That is not a bug; it is how the system avoids unbounded memory growth.</p>
+<h2>Comparison Tables</h2>
+<h3>Problem patterns</h3>
+<div class="table-wrap"><table><thead>
+<tr>
+<th>Problem</th>
+<th>Shared resource</th>
+<th>Main condition</th>
+<th>Main risk</th>
+<th>Common primitive</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Producer-consumer</td>
+<td>Bounded buffer</td>
+<td>Not empty / not full</td>
+<td>Underflow, overflow, races</td>
+<td>Mutex + semaphores</td>
+</tr>
+<tr>
+<td>Readers-writers</td>
+<td>Shared data</td>
+<td>No writer active</td>
+<td>Starvation, stale reads</td>
+<td>Reader-writer lock</td>
+</tr>
+<tr>
+<td>Dining philosophers</td>
+<td>Multiple resources</td>
+<td>Need both forks</td>
+<td>Deadlock</td>
+<td>Lock ordering</td>
+</tr>
+<tr>
+<td>Sleeping barber</td>
+<td>Waiting room and worker</td>
+<td>Seats available / customer available</td>
+<td>Lost wakeup, rejection</td>
+<td>Semaphores + mutex</td>
+</tr>
+</tbody>
+</table></div><h3>Deadlock vs starvation</h3>
+<div class="table-wrap"><table><thead>
+<tr>
+<th>Aspect</th>
+<th>Deadlock</th>
+<th>Starvation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Meaning</td>
+<td>Threads wait forever in a cycle</td>
+<td>One thread repeatedly loses access</td>
+</tr>
+<tr>
+<td>Progress elsewhere</td>
+<td>Often no progress in the cycle</td>
+<td>Other threads may keep progressing</td>
+</tr>
+<tr>
+<td>Typical cause</td>
+<td>Circular wait over resources</td>
+<td>Unfair scheduling or priority policy</td>
+</tr>
+<tr>
+<td>Example</td>
+<td>Every philosopher holds one fork</td>
+<td>Writer waits forever while readers arrive</td>
+</tr>
+<tr>
+<td>Fix</td>
+<td>Break a deadlock condition</td>
+<td>Add fairness or aging</td>
+</tr>
+</tbody>
+</table></div><h2>How to Explain This in an Interview</h2>
+<h3>30-second answer</h3>
+<p>Classical synchronization problems are standard patterns for coordinating threads. Producer-consumer handles a bounded buffer with producers adding and consumers removing. Readers-writers allows many readers but requires exclusive writers. Dining philosophers shows how circular wait over multiple resources causes deadlock. The key is to identify the shared state, the waiting condition, and the failure mode.</p>
+<h3>2-minute answer</h3>
+<p>I would explain them as templates. In producer-consumer, a mutex protects the buffer data structure, one semaphore counts empty slots, and another counts filled slots. Producers wait for empty space, insert under mutex, then signal that an item exists. Consumers wait for an item, remove under mutex, then signal that space exists. In readers-writers, concurrent reads are safe but writes must be exclusive, so the algorithm tracks reader count and blocks writers while readers are active. Depending on the policy, readers or writers may starve. Dining philosophers is about deadlock: if each philosopher holds one fork and waits for the next, circular wait forms. A common fix is global lock ordering.</p>
+<h3>Deeper follow-up answer</h3>
+<p>The subtle part is fairness and condition discipline. A solution can be race-free but still starve one side. Reader preference can starve writers. A bounded queue can be correct but perform badly if processing happens while holding the queue lock. Condition variables require checking the condition under the mutex and usually waiting in a loop. At system level, waits may block threads in OS wait queues, while low-level locks are built from atomic hardware instructions. A strong solution protects invariants, avoids circular wait, and minimizes unnecessary lock hold time.</p>
+<h2>Interview Questions</h2>
+<h3>Basic Questions</h3>
+<ol>
+<li>What is the producer-consumer problem?</li>
+<li>Why does producer-consumer need both a mutex and condition synchronization?</li>
+<li>What is a bounded buffer?</li>
+<li>What is the readers-writers problem?</li>
+<li>Why can multiple readers access shared data at the same time?</li>
+</ol>
+<h3>Intermediate Questions</h3>
+<ol start="6">
+<li>How do <code>emptySlots</code> and <code>filledSlots</code> semaphores work in producer-consumer?</li>
+<li>Why can reader-preference readers-writers solutions starve writers?</li>
+<li>What is the dining philosophers problem trying to demonstrate?</li>
+<li>How does lock ordering prevent dining-philosophers deadlock?</li>
+<li>What is the difference between deadlock and starvation?</li>
+</ol>
+<h3>Advanced Questions</h3>
+<ol start="11">
+<li>Why should condition-variable waits usually be inside a loop?</li>
+<li>How can a bounded queue protect a server during overload?</li>
+<li>When might a reader-writer lock be worse than a simple mutex?</li>
+<li>How would you design a fair readers-writers lock?</li>
+<li>Why is holding a lock during slow I/O usually dangerous?</li>
+</ol>
+<h2>Follow-Up Questions</h2>
+<p>Q: What is the producer-consumer problem?<br>
+Follow-ups:</p>
+<ul>
+<li>What happens if the buffer is full?</li>
+<li>What happens if the buffer is empty?</li>
+<li>Which state does the mutex protect?</li>
+<li>Why is a bounded buffer useful in servers?</li>
+</ul>
+<p>Q: How do you solve producer-consumer using semaphores?<br>
+Follow-ups:</p>
+<ul>
+<li>Why initialize <code>emptySlots</code> to capacity?</li>
+<li>Why initialize <code>filledSlots</code> to zero?</li>
+<li>Why signal <code>filledSlots</code> after producing?</li>
+<li>Why signal <code>emptySlots</code> after consuming?</li>
+</ul>
+<p>Q: What is the readers-writers problem?<br>
+Follow-ups:</p>
+<ul>
+<li>Why are concurrent readers allowed?</li>
+<li>Why must writers be exclusive?</li>
+<li>What does reader starvation mean?</li>
+<li>What does writer starvation mean?</li>
+</ul>
+<p>Q: What is dining philosophers?<br>
+Follow-ups:</p>
+<ul>
+<li>Which Coffman condition is most visible?</li>
+<li>How does resource ordering help?</li>
+<li>Can limiting philosophers at the table help?</li>
+<li>Is the problem realistic outside the table story?</li>
+</ul>
+<p>Q: What is the sleeping barber problem?<br>
+Follow-ups:</p>
+<ul>
+<li>What happens when no customers exist?</li>
+<li>What happens when all waiting chairs are full?</li>
+<li>How does this model finite service queues?</li>
+<li>Where do lost wakeups appear?</li>
+</ul>
+<p>Q: Why can a synchronization solution be correct but slow?<br>
+Follow-ups:</p>
+<ul>
+<li>What is lock contention?</li>
+<li>Why avoid holding locks during I/O?</li>
+<li>What happens if one global lock protects too much?</li>
+<li>How do blocking and spinning differ?</li>
+</ul>
+<h2>Trick Questions</h2>
+<p>Q: If producer-consumer uses a mutex, can consumers safely remove from an empty buffer?<br>
+Expected answer: No. The mutex protects the buffer from concurrent mutation, but it does not guarantee that an item exists. Consumers still need to wait for the not-empty condition.</p>
+<p>Q: If many readers only read, do they need any synchronization?<br>
+Expected answer: Yes, because writers may update the data concurrently. Readers need coordination with writers to avoid seeing inconsistent state.</p>
+<p>Q: Is dining philosophers only about philosophers and forks?<br>
+Expected answer: No. It models any situation where threads acquire multiple resources and may form circular wait.</p>
+<p>Q: If a writer is waiting, should new readers always be allowed in?<br>
+Expected answer: It depends on the policy, but always allowing new readers can starve the writer.</p>
+<p>Q: Does <code>signal</code> guarantee the waiting thread immediately owns the lock?<br>
+Expected answer: No. Depending on the primitive, it may only make the waiter ready. The waiter usually has to reacquire the lock and re-check the condition.</p>
+<p>Q: Is a larger buffer always better in producer-consumer?<br>
+Expected answer: No. Larger buffers can smooth bursts, but they also increase memory usage and latency by allowing more work to wait in the system.</p>
+<p>Q: Can a deadlock-free solution still starve a thread?<br>
+Expected answer: Yes. Deadlock freedom does not automatically imply fairness.</p>
+<h2>Practical Debugging / Observation</h2>
+<p>When studying synchronization in real systems, observe whether threads are running, sleeping, or waiting on locks.</p>
+<pre><code class="language-bash">top -H -p &lt;pid&gt;
+ps -L -p &lt;pid&gt;
+strace -f -e futex ./threaded-program
+perf top
+</code></pre>
+<p>What to observe:</p>
+<ul>
+<li>If CPU usage is high while progress is low, threads may be spinning or repeatedly contending.</li>
+<li>If many threads are sleeping in futex-like waits, they may be blocked on locks or condition variables.</li>
+<li>If queue length keeps growing, producers are faster than consumers or consumers are blocked.</li>
+<li>If write operations have high latency while reads continue, a readers-writers policy may be starving writers.</li>
+<li>If a program hangs with several locks held, inspect lock acquisition order for a circular wait pattern.</li>
+</ul>
+<p>In production systems, the same logic appears as metrics: queue depth, worker utilization, request latency, dropped work, database lock wait time, and thread-pool saturation.</p>
+<h2>Mini Quiz</h2>
+<h3>MCQs</h3>
+<ol>
+<li>
+<p>In producer-consumer, what does <code>emptySlots</code> usually count?<br>
+A. Number of active consumers<br>
+B. Number of available buffer positions<br>
+C. Number of mutexes<br>
+D. Number of blocked producers</p>
+</li>
+<li>
+<p>In readers-writers, which operation requires exclusive access?<br>
+A. Reading only<br>
+B. Writing<br>
+C. Incrementing a local variable<br>
+D. Sleeping</p>
+</li>
+<li>
+<p>Dining philosophers mainly demonstrates which risk?<br>
+A. External fragmentation<br>
+B. Circular wait deadlock<br>
+C. Page replacement<br>
+D. CPU burst prediction</p>
+</li>
+<li>
+<p>A bounded queue primarily helps a server by:<br>
+A. Removing all synchronization<br>
+B. Making CPU cores faster<br>
+C. Applying backpressure under load<br>
+D. Avoiding all blocking</p>
+</li>
+<li>
+<p>Writer starvation can happen when:<br>
+A. Readers are always blocked<br>
+B. Writers never request access<br>
+C. New readers continuously enter before waiting writers<br>
+D. The system has only one thread</p>
+</li>
+</ol>
+<h3>Short-answer questions</h3>
+<ol>
+<li>Why is a mutex alone insufficient for producer-consumer?</li>
+<li>What is the difference between deadlock and starvation?</li>
+<li>Why can holding a lock during slow I/O harm throughput?</li>
+</ol>
+<h3>Reasoning questions</h3>
+<ol>
+<li>A buffer has capacity 5. Three items are currently inside it. What should <code>emptySlots</code> and <code>filledSlots</code> be?</li>
+<li>A system allows unlimited readers to enter while a writer waits. What is the likely fairness problem?</li>
+</ol>
+<h3>Answers</h3>
+<ol>
+<li>B</li>
+<li>B</li>
+<li>B</li>
+<li>C</li>
+<li>C</li>
+</ol>
+<p>Short answers:</p>
+<ol>
+<li>A mutex protects queue mutation, but producers and consumers also need to wait for not-full and not-empty conditions.</li>
+<li>Deadlock is permanent circular waiting. Starvation is unfair repeated delay while others continue to make progress.</li>
+<li>Slow I/O keeps the critical section occupied, blocking unrelated threads and increasing latency.</li>
+</ol>
+<p>Reasoning answers:</p>
+<ol>
+<li><code>emptySlots = 2</code>, <code>filledSlots = 3</code>.</li>
+<li>Writer starvation.</li>
+</ol>
+<h1>5-Minute Revision Column</h1>
+<p>Revision Targets:</p>
+<ul>
+<li>Day 14: Mutex, Locks, and Semaphores - R1 recall revision</li>
+<li>Day 12: Multithreading Models - R2 compression revision</li>
+<li>Day 10: Scheduling Algorithms Part 2 - R3 flash revision</li>
+</ul>
+<h2>Day 14 - Mutex, Locks, and Semaphores (R1)</h2>
+<p>Core recall: A lock restricts access to a critical section. A mutex is a mutual-exclusion lock with ownership: the thread that locks it should unlock it. A semaphore is a permit counter controlled by wait and signal operations. Use a mutex when one thread at a time must protect a shared invariant. Use a counting semaphore when a fixed number of identical resources may be used concurrently, such as database connections or worker slots.</p>
+<p>Key definitions:</p>
+<ul>
+<li>Mutex: ownership-based mutual exclusion for a critical section.</li>
+<li>Binary semaphore: one permit; can behave like a gate but is not necessarily ownership-based.</li>
+<li>Counting semaphore: multiple permits for limited identical resources.</li>
+</ul>
+<p>Pitfalls:</p>
+<ul>
+<li>A binary semaphore is not automatically the same as a mutex because ownership semantics differ.</li>
+<li>A lock only works if every access path follows the same protection rule.</li>
+</ul>
+<p>Tricky questions:</p>
+<ul>
+<li>If code uses a lock, is it automatically thread-safe?</li>
+<li>Should a mutex be held while doing slow network or disk I/O?</li>
+</ul>
+<p>One-line memory: mutex protects a shared invariant; semaphore controls how many threads may pass.</p>
+<h2>Day 12 - Multithreading Models (R2)</h2>
+<p>Core recall:</p>
+<ul>
+<li>A multithreading model maps user-level threads to kernel-level threads.</li>
+<li>Many-to-one is cheap in user space but cannot use multiple cores and can block as a group.</li>
+<li>One-to-one enables parallelism and independent blocking, but many OS threads are expensive.</li>
+<li>Many-to-many maps many user threads over fewer or many kernel threads to balance runtime control and parallelism.</li>
+<li>Thread pools control concurrency; they do not create hardware capacity.</li>
+</ul>
+<p>Key definitions:</p>
+<ul>
+<li>User-level thread: managed mainly by a runtime or library.</li>
+<li>Kernel-level thread: visible to the OS scheduler.</li>
+</ul>
+<p>Pitfalls:</p>
+<ul>
+<li>Concurrency is not the same as parallelism.</li>
+<li>More threads can reduce throughput when they increase contention and context-switch overhead.</li>
+</ul>
+<p>Tricky questions:</p>
+<ul>
+<li>If a process has many user-level threads, is it definitely using many cores?</li>
+<li>If one thread blocks on I/O, does the entire process always block?</li>
+</ul>
+<p>One-line memory: thread models decide how logical concurrency becomes kernel-scheduled execution.</p>
+<h2>Day 10 - Scheduling Algorithms Part 2 (R3)</h2>
+<p>Round Robin gives each ready process a fixed time quantum. MLFQ uses multiple queues and moves tasks based on behavior.</p>
+<p>Must remember:</p>
+<ul>
+<li>Tiny quantum improves responsiveness only until context-switch overhead dominates.</li>
+<li>Infinite quantum makes Round Robin behave like FCFS.</li>
+<li>MLFQ does not know the future; it guesses from observed behavior.</li>
+</ul>
+<p>Killer pitfall: fairness in CPU turns does not automatically minimize waiting time or turnaround time.</p>
+<p>Tricky question: can a low-priority queue starve even when there is no deadlock?</p>
+<p>One-line memory: Round Robin manages time-sharing; MLFQ adapts priority to observed interactivity and CPU usage.</p>
+<h2>Final Takeaway</h2>
+<p>Classical synchronization problems are interview templates for real coordination failures. Producer-consumer teaches bounded handoff and condition synchronization. Readers-writers teaches shared reads, exclusive writes, and fairness. Dining philosophers teaches deadlock through circular wait. Sleeping barber teaches finite queues and wake-up coordination. A strong answer always names the shared state, the waiting condition, the primitive used, and the failure mode being avoided. Correct synchronization is not just “add a lock”; it is protecting the right invariant with the right progress rule.</p>
+<h2>What You Should Be Able To Answer Now</h2>
+<ul>
+<li>Explain the producer-consumer problem and solve it with semaphores.</li>
+<li>Describe why bounded buffers need both mutual exclusion and condition synchronization.</li>
+<li>Explain readers-writers and the fairness tradeoff between reader preference and writer preference.</li>
+<li>Show how dining philosophers can deadlock through circular wait.</li>
+<li>Describe at least two ways to prevent dining-philosophers deadlock.</li>
+<li>Explain the sleeping barber problem as a finite service-queue model.</li>
+<li>Distinguish deadlock from starvation in synchronization problems.</li>
+<li>Connect classical synchronization problems to real systems such as servers, databases, kernels, browsers, and Android apps.</li>
+</ul>
+</article>
+    </main>
+    <script>
+      (() => {
+        const article = document.querySelector(".article");
+        if (!article) return;
+        const chapterMap = {
+          "Opening Intuition": ["01", "Opening Intuition", "Why this concept exists in real systems before formal definition."],
+          "Interview Definition": ["02", "Interview Definition", "A clean interview-ready explanation with precise language."],
+          "Mental Model": ["03", "Mental Model", "A compact analogy that maps theory to practical recall."],
+          "Layer 1: What happens at a high level?": ["04", "Core Theory", "What the OS manages and how abstraction/resource management fit together."],
+          "Layer 2: What happens inside the OS?": ["05", "System Internals", "Kernel boundaries, data structures, and service flow inside the OS."],
+          "Step-by-Step Flow": ["06", "Step-by-Step Flow", "Concrete execution sequence you can narrate in interviews."],
+          "Practical System Relevance": ["07", "Practical Examples", "How the concept appears in Linux, Windows, Android, servers, and cloud."],
+          "Common Misconceptions": ["08", "Common Misconceptions", "High-frequency mistakes and what to say instead."],
+          "Tricky Interview Corners": ["09", "Tricky Interview Corners", "Edge cases and deeper follow-up traps interviewers probe."],
+          "Interview Questions": ["10", "Interview Questions", "Layered practice questions from basic to advanced."],
+          "5-Minute Revision Column": ["11", "5-Minute Revision Column", "Compressed spaced-repetition recall from prior targets."],
+          "Final Takeaway": ["12", "Final Takeaway", "The final memory model and what you should be able to answer now."]
+        };
+
+        const wrapAfterHeading = (title, className) => {
+          const heading = Array.from(article.querySelectorAll("h2")).find((el) => el.textContent?.trim() === title);
+          if (!heading) return;
+          const wrap = document.createElement("div");
+          wrap.className = className;
+          let node = heading.nextElementSibling;
+          while (node && node.tagName !== "H2") {
+            const next = node.nextElementSibling;
+            wrap.appendChild(node);
+            node = next;
+          }
+          heading.insertAdjacentElement("afterend", wrap);
+        };
+
+        wrapAfterHeading("Interview Definition", "definition-block");
+        wrapAfterHeading("5-Minute Revision Column", "revision-block");
+        wrapAfterHeading("Final Takeaway", "takeaway-block");
+        wrapAfterHeading("What You Should Be Able To Answer Now", "takeaway-block");
+
+        article.querySelectorAll("h2").forEach((heading) => {
+          const text = heading.textContent?.trim() ?? "";
+          const chapter = chapterMap[text];
+          if (!chapter) return;
+          const opener = document.createElement("div");
+          opener.className = "section-opener";
+          opener.innerHTML = "<div class=\"section-kicker\">SECTION " + chapter[0] + " / " + chapter[1].toUpperCase() + "</div><div class=\"section-summary\">" + chapter[2] + "</div>";
+          heading.insertAdjacentElement("beforebegin", opener);
+        });
+
+        const misconceptions = Array.from(article.querySelectorAll("h2")).find(
+          (el) => el.textContent?.trim() === "Common Misconceptions"
+        );
+        if (misconceptions) {
+          let node = misconceptions.nextElementSibling;
+          while (node && node.tagName !== "H2") {
+            if (node.tagName === "OL") {
+              node.querySelectorAll("li").forEach((li) => li.classList.add("trap-item"));
+            }
+            node = node.nextElementSibling;
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>

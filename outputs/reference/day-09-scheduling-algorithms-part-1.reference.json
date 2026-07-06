@@ -1,0 +1,79 @@
+{
+  "day": 9,
+  "topic": "Scheduling Algorithms Part 1",
+  "difficulty": "Intermediate",
+  "core_summary": [
+    "A CPU scheduling algorithm is the policy used by the operating system to choose the next ready process or thread for CPU execution. FCFS chooses by arrival order, SJF chooses the smallest next CPU burst, SRTF preempts when a shorter remaining burst appears, and priority scheduling chooses by assigned priority. The goal is to balance criteria such as waiting time, turnaround time, response time, throughput, fairness, and starvation avoidance."
+  ],
+  "key_definitions": {
+    "CPU scheduling algorithm": "The OS policy for choosing which ready process or thread gets CPU execution next.",
+    "SJF": "Shortest Job First, a policy that selects the ready process with the smallest estimated next CPU burst.",
+    "SRTF": "Shortest Remaining Time First, the preemptive form of SJF that can switch when a task with less remaining time appears."
+  },
+  "mental_model": "Think of the ready queue as a dispatch board in an operations room. Every process on the board is capable of running now. The scheduler is the person deciding which ticket should be handled next. Different algorithms represent different rules for choosing tickets: FCFS says: &quot;Handle the oldest ticket first.&quot; SJF says: &quot;Handle the ticket that will finish fastest.&quot;",
+  "core_examples": [
+    {
+      "name": "Opening an application",
+      "point": "The OS loads executable code, creates a process, assigns memory, schedules CPU time, and services I/O."
+    },
+    {
+      "name": "Reading a file",
+      "point": "The app requests bytes while the OS handles permissions, metadata lookup, filesystem mapping, and device access."
+    }
+  ],
+  "practical_uses": [
+    "Linux does not use pure FCFS, SJF, or SRTF as its modern general-purpose scheduler, but these algorithms explain the tradeoffs behind fairness, latency, and CPU accounting.",
+    "Windows also uses priority-based scheduling ideas with dynamic priority adjustments, especially to keep interactive workloads responsive.",
+    "Android inherits Linux scheduling foundations, but mobile systems care heavily about foreground responsiveness, battery usage, and background task control.",
+    "Web servers use scheduling concepts when deciding how worker threads, event loops, and request queues share CPU time.",
+    "Databases care about scheduling because query workers, background vacuuming, checkpointing, and I/O threads compete for CPU and disk.",
+    "Cloud systems apply similar ideas above the OS level when scheduling containers or VMs across hosts.",
+    "Containers do not contain their own physical CPU; the host kernel scheduler still decides when containerized processes run.",
+    "Browsers use multiple processes and threads, so scheduling affects tab responsiveness, rendering, JavaScript execution, and background throttling."
+  ],
+  "pitfalls": [
+    "FCFS is fair only by arrival order and can still create poor response time through the convoy effect.",
+    "SJF depends on burst-time estimates; real operating systems usually cannot know future CPU bursts exactly.",
+    "SRTF improves short-job response but can add context-switch and cache-locality overhead.",
+    "Priority scheduling can starve low-priority tasks unless aging or another fairness mechanism is used."
+  ],
+  "misconceptions": [
+    "FCFS is always fair in every meaningful sense.",
+    "SJF is always practical because textbook examples provide burst times.",
+    "SRTF always improves total system performance.",
+    "Priority scheduling guarantees low-priority processes will never run.",
+    "Starvation and deadlock are the same problem.",
+    "The scheduler and context-switch mechanism are the same thing."
+  ],
+  "tricky_questions": [
+    {
+      "question": "If FCFS is fair, can it still give bad performance?",
+      "answer": ""
+    },
+    {
+      "question": "Does SJF require the OS to know the future perfectly?",
+      "answer": ""
+    },
+    {
+      "question": "If a task has low priority, is it guaranteed never to run?",
+      "answer": ""
+    },
+    {
+      "question": "Is SRTF just SJF with a different name?",
+      "answer": ""
+    },
+    {
+      "question": "Is starvation the same as deadlock?",
+      "answer": ""
+    }
+  ],
+  "interview_ready_answer": {
+    "short": "### 30-second answer",
+    "medium": "Scheduling algorithms decide which ready process gets the CPU next. FCFS runs by arrival order, SJF chooses the shortest CPU burst, SRTF preempts if a process with shorter remaining time appears, and priority scheduling chooses by priority. The tradeoffs are waiting time, response time, throughput, fairness, overhead, and starvation."
+  },
+  "revision_history": {
+    "times_revised": 2,
+    "last_revised_on_day": 12,
+    "revision_strength": "R3"
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "day": 5,
+  "topic": "Program vs Process",
+  "difficulty": "Beginner",
+  "core_summary": [
+    "A program is a passive file stored on disk that contains executable instructions and related data. A process is an active execution instance of a program, loaded into memory and managed by the operating system. A process has its own address space, execution state, resources, and Process Control Block. In interviews, say that a program is &quot;what can run,&quot; while a process is &quot;what is currently running or ready to run.&quot;"
+  ],
+  "key_definitions": {},
+  "mental_model": "Think of a program as a recipe saved in a cookbook. It lists ingredients, steps, and instructions, but it does not cook anything by itself. A process is an actual cooking session in a kitchen. The cook has ingredients on the counter, utensils in use, a current step, a timer, and a kitchen manager tracking progress. The same recipe can be used by many cooks at the same time. Each cook follows the same instructions but has separate ingredients, separate progress, and possibly different outcomes. Similarly, one executable file can create many processes. Each process has its own memory layout, CPU register state, stack, heap, open files, permissions, and OS bookkeeping. The OS is the kitchen manager. It decides who gets access to the stove, prevents one cook from taking another cook's ingredients, handles interruptions, and records enough state to pause one cooking session and resume another later. That record is the Process Control Block.",
+  "core_examples": [
+    {
+      "name": "Opening an application",
+      "point": "The OS loads executable code, creates a process, assigns memory, schedules CPU time, and services I/O."
+    },
+    {
+      "name": "Reading a file",
+      "point": "The app requests bytes while the OS handles permissions, metadata lookup, filesystem mapping, and device access."
+    }
+  ],
+  "practical_uses": [],
+  "pitfalls": [],
+  "misconceptions": [],
+  "tricky_questions": [
+    {
+      "question": "If an executable file is deleted while a process is running, must the process immediately stop?",
+      "answer": ""
+    },
+    {
+      "question": "If two processes run the same program, do they always have two full physical copies of the code?",
+      "answer": ""
+    },
+    {
+      "question": "Is a process that is waiting for I/O still using the CPU?",
+      "answer": ""
+    },
+    {
+      "question": "Does exec() create a new process?",
+      "answer": ""
+    },
+    {
+      "question": "Is the PID the same thing as the PCB?",
+      "answer": ""
+    }
+  ],
+  "interview_ready_answer": {
+    "short": "### 30-second answer",
+    "medium": "A program is a passive executable file, while a process is an active running instance of that program. When the OS starts a program, it creates a process with a PID, address space, stack, heap, open resources, execution state, and PCB. The same program can create multiple processes, and each process is scheduled and managed separately."
+  },
+  "revision_history": {
+    "times_revised": 3,
+    "last_revised_on_day": 10,
+    "revision_strength": "R3"
+  }
+}

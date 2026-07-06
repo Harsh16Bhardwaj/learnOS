@@ -2,6 +2,17 @@ import nodemailer from "nodemailer";
 import { AppConfig, Topic } from "./types.js";
 import { formatDay } from "./utils.js";
 
+const MAX_EMAIL_ATTEMPTS = 3;
+const EMAIL_RETRY_DELAYS_MS = [5000, 15000];
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "SMTP delivery failed.";
+}
+
 export async function sendEmail(args: {
   config: AppConfig;
   topic: Topic;
@@ -16,12 +27,27 @@ export async function sendEmail(args: {
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
   const from = process.env.SMTP_FROM;
+  const recipients = [
+    args.config.learnerEmail,
+    process.env.MAIL1,
+    process.env.MAIL2,
+    process.env.MAIL3
+  ].filter((value): value is string => Boolean(value && value.trim()));
+  const uniqueRecipients = Array.from(new Set(recipients.map((value) => value.trim())));
 
   if (!host || !port || !user || !pass || !from) {
     return {
       attempted: false,
       delivered: false,
       message: "SMTP credentials are not configured. Email delivery skipped."
+    };
+  }
+
+  if (uniqueRecipients.length === 0) {
+    return {
+      attempted: false,
+      delivered: false,
+      message: "No email recipients are configured."
     };
   }
 
@@ -58,31 +84,44 @@ export async function sendEmail(args: {
     <p>Generated on ${args.today}.</p>
   </div>`;
 
-  try {
-    await transporter.sendMail({
-      from,
-      to: args.config.learnerEmail,
-      subject,
-      html,
-      attachments: [
-        {
-          filename: `day-${formatDay(args.day)}-${args.topic.title}.pdf`.replace(/\s+/g, "-"),
-          path: args.pdfPath
-        }
-      ]
-    });
+  const mailOptions = {
+    from,
+    to: uniqueRecipients,
+    subject,
+    html,
+    attachments: [
+      {
+        filename: `day-${formatDay(args.day)}-${args.topic.title}.pdf`.replace(/\s+/g, "-"),
+        path: args.pdfPath
+      }
+    ]
+  };
 
-    return {
-      attempted: true,
-      delivered: true,
-      message: "SMTP delivery succeeded."
-    };
-  } catch (error) {
-    return {
-      attempted: true,
-      delivered: false,
-      message: error instanceof Error ? error.message : "SMTP delivery failed."
-    };
+  let lastError = "SMTP delivery failed.";
+
+  for (let attempt = 1; attempt <= MAX_EMAIL_ATTEMPTS; attempt += 1) {
+    try {
+      await transporter.sendMail(mailOptions);
+
+      return {
+        attempted: true,
+        delivered: true,
+        message:
+          attempt === 1
+            ? `SMTP delivery succeeded for ${uniqueRecipients.length} recipient(s).`
+            : `SMTP delivery succeeded for ${uniqueRecipients.length} recipient(s) on attempt ${attempt}.`
+      };
+    } catch (error) {
+      lastError = errorMessage(error);
+      if (attempt < MAX_EMAIL_ATTEMPTS) {
+        await wait(EMAIL_RETRY_DELAYS_MS[attempt - 1] ?? 15000);
+      }
+    }
   }
-}
 
+  return {
+    attempted: true,
+    delivered: false,
+    message: `SMTP delivery failed after ${MAX_EMAIL_ATTEMPTS} attempts. Last error: ${lastError}`
+  };
+}

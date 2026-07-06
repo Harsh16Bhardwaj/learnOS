@@ -1,0 +1,91 @@
+{
+  "day": 22,
+  "topic": "Translation Lookaside Buffer",
+  "difficulty": "Intermediate",
+  "core_summary": [
+    "A Translation Lookaside Buffer is a small, fast associative cache used by the MMU to store recent virtual page number to physical frame number translations. On a TLB hit, address translation is performed quickly without reading the page table from memory. On a TLB miss, the system must find the translation in the page table, possibly handle a page fault, and then update the TLB."
+  ],
+  "key_definitions": {
+    "Translation Lookaside Buffer": "a small hardware cache of recent virtual page to physical frame translations.",
+    "TLB hit": "the requested translation is found in the TLB, so the page table does not need to be consulted for that access.",
+    "TLB miss": "the requested translation is not in the TLB, so the system must consult the page table or handle a fault.",
+    "Effective access time": "the average memory-access cost after accounting for TLB hit rate, miss rate, and memory access time.",
+    "Address-space identifier": "a hardware tag that helps distinguish TLB entries belonging to different address spaces.",
+    "TLB flush": "invalidating TLB entries, often during mapping changes or context switches.",
+    "TLB shootdown": "cross-core invalidation of stale TLB entries after the OS changes a mapping.",
+    "Revision targets": "Day 21 - Paging Basics (R1), Day 19 - Memory Management Basics (R2)"
+  },
+  "mental_model": "Think of the page table as the full address directory for a large city and the TLB as the few addresses you recently saved in your phone. The full directory is complete but slower to search. Your saved list is tiny but very fast. The TLB does not replace the page table. It accelerates access to it. The page table remains the authoritative structure maintained by the operating system. The TLB is a hardware cache of selected page-table entries. The mental model is:",
+  "core_examples": [
+    {
+      "name": "Opening an application",
+      "point": "The OS loads executable code, creates a process, assigns memory, schedules CPU time, and services I/O."
+    },
+    {
+      "name": "Reading a file",
+      "point": "The app requests bytes while the OS handles permissions, metadata lookup, filesystem mapping, and device access."
+    }
+  ],
+  "practical_uses": [
+    "In Linux, virtual memory areas describe ranges of process virtual memory, while page tables map pages to frames. The processor uses TLB entries to speed up repeated translations. When the kernel changes mappings, switches address spaces, or unmaps memory, it may need to invalidate TLB entries. On multi-core systems, this can involve coordination across cores.",
+    "In Windows, the memory manager also relies on hardware address translation and TLBs. Working sets, mapped files, copy-on-write pages, and page faults all interact with page-table state. The TLB is not normally visible in Task Manager, but memory-heavy workloads are affected by translation locality.",
+    "In Android, each app process has its own virtual address space. Fast address translation matters for app responsiveness, graphics pipelines, runtime execution, and shared libraries. Mobile systems also care about power: extra memory walks consume time and energy.",
+    "In browsers, renderer processes, JavaScript engines, WebAssembly memory, GPU processes, and sandboxing all rely on virtual memory. Large heaps and scattered memory access patterns can stress caches and TLBs.",
+    "In databases, TLB behavior can matter for buffer pools and memory-mapped files. A database touching a very large working set may suffer from TLB pressure even if the data is technically in RAM. Huge pages are sometimes used in server workloads to reduce the number of page translations needed for large memory regions.",
+    "In cloud systems and virtualization, address translation can be layered. Hardware support reduces overhead, but the TLB remains central because frequent translation misses can hurt VM performance.",
+    "In containers, the host kernel still manages page tables and TLB behavior. Containers isolate process views using namespaces and cgroups, but they do not create a separate kernel with separate hardware translation logic."
+  ],
+  "pitfalls": [
+    "TLB and page table are the same.",
+    "A TLB miss always means the page is not in memory.",
+    "A page fault and a TLB miss are identical.",
+    "TLB stores full physical addresses for every byte."
+  ],
+  "misconceptions": [
+    "TLB and page table are the same.",
+    "A TLB miss always means the page is not in memory.",
+    "A page fault and a TLB miss are identical.",
+    "TLB stores full physical addresses for every byte.",
+    "Offset changes during TLB translation.",
+    "Larger TLB is always better with no tradeoff."
+  ],
+  "tricky_questions": [
+    {
+      "question": "If there is a TLB miss, is the page definitely absent from RAM?",
+      "answer": "No. The translation may simply be absent from the TLB while the page-table entry is valid."
+    },
+    {
+      "question": "If the TLB has a translation, can the page table be ignored forever?",
+      "answer": "No. Page tables are authoritative, and stale TLB entries must be invalidated when mappings change."
+    },
+    {
+      "question": "Does a TLB store the offset?",
+      "answer": "Usually no. It stores page-level translation information. The offset comes from the original virtual address."
+    },
+    {
+      "question": "Is a TLB miss always handled by the operating system?",
+      "answer": "Not always. Some architectures handle page-table walks in hardware; others trap to software."
+    },
+    {
+      "question": "Does a higher TLB hit ratio always mean the program is faster overall?",
+      "answer": "It helps translation cost, but total speed also depends on data cache behavior, CPU work, I/O, locks, and other bottlenecks."
+    },
+    {
+      "question": "If two processes use the same virtual page number, must they share the same TLB entry?",
+      "answer": "No. Entries must be separated by address space, usually by flushing or tagging."
+    },
+    {
+      "question": "Can a TLB hit still lead to a protection fault?",
+      "answer": "Yes, if the cached entry indicates that the attempted access violates permissions."
+    }
+  ],
+  "interview_ready_answer": {
+    "short": "### 30-second answer",
+    "medium": "A TLB is a small hardware cache used by the MMU to speed up virtual-to-physical address translation. It stores recent mappings from virtual page numbers to physical frame numbers. On a TLB hit, the CPU avoids reading the page table. On a miss, the page table is consulted and the translation may be inserted into the TLB."
+  },
+  "revision_history": {
+    "times_revised": 2,
+    "last_revised_on_day": 25,
+    "revision_strength": "R3"
+  }
+}

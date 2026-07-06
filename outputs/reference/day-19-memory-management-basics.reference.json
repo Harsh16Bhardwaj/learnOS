@@ -1,0 +1,78 @@
+{
+  "day": 19,
+  "topic": "Memory Management Basics",
+  "difficulty": "Intermediate",
+  "core_summary": [
+    "Memory management is the operating system responsibility of allocating, tracking, translating, protecting, and reclaiming memory for processes and the kernel. It lets each process use logical addresses while the system maps those addresses to physical memory safely. The OS works with hardware support such as the MMU to enforce isolation, relocation, and access permissions.",
+    "In interview form: memory management allows multiple programs to share RAM without corrupting each other, while giving each process the abstraction of its own address space."
+  ],
+  "key_definitions": {
+    "Day 18": "Deadlocks Part 2 - R1 recall revision, previous day reinforcement.",
+    "Day 16": "Monitors and Condition Variables - R2 compression revision, three-day spaced recall."
+  },
+  "mental_model": "Think of physical memory as a large apartment building, and each process as a tenant. The tenant does not get to walk into any room in the building. Instead, the building manager gives the tenant an apartment map: living room, kitchen, storage, bedroom. The tenant uses names and positions inside that apartment. The real building manager knows which physical rooms correspond to which tenant's apartment. If a tenant tries to open another tenant's door, the manager blocks it. If the tenant moves to a different floor, the tenant's internal apartment map can still look the same. In OS terms:",
+  "core_examples": [
+    {
+      "name": "Opening an application",
+      "point": "The OS loads executable code, creates a process, assigns memory, schedules CPU time, and services I/O."
+    },
+    {
+      "name": "Reading a file",
+      "point": "The app requests bytes while the OS handles permissions, metadata lookup, filesystem mapping, and device access."
+    }
+  ],
+  "practical_uses": [],
+  "pitfalls": [
+    "Logical address and physical address are the same.",
+    "Memory management is only about allocation.",
+    "malloc always directly asks the kernel for RAM.",
+    "A segmentation fault always means the machine ran out of memory."
+  ],
+  "misconceptions": [
+    "Logical address and physical address are the same.",
+    "Memory management is only about allocation.",
+    "malloc always directly asks the kernel for RAM.",
+    "A segmentation fault always means the machine ran out of memory.",
+    "The OS can detect every buffer overflow.",
+    "Physical memory is unlimited because virtual addresses are large."
+  ],
+  "tricky_questions": [
+    {
+      "question": "If two processes both use address 0x400000, must they refer to the same physical memory?",
+      "answer": "No. The same logical or virtual address in different processes can map to different physical memory."
+    },
+    {
+      "question": "Does a segmentation fault mean the system has no RAM left?",
+      "answer": "Usually no. It means the process made an invalid or forbidden memory access."
+    },
+    {
+      "question": "If an address is inside the heap mapping, is the program definitely using it correctly?",
+      "answer": "No. The access may be valid for the OS but still violate C object boundaries or allocator rules."
+    },
+    {
+      "question": "Can a normal user process change its base register, limit register, or page tables directly?",
+      "answer": "No. Those controls are privileged because otherwise isolation would fail."
+    },
+    {
+      "question": "Is physical memory the same as virtual memory?",
+      "answer": "No. Physical memory is actual RAM. Virtual memory is the address abstraction and mapping system."
+    },
+    {
+      "question": "Does memory protection remove the need for safe programming practices?",
+      "answer": "No. It isolates processes and regions, but bugs inside a process can still corrupt that process."
+    },
+    {
+      "question": "If a process can allocate a very large address range, does that mean RAM was fully reserved immediately?",
+      "answer": "Not necessarily. Modern systems can reserve address space and commit or back memory later."
+    }
+  ],
+  "interview_ready_answer": {
+    "short": "### 30-second answer",
+    "medium": "Memory management is how the OS gives each process a safe address space, maps process addresses to physical RAM, and enforces permissions. The process uses logical or virtual addresses, while the MMU translates them to physical addresses. This lets multiple processes share memory safely without directly controlling hardware addresses."
+  },
+  "revision_history": {
+    "times_revised": 2,
+    "last_revised_on_day": 22,
+    "revision_strength": "R3"
+  }
+}

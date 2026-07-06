@@ -1,0 +1,76 @@
+{
+  "day": 11,
+  "topic": "Thread Basics",
+  "difficulty": "Beginner",
+  "core_summary": [
+    "A thread is the smallest schedulable unit of execution within a process. Multiple threads in the same process share the process address space and resources, such as code, heap, global variables, and open files, but each thread has its own program counter, CPU registers, stack, and thread control information. Threads are lighter than processes because creating and switching between threads usually requires less resource isolation work than creating and switching between separate processes.",
+    "In an interview, say: a process owns resources; a thread executes instructions using those resources. Threads improve responsiveness and concurrency, but shared memory makes synchronization necessary."
+  ],
+  "key_definitions": {},
+  "mental_model": "Think of a process as a workshop. The workshop has shared tools, storage shelves, electricity, doors, and a work plan. A thread is a worker inside that workshop. Several workers can use the same shelves and tools, but each worker has their own clipboard showing what they are doing right now. The shared workshop is useful because workers can coordinate quickly without shipping materials between buildings. But it also creates danger. If two workers update the same inventory sheet at the same time without rules, the final count may be wrong. If one worker locks a cabinet and waits for another locked cabinet, and the second worker does the reverse, both may be stuck. This is the right mental model for threads:",
+  "core_examples": [
+    {
+      "name": "Opening an application",
+      "point": "The OS loads executable code, creates a process, assigns memory, schedules CPU time, and services I/O."
+    },
+    {
+      "name": "Reading a file",
+      "point": "The app requests bytes while the OS handles permissions, metadata lookup, filesystem mapping, and device access."
+    }
+  ],
+  "practical_uses": [
+    "Linux represents schedulable execution through task-like kernel structures. Threads in the same process can share memory mappings and file tables while still being scheduled independently.",
+    "Windows processes contain one or more threads, and the scheduler runs threads rather than abstract process containers.",
+    "Android apps use a main UI thread; long work on that thread can cause an Application Not Responding failure because the UI event loop stops responding.",
+    "Browsers use multiple processes for isolation and multiple threads for work such as rendering, networking, JavaScript execution, and background tasks.",
+    "Databases use worker threads for query execution, background checkpointing, logging, compaction, and connection handling.",
+    "Web servers commonly use thread pools or event loops with worker threads to avoid creating a new OS thread for every request.",
+    "Cloud services use threads to overlap I/O, handle concurrent requests, and use multiple cores, but they also use limits to avoid thread explosion.",
+    "Containers do not remove threads. A containerized process can still create threads; the kernel still schedules those threads, subject to cgroup CPU and memory limits."
+  ],
+  "pitfalls": [
+    "Threads and processes are the same. A process is a resource container with an address space; a thread is an execution path inside a process.",
+    "Threads are always faster than processes. Threads are often cheaper to create and switch, but poor synchronization, lock contention, and cache effects can make threaded programs slower.",
+    "Threads do not need scheduling. Threads are schedulable entities. The OS or runtime decides when each runnable thread gets CPU time.",
+    "If one thread blocks, the whole process always blocks. With kernel-level threads, another ready thread in the same process can continue running."
+  ],
+  "misconceptions": [
+    "Threads and processes are the same. A process is a resource container with an address space; a thread is an execution path inside a process.",
+    "Threads are always faster than processes. Threads are often cheaper to create and switch, but poor synchronization, lock contention, and cache effects can make threaded programs slower.",
+    "Threads do not need scheduling. Threads are schedulable entities. The OS or runtime decides when each runnable thread gets CPU time.",
+    "If one thread blocks, the whole process always blocks. With kernel-level threads, another ready thread in the same process can continue running.",
+    "All thread memory is shared. Threads share the process address space, but each thread has its own stack and execution state.",
+    "More threads always improve responsiveness. Too many threads can increase context switching, memory use, and lock contention."
+  ],
+  "tricky_questions": [
+    {
+      "question": "If two threads are in the same process, do they share the same stack?",
+      "answer": ""
+    },
+    {
+      "question": "If a process has four threads, does it always run four times faster?",
+      "answer": ""
+    },
+    {
+      "question": "If one thread crashes, can the whole process be affected?",
+      "answer": ""
+    },
+    {
+      "question": "Is a thread context switch free because threads share memory?",
+      "answer": ""
+    },
+    {
+      "question": "If one thread is waiting for disk I/O, is it still using the CPU?",
+      "answer": ""
+    }
+  ],
+  "interview_ready_answer": {
+    "short": "### 30-second answer",
+    "medium": "A thread is the smallest unit of execution inside a process. Threads in the same process share code, heap, global variables, open files, and address space, but each thread has its own program counter, registers, and stack. Threads are useful for concurrency, responsiveness, and parallelism, but shared memory means we need synchronization."
+  },
+  "revision_history": {
+    "times_revised": 2,
+    "last_revised_on_day": 14,
+    "revision_strength": "R3"
+  }
+}

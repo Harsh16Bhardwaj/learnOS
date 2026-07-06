@@ -1,0 +1,85 @@
+{
+  "day": 20,
+  "topic": "Contiguous Memory Allocation",
+  "difficulty": "Intermediate",
+  "core_summary": [
+    "Contiguous memory allocation is a memory-management technique where each process is placed in one continuous block of physical memory. The OS keeps track of occupied partitions and free holes, then allocates a hole large enough for a process. It is simple and fast for address translation, but it suffers from internal fragmentation in fixed partitions and external fragmentation in variable partitions."
+  ],
+  "key_definitions": {
+    "Revision targets from prepare": "Day 19 - Memory Management Basics (R1), Day 17 - Deadlocks Part 1 (R2), Day 15 - Classical Synchronization Problems (R3)."
+  },
+  "mental_model": "Think of physical memory as a single long parking lane and each process as a vehicle that needs a continuous parking space. A small car can fit in a small slot. A bus needs a long continuous slot. If the parking lane becomes full of gaps between parked vehicles, the total empty space may look large, but a bus still cannot park unless one gap is large enough. The memory manager's job is to answer three questions: Where is the next large enough continuous free block?",
+  "core_examples": [
+    {
+      "name": "Opening an application",
+      "point": "The OS loads executable code, creates a process, assigns memory, schedules CPU time, and services I/O."
+    },
+    {
+      "name": "Reading a file",
+      "point": "The app requests bytes while the OS handles permissions, metadata lookup, filesystem mapping, and device access."
+    }
+  ],
+  "practical_uses": [
+    "Boot process: early boot code often runs before the full virtual-memory system is active, so simple contiguous memory regions matter.",
+    "Kernel memory: some kernel allocations require physically contiguous memory, especially for DMA or hardware buffers.",
+    "Embedded systems: small systems may use simple fixed or variable partition allocation because predictability matters more than flexibility.",
+    "Huge pages: large page mappings need larger contiguous physical regions than ordinary small pages.",
+    "Real-time systems: predictable allocation can matter more than maximum memory utilization.",
+    "Memory allocators: user-space allocators such as malloc manage contiguous regions inside heaps and still deal with splitting, coalescing, and fragmentation.",
+    "In Linux, general process memory is virtual and paged, but the kernel still distinguishes between normal allocations and allocations requiring physical contiguity. Device drivers may need DMA-safe buffers. The buddy allocator also works with blocks of physical pages and splits or coalesces blocks, so the fragmentation theme remains alive.",
+    "In databases and servers, memory pools often allocate chunks from larger arenas. Even when physical memory is paged, allocator-level fragmentation can hurt memory usage. A server may appear to have free memory while its allocator cannot satisfy a large contiguous request inside a specific pool."
+  ],
+  "pitfalls": [
+    "&quot;If total free memory is enough, allocation must succeed.&quot; False. Contiguous allocation needs one continuous hole large enough for the request.",
+    "&quot;Internal and external fragmentation are the same kind of waste.&quot; False. Internal waste is inside an allocated block. External waste is free space split between allocations.",
+    "&quot;Best fit is always best.&quot; False. Best fit can create tiny unusable holes and may require longer searches.",
+    "&quot;Compaction is a free cleanup step.&quot; False. Compaction moves memory and can be expensive or unsafe without relocation support."
+  ],
+  "misconceptions": [
+    "&quot;If total free memory is enough, allocation must succeed.&quot; False. Contiguous allocation needs one continuous hole large enough for the request.",
+    "&quot;Internal and external fragmentation are the same kind of waste.&quot; False. Internal waste is inside an allocated block. External waste is free space split between allocations.",
+    "&quot;Best fit is always best.&quot; False. Best fit can create tiny unusable holes and may require longer searches.",
+    "&quot;Compaction is a free cleanup step.&quot; False. Compaction moves memory and can be expensive or unsafe without relocation support.",
+    "&quot;Paging is unrelated to contiguous allocation.&quot; False. Paging is partly motivated by the limitations of contiguous allocation.",
+    "&quot;Base and limit registers are only for performance.&quot; False. They also enforce protection by preventing illegal memory access."
+  ],
+  "tricky_questions": [
+    {
+      "question": "If a system has 300 MB free in total, can it always load a 200 MB process under contiguous allocation?",
+      "answer": "No. It needs one continuous 200 MB hole."
+    },
+    {
+      "question": "Is best fit always the best placement algorithm?",
+      "answer": "No. It may create tiny unusable holes and can be slower if it scans many holes."
+    },
+    {
+      "question": "Does compaction increase total physical memory?",
+      "answer": "No. It rearranges allocated blocks so scattered free space becomes more usable."
+    },
+    {
+      "question": "Does paging mean physical contiguity never matters?",
+      "answer": "No. Some kernel and hardware operations may still require contiguous physical memory."
+    },
+    {
+      "question": "If a process has a contiguous virtual address range, must it be contiguous in RAM?",
+      "answer": "No. With paging, virtual continuity can map to scattered physical frames."
+    },
+    {
+      "question": "Is external fragmentation wasted memory inside an allocated process?",
+      "answer": "No. That describes internal fragmentation."
+    },
+    {
+      "question": "Can fixed partition allocation reject a process even when memory is free?",
+      "answer": "Yes, if no available partition is large enough for the process."
+    }
+  ],
+  "interview_ready_answer": {
+    "short": "### 30-second answer",
+    "medium": "Contiguous memory allocation means each process is placed in one continuous physical memory block. It is simple because address translation can use base and limit registers, but it causes fragmentation. Fixed partitions mainly cause internal fragmentation, while variable partitions mainly cause external fragmentation. Fit algorithms decide which free hole to use."
+  },
+  "revision_history": {
+    "times_revised": 3,
+    "last_revised_on_day": 25,
+    "revision_strength": "R3"
+  }
+}

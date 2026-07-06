@@ -1,0 +1,964 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Day 18 - Deadlocks Part 2</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #070707;
+        --surface: #101010;
+        --surface-soft: #151515;
+        --border: #262626;
+        --text: #d8d8d8;
+        --muted: #8f8f8f;
+        --faint: #5f5f5f;
+        --cyan: #67e8f9;
+        --amber: #f4c95d;
+        --violet: #b79cff;
+        --green: #8ee6a3;
+      }
+
+      @page {
+        size: A4;
+        margin: 18mm 17mm 20mm 17mm;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "JetBrains Mono", "IBM Plex Mono", "Roboto Mono", monospace;
+        font-size: 9.8px;
+        line-height: 1.62;
+      }
+
+      .page {
+        width: min(980px, calc(100vw - 24px));
+        margin: 0 auto;
+        padding: 12px 0 20px;
+      }
+
+      .hero {
+        margin-bottom: 14px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 12px;
+      }
+
+      .eyebrow {
+        margin: 0 0 8px;
+        font-size: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        color: var(--faint);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 24px;
+        line-height: 1.18;
+        letter-spacing: -0.04em;
+        color: #f2f2f2;
+        break-after: avoid;
+      }
+
+      .meta-line {
+        margin-top: 8px;
+        font-size: 8.8px;
+        color: var(--muted);
+      }
+
+      .subtitle {
+        max-width: 760px;
+        margin: 8px 0 0;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .revision-strip {
+        margin-top: 10px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .revision-strip span {
+        display: inline-flex;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: rgba(142, 230, 163, 0.08);
+        border: 1px solid rgba(142, 230, 163, 0.22);
+        color: var(--green);
+        font-size: 8px;
+      }
+
+      .article h2,
+      .article h3,
+      .article h4 {
+        line-height: 1.3;
+        break-after: avoid;
+      }
+
+      .article h2 {
+        margin-top: 24px;
+        margin-bottom: 8px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 5px;
+        font-size: 15px;
+        color: #f2f2f2;
+      }
+
+      .section-opener {
+        margin-top: 30px;
+        margin-bottom: 14px;
+        padding: 12px 14px;
+        background: var(--surface);
+        border-left: 3px solid var(--cyan);
+        border-radius: 8px;
+        break-inside: avoid;
+      }
+
+      .section-kicker {
+        font-size: 8px;
+        color: var(--cyan);
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+      }
+
+      .section-summary {
+        font-size: 9.2px;
+        color: #9ca3af;
+        line-height: 1.55;
+      }
+
+      .article h3 {
+        margin-top: 16px;
+        margin-bottom: 6px;
+        font-size: 12px;
+        color: var(--cyan);
+      }
+
+      .article p,
+      .article li {
+        color: var(--text);
+      }
+
+      p {
+        orphans: 3;
+        widows: 3;
+      }
+
+      .article ul,
+      .article ol {
+        padding-left: 1.15rem;
+      }
+
+      .article blockquote {
+        margin: 12px 0;
+        padding: 10px 12px;
+        border-left: 3px solid var(--amber);
+        background: rgba(244, 201, 93, 0.06);
+        border-radius: 8px;
+        color: #ddd4bd;
+        break-inside: avoid;
+      }
+
+      .article pre,
+      .article code {
+        font-family: "JetBrains Mono", "IBM Plex Mono", monospace;
+      }
+
+      .article pre {
+        background: #030303;
+        border: 1px solid #242424;
+        border-radius: 8px;
+        padding: 12px;
+        font-size: 8.8px;
+        line-height: 1.55;
+        overflow-wrap: break-word;
+        white-space: pre-wrap;
+        break-inside: avoid;
+      }
+
+      .article code {
+        color: var(--cyan);
+        background: transparent;
+        padding: 0;
+      }
+
+      .diagram-card {
+        margin: 14px 0;
+        padding: 14px;
+        background: var(--surface);
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        overflow-x: auto;
+        break-inside: avoid;
+      }
+
+      .mermaid {
+        display: flex;
+        justify-content: center;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+        margin: 14px 0;
+        break-inside: avoid;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 8.8px;
+      }
+
+      th,
+      td {
+        padding: 7px;
+        border-bottom: 1px solid #202020;
+        text-align: left;
+      }
+
+      th {
+        color: var(--cyan);
+        font-weight: 600;
+        border-bottom: 1px solid #333;
+      }
+
+      td {
+        color: #cfcfcf;
+      }
+
+      a {
+        color: var(--cyan);
+      }
+
+      .definition-block,
+      .revision-block,
+      .takeaway-block {
+        background: var(--surface);
+        border-radius: 8px;
+        padding: 12px 14px;
+        margin: 12px 0;
+        break-inside: avoid;
+      }
+
+      .definition-block {
+        border-left: 3px solid var(--violet);
+      }
+
+      .revision-block {
+        background: rgba(142, 230, 163, 0.06);
+        border: 1px solid rgba(142, 230, 163, 0.22);
+      }
+
+      .takeaway-block {
+        border-left: 3px solid var(--green);
+      }
+
+      .trap-item {
+        background: rgba(244, 201, 93, 0.06);
+        border-left: 3px solid var(--amber);
+        border-radius: 8px;
+        padding: 10px 13px;
+        margin: 8px 0;
+        break-inside: avoid;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <p class="eyebrow">LearnOS Daily / DAY 18</p>
+        <h1>Deadlocks Part 2</h1>
+        <p class="meta-line">40 min read - 5 min revision - Advanced - Prerequisites: Day 17</p>
+        <p class="subtitle">Prevention, avoidance, detection, and recovery require crisp tradeoff reasoning.</p>
+        <div class="revision-strip"><span>Day 17 - Deadlocks Part 1 - R1 - Previous day reinforcement</span><span>Day 15 - Classical Synchronization Problems - R2 - Three-day spaced recall</span></div>
+      </section>
+      <article class="article"><p>Difficulty: Advanced<br>
+Fresh Learning: 40 minutes<br>
+Revision: 5 minutes<br>
+Prerequisites: Day 17 - Deadlocks Part 1, Coffman conditions, resource-allocation graphs, wait-for cycles<br>
+Why this topic matters in interviews: Prevention, avoidance, detection, and recovery require crisp tradeoff reasoning. Interviewers want to know whether you can move beyond defining deadlock and choose a practical handling strategy for real systems.</p>
+<p>Imagine a database server where two transactions are stuck. Transaction T1 has locked row A and wants row B. Transaction T2 has locked row B and wants row A. Yesterday, you learned how to recognize that as deadlock. Today, the harder question is: what should the system do about it?</p>
+<p>One answer is: design the system so this situation can never happen. Another answer is: allow risky requests only when the system can prove a safe completion order still exists. Another answer is: let the system run, periodically detect cycles, then abort one participant. A final answer is: recover after the deadlock happens, perhaps by killing a process, rolling back a transaction, or preempting a resource.</p>
+<p>Deadlock handling is not a single algorithm. It is a design choice. A real operating system, database, runtime, or distributed service must balance safety, performance, fairness, implementation cost, and user experience. Avoiding every possible deadlock may make the system too conservative. Ignoring deadlocks may make it freeze under rare but serious workloads. The interview-level skill is knowing the four broad strategies and the tradeoffs behind each one.</p>
+<h2>Interview Definition</h2>
+<p>Deadlock handling is the set of techniques used to prevent deadlocks, avoid unsafe resource allocations, detect existing deadlocks, and recover from them. Prevention breaks at least one Coffman condition by design. Avoidance grants a request only if the system remains in a safe state. Detection allows deadlocks to occur, then finds cycles in the wait-for or resource graph. Recovery removes the deadlock by aborting, rolling back, preempting, or otherwise forcing progress.</p>
+<p>In an interview, say: deadlock prevention is conservative design, deadlock avoidance is runtime safety checking, deadlock detection is post-fact cycle discovery, and deadlock recovery is the action taken after detection. Banker algorithm is the classic avoidance algorithm, not a general-purpose deadlock detector.</p>
+<h2>Mental Model</h2>
+<p>Think of a deadlock-handling system as a bank manager lending limited equipment to multiple projects.</p>
+<p>Prevention is the manager saying, “Everyone must request equipment in a fixed order, and nobody may hold one tool while waiting for another.” This is safe but can be restrictive.</p>
+<p>Avoidance is the manager asking before every loan, “If I approve this request, can all projects still finish in some order?” This is smarter, but it needs accurate maximum claims and current availability.</p>
+<p>Detection is the manager allowing normal borrowing, then checking the dependency board when projects stop moving. If a cycle appears, the manager knows some intervention is needed.</p>
+<p>Recovery is the intervention: cancel a project, take back a tool, roll back partial work, or restart one participant. It solves the current deadlock but may waste work.</p>
+<p>The important mental model is not “one magic deadlock solution.” It is a spectrum: stricter rules reduce risk but reduce flexibility; looser rules improve performance but require detection and recovery.</p>
+<h2>Key Definitions</h2>
+<ul>
+<li>Deadlock prevention: A design strategy that ensures at least one necessary deadlock condition can never hold.</li>
+<li>Deadlock avoidance: A runtime strategy that grants a resource request only if the resulting state is safe.</li>
+<li>Safe state: A state where there exists at least one sequence in which all processes can finish with available resources plus resources released by earlier finishers.</li>
+<li>Unsafe state: A state where the system cannot guarantee a completion sequence, even though it may not be deadlocked yet.</li>
+<li>Safe sequence: An ordering of processes such that each process can obtain its remaining maximum need, finish, and release resources for the next process.</li>
+<li>Banker algorithm: A classic deadlock-avoidance algorithm that uses maximum demand, allocation, need, and available resource vectors to test whether a request preserves safety.</li>
+<li>Deadlock detection: A strategy that allows deadlocks to occur and periodically or reactively checks for cycles or impossible completion.</li>
+<li>Deadlock recovery: The set of actions used to break a detected deadlock, such as terminating a process, rolling back a transaction, or preempting resources.</li>
+</ul>
+<h2>Layer 1: What happens at a high level?</h2>
+<p>At a high level, a system has four choices.</p>
+<p>First, it can prevent deadlocks by changing the rules of resource acquisition. If circular wait is the most dangerous condition, impose a global resource ordering: always acquire lock A before lock B before lock C. If hold-and-wait is dangerous, require a process to request all required resources at once or release what it holds before waiting. If no preemption is dangerous, allow the system to take resources back in some cases. If mutual exclusion is avoidable, make a resource shareable or copy-on-write.</p>
+<p>Second, it can avoid deadlocks by inspecting each request before granting it. The system asks: “If I give this process what it wants now, can every process still finish in some order?” If yes, grant. If no, make the process wait even if the resource is currently available.</p>
+<p>Third, it can detect deadlocks after they occur. The system builds a dependency graph or runs a matrix-based detection algorithm. If there is a cycle with single-instance resources, or if no process in a blocked set can complete under a multi-instance model, the system has found deadlock.</p>
+<p>Fourth, it can recover. Recovery is usually unpleasant because it means undoing work or taking away something that a process believed it owned. Databases often choose a victim transaction and roll it back. Operating systems may kill a process or return an error. Distributed systems may use timeouts, leases, or fencing to force progress.</p>
+<p>The strategies are not mutually exclusive. A system may prevent deadlock for kernel locks using lock ordering, avoid deadlock for a resource manager with known maximum claims, detect database transaction cycles, and recover by aborting one transaction.</p>
+<h2>Layer 2: What happens inside the OS?</h2>
+<p>Inside the OS or runtime, resources are represented by metadata: lock owners, wait queues, resource counts, allocation tables, file locks, memory reservations, device queues, and process states. Deadlock-handling code reasons over this metadata.</p>
+<p>For prevention, the OS or library enforces rules. A lock-order checker may verify that code does not acquire locks out of order. A nonblocking API may require callers to release one resource before trying another. Some resources are designed to be shareable, reducing mutual exclusion. For example, read-only file mappings can be shared by many processes.</p>
+<p>For avoidance, the OS needs more information than most real processes provide. Banker algorithm requires every process to declare its maximum possible demand for each resource type. The system tracks:</p>
+<ul>
+<li>Available: how many free instances of each resource type exist.</li>
+<li>Max: the maximum demand each process may ever make.</li>
+<li>Allocation: how many instances each process currently holds.</li>
+<li>Need: Max minus Allocation.</li>
+</ul>
+<p>When a process requests resources, the system temporarily simulates granting the request, then runs a safety check. If the simulated state has a safe sequence, the request is allowed. If not, the request waits.</p>
+<p>For detection, the OS or subsystem builds a wait-for relationship. With one instance per resource, a wait-for graph is enough: process P1 waits for P2 if P2 holds a resource P1 needs. A cycle means deadlock. With multiple instances, detection needs resource counts and a process-completion simulation similar to the safety algorithm, but it uses current outstanding requests instead of declared maximum future claims.</p>
+<p>For recovery, the OS chooses what to sacrifice. The victim may be the lowest-priority process, the process that has done the least work, the one holding the fewest resources, or the one easiest to restart. This is why recovery is policy, not only mechanism.</p>
+<h2>Layer 3: What happens at hardware or kernel level?</h2>
+<p>Deadlock handling is mostly an OS, runtime, database, or application-level concern, but hardware and kernel behavior still matter.</p>
+<p>Locks are often implemented using atomic CPU instructions such as compare-and-swap, test-and-set, or load-linked/store-conditional. These instructions help build mutual exclusion, but they do not prevent deadlock. A perfect atomic lock can still be acquired in a circular order.</p>
+<p>Kernel code has stricter constraints than user code. Some kernel paths cannot sleep because they run in interrupt context or while holding a spinlock. That means recovery options are limited. The kernel cannot simply “roll back” arbitrary state the way a database transaction can. Kernel developers therefore rely heavily on prevention: strict lock ordering, lock dependency checking, short critical sections, and careful separation between sleeping locks and spinlocks.</p>
+<p>Memory and I/O resources also complicate recovery. If a process holds a device lock while waiting for memory, and the memory reclaim path needs that same device lock, the system can enter a dangerous dependency loop. This is why kernels treat allocation flags, interrupt contexts, and lock hierarchies carefully.</p>
+<p>At hardware level, there is no general deadlock detector that understands all software locks. The CPU can tell that a thread is spinning or sleeping, but it does not know the semantic dependency graph of database rows, Java monitors, file locks, or thread-pool workers. Deadlock handling needs higher-level metadata.</p>
+<h2>Layer 4: What can go wrong?</h2>
+<p>Deadlock prevention can reduce concurrency too much. If every process must request all resources in advance, resources may sit idle while a process waits for one missing item. If every lock has a strict order, code may become harder to design, especially when modules evolve independently.</p>
+<p>Deadlock avoidance can be impractical. Banker algorithm assumes known maximum demands and a fixed set of resource types. Many real programs do not know their maximum future lock or memory needs. Threads may create dynamic work, load plugins, open files based on user input, or call unknown libraries. The information needed for avoidance may simply not exist.</p>
+<p>Deadlock detection can be expensive or too late. Checking too frequently wastes CPU. Checking too rarely leaves users waiting. Detection also needs accurate graph data. If a system cannot distinguish a slow operation from a true wait dependency, it may report false positives or miss real cycles.</p>
+<p>Recovery can damage work. Killing a process might release locks but lose unsaved data. Rolling back a transaction is safer because databases are built for rollback, but it still wastes computation and may increase latency. Preempting resources is only safe when the resource can be saved and restored consistently.</p>
+<p>The biggest interview trap is presenting one method as always best. A good answer explains where each strategy fits.</p>
+<h2>Step-by-Step Flow</h2>
+<h3>Deadlock prevention flow</h3>
+<ol>
+<li>List the resource types the system controls: locks, files, buffers, devices, worker slots, database rows, or semaphores.</li>
+<li>Identify which Coffman conditions can realistically be broken.</li>
+<li>Make shareable resources shareable when possible.</li>
+<li>For non-shareable resources, define acquisition rules such as global lock ordering.</li>
+<li>Avoid holding resources while performing blocking calls when possible.</li>
+<li>Add code review checks, runtime assertions, or lock-order tooling.</li>
+<li>Treat violations as design bugs rather than waiting for production deadlocks.</li>
+</ol>
+<h3>Deadlock avoidance flow using Banker algorithm</h3>
+<ol>
+<li>Store total resource instances for each resource type.</li>
+<li>For every process, store its maximum declared demand.</li>
+<li>Track current allocation and compute remaining need.</li>
+<li>When a process requests resources, verify the request is not greater than its remaining need.</li>
+<li>Verify the request is not greater than currently available resources.</li>
+<li>Pretend to grant the request.</li>
+<li>Run the safety check to search for a safe sequence.</li>
+<li>If a safe sequence exists, commit the allocation.</li>
+<li>If no safe sequence exists, make the process wait even though the resources may be physically available.</li>
+</ol>
+<h3>Deadlock detection and recovery flow</h3>
+<ol>
+<li>Track who holds each resource and who is waiting for each resource.</li>
+<li>Periodically or reactively build a wait-for graph or detection matrix.</li>
+<li>Search for cycles or for a blocked set that cannot complete.</li>
+<li>If no deadlock exists, continue normal execution.</li>
+<li>If deadlock exists, choose a victim using policy: priority, cost, progress, resources held, or rollback safety.</li>
+<li>Abort, roll back, preempt, or restart the victim.</li>
+<li>Release its resources.</li>
+<li>Wake blocked processes and let them retry.</li>
+<li>Log the event because recurring deadlocks usually indicate a design flaw.</li>
+</ol>
+<h2>Diagram Section</h2>
+<h3>Strategy map</h3>
+<div class="diagram-card"><div class="mermaid">flowchart TD
+    A[Resource request appears] --&gt; B{Chosen deadlock policy}
+    B --&gt; C[Prevention: reject unsafe design patterns]
+    B --&gt; D[Avoidance: test if request keeps safe state]
+    B --&gt; E[Detection: allow now and inspect waits later]
+    D --&gt; F{Safe sequence exists?}
+    F --&gt;|Yes| G[Grant request]
+    F --&gt;|No| H[Make requester wait]
+    E --&gt; I{Cycle or impossible completion found?}
+    I --&gt;|No| G
+    I --&gt;|Yes| J[Recovery: abort, rollback, or preempt]
+    C --&gt; K[No circular wait by construction]
+    J --&gt; L[Resources released and waiters retry]
+</div></div><p>This diagram shows that deadlock handling is a policy choice. Prevention acts before runtime requests become dangerous, avoidance checks every risky request, detection finds deadlock after it appears, and recovery forces progress.</p>
+<h3>Banker safety check intuition</h3>
+<div class="diagram-card"><div class="mermaid">flowchart LR
+    A[Available vector] --&gt; C[Find unfinished process whose Need &lt;= Work]
+    B[Need matrix] --&gt; C
+    D[Allocation matrix] --&gt; E[If found, pretend process finishes]
+    C --&gt;|Found| E
+    E --&gt; F[Work = Work + Allocation of finished process]
+    F --&gt; G[Mark process finished]
+    G --&gt; C
+    C --&gt;|None found| H{All processes finished?}
+    H --&gt;|Yes| I[State is safe]
+    H --&gt;|No| J[State is unsafe]
+</div></div><p>Banker algorithm does not need to run the processes. It simulates whether there is some completion order using available resources plus resources released by processes that could finish.</p>
+<h3>Detection and recovery timeline</h3>
+<div class="diagram-card"><div class="mermaid">sequenceDiagram
+    participant P1 as Process P1
+    participant P2 as Process P2
+    participant RM as Resource Manager
+    participant DET as Deadlock Detector
+    P1-&gt;&gt;RM: Holds R1, requests R2
+    P2-&gt;&gt;RM: Holds R2, requests R1
+    RM--&gt;&gt;P1: Block on R2
+    RM--&gt;&gt;P2: Block on R1
+    DET-&gt;&gt;RM: Build wait-for graph
+    RM--&gt;&gt;DET: P1 waits for P2, P2 waits for P1
+    DET-&gt;&gt;RM: Cycle found
+    RM-&gt;&gt;P2: Abort or rollback victim
+    RM--&gt;&gt;P1: R2 released, retry succeeds
+</div></div><p>This is close to how database engines often handle transaction deadlocks: they detect a cycle and abort one transaction so the other can continue.</p>
+<h2>Practical System Relevance</h2>
+<p>In Linux kernel development, deadlock prevention is extremely important because arbitrary rollback is rarely possible. Kernel code uses lock ordering discipline, lock dependency debugging, careful separation of spinlocks and sleeping locks, and rules about what can be called in interrupt context.</p>
+<p>In Windows applications, deadlocks can happen with mutexes, critical sections, UI message loops, COM calls, events, and thread joins. Prevention often means avoiding synchronous waits on the UI thread and avoiding lock acquisition across callbacks into unknown code.</p>
+<p>In Android, a common application-level deadlock pattern is blocking the main thread while waiting for work that needs the main thread to deliver a callback. The system may surface the symptom as an ANR. The deadlock-handling strategy is mostly prevention: do not block the main thread, use async callbacks carefully, and keep lock ownership away from UI lifecycle calls.</p>
+<p>In databases, deadlock detection and recovery are standard. Two transactions can lock rows in opposite order. The database detects a wait-for cycle, chooses a victim transaction, rolls it back, and returns an error so application code can retry.</p>
+<p>In servers, worker-pool deadlocks happen when all workers block waiting for subtasks queued to the same exhausted pool. Prevention means not blocking pool threads on work scheduled to the same pool, separating pools, using async composition, or bounding dependencies carefully.</p>
+<p>In browsers, event loops prevent many shared-memory races at the JavaScript level, but browser engines are full of locks and task queues internally. Deadlock prevention relies on thread-affinity rules, avoiding blocking calls across process boundaries, and designing renderer, network, storage, and GPU interactions carefully.</p>
+<p>In cloud systems, distributed deadlock-like cycles may involve services, locks, queues, database connections, and RPC calls. Recovery often uses timeouts, leases, idempotent retries, circuit breakers, and transaction aborts. A timeout is not a perfect deadlock detector, but it prevents infinite waiting.</p>
+<p>In file systems, lock ordering matters because operations may involve directories, inodes, buffer cache entries, journals, and block devices. A filesystem that acquires locks inconsistently can deadlock under concurrent rename, delete, writeback, or metadata update paths.</p>
+<h2>Code or Pseudocode Section</h2>
+<h3>Banker algorithm safety check pseudocode</h3>
+<pre><code class="language-c">bool is_safe(int n, int m,
+             int available[m],
+             int allocation[n][m],
+             int need[n][m]) {
+    int work[m];
+    bool finish[n];
+
+    copy(work, available, m);
+    fill(finish, false, n);
+
+    bool progress = true;
+    while (progress) {
+        progress = false;
+
+        for (int i = 0; i &lt; n; i++) {
+            if (finish[i]) continue;
+
+            bool can_finish = true;
+            for (int r = 0; r &lt; m; r++) {
+                if (need[i][r] &gt; work[r]) {
+                    can_finish = false;
+                    break;
+                }
+            }
+
+            if (can_finish) {
+                for (int r = 0; r &lt; m; r++) {
+                    work[r] += allocation[i][r];
+                }
+                finish[i] = true;
+                progress = true;
+            }
+        }
+    }
+
+    for (int i = 0; i &lt; n; i++) {
+        if (!finish[i]) return false;
+    }
+    return true;
+}
+</code></pre>
+<p>This demonstrates the central idea: a state is safe if the system can repeatedly find at least one process whose remaining need can be satisfied, pretend it finishes, and add its released allocation back to the available pool.</p>
+<h3>Lock ordering prevention pattern</h3>
+<pre><code class="language-c">// Rule: always acquire account locks by increasing account id.
+void transfer(Account *a, Account *b, int amount) {
+    Account *first  = a-&gt;id &lt; b-&gt;id ? a : b;
+    Account *second = a-&gt;id &lt; b-&gt;id ? b : a;
+
+    lock(first-&gt;mutex);
+    lock(second-&gt;mutex);
+
+    a-&gt;balance -= amount;
+    b-&gt;balance += amount;
+
+    unlock(second-&gt;mutex);
+    unlock(first-&gt;mutex);
+}
+</code></pre>
+<p>The code prevents circular wait by forcing every transfer to acquire locks in the same global order. Without that rule, one thread could lock account A then wait for B while another locks B then waits for A.</p>
+<h3>Database retry shape after recovery</h3>
+<pre><code class="language-pseudo">for attempt in 1..MAX_RETRIES:
+    begin transaction
+    try:
+        update row A
+        update row B
+        commit
+        return success
+    catch DeadlockVictimError:
+        rollback
+        sleep(backoff(attempt))
+
+return failure
+</code></pre>
+<p>Database deadlock recovery often aborts one transaction. Application code should treat that as a retryable concurrency conflict, not as proof that the database is broken.</p>
+<h2>Common Misconceptions</h2>
+<ul>
+<li>“Deadlock prevention and deadlock avoidance are the same.” False. Prevention changes design rules so a necessary condition cannot hold. Avoidance allows dynamic requests but checks whether granting them keeps the system safe.</li>
+<li>“Unsafe state means deadlock already exists.” False. Unsafe means the system cannot guarantee a safe completion sequence. Deadlock may occur later depending on future requests.</li>
+<li>“Banker algorithm detects deadlocks.” Not exactly. Banker algorithm is mainly an avoidance algorithm. It checks whether a proposed allocation leaves the system in a safe state.</li>
+<li>“If a resource is available, the OS should always grant it.” False under avoidance. A currently available resource may be withheld if granting it would make the system unsafe.</li>
+<li>“Deadlock recovery is easy because the OS can just kill a process.” Killing may release resources, but it can lose work, corrupt higher-level state if not designed safely, or harm user experience.</li>
+<li>“Timeouts prove deadlock.” False. A timeout can break infinite waiting, but a slow network, overloaded server, or long I/O operation can also time out.</li>
+<li>“Lock ordering solves every deadlock.” It helps with locks under your control, but it does not automatically solve dynamic resources, callbacks, unknown libraries, distributed calls, or worker-pool exhaustion.</li>
+<li>“More resources always remove deadlocks.” More instances can reduce risk, but circular waits can still happen if demand exceeds available resources in the wrong pattern.</li>
+</ul>
+<h2>Tricky Interview Corners</h2>
+<h3>Safe vs unsafe vs deadlocked</h3>
+<p>Safe state means there is at least one safe sequence. Unsafe state means no safe sequence is guaranteed. Deadlocked state means some processes are currently stuck in a cycle or impossible completion set. Every deadlocked state is unsafe, but not every unsafe state is deadlocked.</p>
+<h3>Why Banker algorithm is rare in general OS scheduling</h3>
+<p>Banker algorithm needs maximum future demand. General-purpose processes often cannot declare accurate maximum needs for locks, files, memory, sockets, windows, callbacks, and library internals. That is why the algorithm is more important as an interview model than as a universal OS solution.</p>
+<h3>Why prevention may hurt throughput</h3>
+<p>If a process must request all resources up front, it may hold resources long before it needs them. If strict ordering forces awkward code paths, resources may stay locked across longer sections. Safety improves, but concurrency may drop.</p>
+<h3>Why recovery is easier in databases than kernels</h3>
+<p>Databases already have transaction logs, rollback, isolation, and retry semantics. Kernels manage arbitrary hardware and shared state where rollback is much harder. This is why databases often use detection and recovery, while kernels lean heavily on prevention.</p>
+<h3>Why cycle detection differs for single-instance and multi-instance resources</h3>
+<p>With one instance per resource type, a cycle in the wait-for graph proves deadlock. With multiple instances, a cycle may not be enough because another instance might become available. Multi-instance detection must reason about counts.</p>
+<h2>Comparison Tables</h2>
+<div class="table-wrap"><table><thead>
+<tr>
+<th>Strategy</th>
+<th>Main idea</th>
+<th>Strength</th>
+<th>Weakness</th>
+<th>Common use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prevention</td>
+<td>Break a Coffman condition by design</td>
+<td>Simple to reason about once rules are enforced</td>
+<td>Can reduce concurrency or complicate APIs</td>
+<td>Kernel lock ordering, coding standards</td>
+</tr>
+<tr>
+<td>Avoidance</td>
+<td>Grant only if state remains safe</td>
+<td>More flexible than prevention</td>
+<td>Needs maximum demand and runtime checks</td>
+<td>Teaching model, controlled resource managers</td>
+</tr>
+<tr>
+<td>Detection</td>
+<td>Allow deadlock, then find it</td>
+<td>Practical when deadlocks are rare</td>
+<td>Deadlock exists until detected</td>
+<td>Databases, some resource managers</td>
+</tr>
+<tr>
+<td>Recovery</td>
+<td>Force progress after detection</td>
+<td>Restores liveness</td>
+<td>May abort work or harm users</td>
+<td>Transaction rollback, process termination</td>
+</tr>
+</tbody>
+</table></div><div class="table-wrap"><table><thead>
+<tr>
+<th>Term</th>
+<th>Meaning</th>
+<th>Interview trap</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Safe state</td>
+<td>Some completion order exists</td>
+<td>It does not mean all schedules are good</td>
+</tr>
+<tr>
+<td>Unsafe state</td>
+<td>No guaranteed completion order</td>
+<td>It is not automatically deadlock</td>
+</tr>
+<tr>
+<td>Deadlocked state</td>
+<td>Current blocked dependency cannot progress</td>
+<td>It usually requires intervention</td>
+</tr>
+<tr>
+<td>Safe sequence</td>
+<td>One possible order that lets everyone finish</td>
+<td>It is proof of safety, not the actual schedule</td>
+</tr>
+</tbody>
+</table></div><div class="table-wrap"><table><thead>
+<tr>
+<th>Recovery method</th>
+<th>Works well when</th>
+<th>Risk</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Abort all deadlocked processes</td>
+<td>Work is cheap or state is disposable</td>
+<td>High wasted work</td>
+</tr>
+<tr>
+<td>Abort one victim at a time</td>
+<td>Victim can be chosen cheaply</td>
+<td>May need repeated detection</td>
+</tr>
+<tr>
+<td>Resource preemption</td>
+<td>Resource state can be saved/restored</td>
+<td>Not possible for many locks/devices</td>
+</tr>
+<tr>
+<td>Rollback</td>
+<td>System has transactional logs</td>
+<td>Requires rollback support</td>
+</tr>
+<tr>
+<td>Timeout and retry</td>
+<td>Distributed calls or leases are involved</td>
+<td>Can confuse slowness with deadlock</td>
+</tr>
+</tbody>
+</table></div><h2>How to Explain This in an Interview</h2>
+<h3>30-second answer</h3>
+<p>Deadlock can be handled in four ways: prevention, avoidance, detection, and recovery. Prevention breaks one of the necessary conditions, often circular wait through lock ordering. Avoidance checks whether granting a request leaves the system in a safe state, with Banker algorithm as the classic example. Detection allows deadlocks and finds cycles later. Recovery breaks the deadlock by aborting, rolling back, or preempting resources.</p>
+<h3>2-minute answer</h3>
+<p>After identifying deadlock, the next question is policy. Prevention is proactive: design the system so deadlock cannot occur, for example by requiring a fixed lock order or preventing hold-and-wait. Avoidance is dynamic: before granting a request, test whether all processes could still complete in some safe sequence. Banker algorithm uses available resources, current allocations, maximum demands, and remaining needs to make that decision. Detection is reactive: the system allows waiting and periodically checks dependency graphs. If it finds a cycle or a set that cannot complete, recovery chooses a victim and forces progress. The tradeoff is that prevention can be restrictive, avoidance needs advance knowledge, detection allows deadlocks to exist temporarily, and recovery may waste work.</p>
+<h3>Deeper follow-up answer</h3>
+<p>In real systems, different layers choose different strategies. Kernel code often uses prevention because rollback is hard and deadlocks can threaten the whole machine. Databases often use detection and recovery because transactions can be rolled back safely. Distributed systems use timeouts, leases, and retries because a global perfect dependency graph is hard to maintain. Banker algorithm is conceptually important because it distinguishes safe, unsafe, and deadlocked states, but it is less common in general-purpose OS code because processes rarely declare accurate maximum future resource demands.</p>
+<h2>Interview Questions</h2>
+<h3>Basic Questions</h3>
+<ol>
+<li>What are the four main strategies for handling deadlocks?</li>
+<li>What is the difference between deadlock prevention and deadlock avoidance?</li>
+<li>What is a safe state?</li>
+<li>What is an unsafe state?</li>
+<li>Why is every unsafe state not necessarily a deadlock?</li>
+</ol>
+<h3>Intermediate Questions</h3>
+<ol start="6">
+<li>How does lock ordering prevent circular wait?</li>
+<li>What information does Banker algorithm need?</li>
+<li>Why might an OS refuse a resource request even when the resource is available?</li>
+<li>How does deadlock detection work with a wait-for graph?</li>
+<li>Why is recovery easier in a database than inside an operating-system kernel?</li>
+</ol>
+<h3>Advanced Questions</h3>
+<ol start="11">
+<li>Why is Banker algorithm not widely used for arbitrary user processes?</li>
+<li>How do detection algorithms differ for single-instance and multi-instance resource types?</li>
+<li>How should a system choose a victim during deadlock recovery?</li>
+<li>Can timeout-based recovery incorrectly classify a slow operation as a deadlock?</li>
+<li>How can a thread-pool deadlock happen without traditional mutex deadlock?</li>
+</ol>
+<h2>Follow-Up Questions</h2>
+<p>Q: What is deadlock prevention?<br>
+Follow-ups:</p>
+<ul>
+<li>Which Coffman condition is easiest to break in practice?</li>
+<li>How does global lock ordering break circular wait?</li>
+<li>Why can prevention reduce concurrency?</li>
+</ul>
+<p>Q: What is deadlock avoidance?<br>
+Follow-ups:</p>
+<ul>
+<li>What is a safe sequence?</li>
+<li>Why does avoidance need maximum demand?</li>
+<li>Why can a request be denied even when resources are available?</li>
+</ul>
+<p>Q: Explain Banker algorithm.<br>
+Follow-ups:</p>
+<ul>
+<li>What are Available, Max, Allocation, and Need?</li>
+<li>What does the safety check simulate?</li>
+<li>Is Banker algorithm detection or avoidance?</li>
+<li>Why is it mostly a teaching model in general OS contexts?</li>
+</ul>
+<p>Q: What is deadlock detection?<br>
+Follow-ups:</p>
+<ul>
+<li>How does a wait-for graph help?</li>
+<li>When does a cycle prove deadlock?</li>
+<li>Why are multiple resource instances harder?</li>
+</ul>
+<p>Q: What is deadlock recovery?<br>
+Follow-ups:</p>
+<ul>
+<li>How do you choose a victim?</li>
+<li>What is the cost of rollback?</li>
+<li>Why can process termination be unsafe?</li>
+<li>How do databases recover from transaction deadlocks?</li>
+</ul>
+<p>Q: Compare prevention and detection.<br>
+Follow-ups:</p>
+<ul>
+<li>Which is more conservative?</li>
+<li>Which has lower normal-case overhead?</li>
+<li>Which strategy fits databases better and why?</li>
+</ul>
+<p>Q: What is an unsafe state?<br>
+Follow-ups:</p>
+<ul>
+<li>Is unsafe the same as deadlocked?</li>
+<li>Can an unsafe state still complete successfully?</li>
+<li>How does Banker algorithm use this distinction?</li>
+</ul>
+<h2>Trick Questions</h2>
+<ol>
+<li>
+<p>Q: If a system is in an unsafe state, is it already deadlocked?<br>
+Expected answer: No. Unsafe means no guaranteed safe sequence exists. The system may still complete if future requests are favorable.</p>
+</li>
+<li>
+<p>Q: Does Banker algorithm break circular wait?<br>
+Expected answer: No. It avoids unsafe allocations by checking safe sequences. It does not directly impose lock ordering.</p>
+</li>
+<li>
+<p>Q: If a resource is free, must it be granted immediately?<br>
+Expected answer: Not under avoidance. The request can be delayed if granting it would make the state unsafe.</p>
+</li>
+<li>
+<p>Q: Can deadlock detection be useful if prevention is possible?<br>
+Expected answer: Yes. Prevention may be too restrictive or expensive. Some systems prefer detection and recovery when deadlocks are rare and rollback is cheap.</p>
+</li>
+<li>
+<p>Q: Does a timeout prove a deadlock happened?<br>
+Expected answer: No. A timeout indicates lack of response within a limit. It may be deadlock, overload, slow I/O, network delay, or a crashed dependency.</p>
+</li>
+<li>
+<p>Q: Is killing one process always a safe recovery strategy?<br>
+Expected answer: No. It may release resources, but it can lose user work or leave higher-level application state inconsistent unless the system is designed for it.</p>
+</li>
+<li>
+<p>Q: Can a deadlock happen without locks?<br>
+Expected answer: Yes. Worker slots, database rows, buffers, file descriptors, messages, and service calls can form dependency cycles.</p>
+</li>
+<li>
+<p>Q: Does more RAM or more CPU cores eliminate deadlocks?<br>
+Expected answer: No. More resources may reduce pressure, but circular waiting over finite resources can still occur.</p>
+</li>
+</ol>
+<h2>Practical Debugging / Observation</h2>
+<p>On Linux, these commands help observe blocking behavior, even though they do not magically solve deadlocks:</p>
+<pre><code class="language-bash">ps -eo pid,ppid,state,wchan,comm
+top -H -p &lt;pid&gt;
+strace -f -p &lt;pid&gt;
+lsof -p &lt;pid&gt;
+cat /proc/&lt;pid&gt;/stack
+</code></pre>
+<p>Use <code>ps</code> to see process states and wait channels. Use <code>top -H</code> to inspect threads. Use <code>strace</code> to see whether a process is stuck in <code>futex</code>, file I/O, socket I/O, or another system call. Use <code>lsof</code> to inspect files and sockets held by a process. Kernel stack inspection may require privileges and is mainly useful for native processes or kernel-level waits.</p>
+<p>For database deadlocks, look at database-specific logs. Many engines report the two transactions, locks held, locks requested, and the victim transaction. The important habit is to identify the resource order and make the application acquire resources consistently or retry safely.</p>
+<p>For thread-pool deadlocks, inspect worker counts and queued tasks. If every worker is blocked waiting for more work scheduled to the same pool, adding a lock-order graph will not be enough. The “resource” is worker capacity.</p>
+<p>For application locks, log lock acquisition and release around suspicious paths. Include thread id, lock name, operation name, and timestamp. A repeated pattern like “thread A holds X waiting for Y” and “thread B holds Y waiting for X” is the practical shape of a wait-for cycle.</p>
+<h2>Mini Quiz</h2>
+<h3>MCQs</h3>
+<ol>
+<li>
+<p>Which strategy grants a resource only if the system remains in a safe state?<br>
+A. Prevention<br>
+B. Avoidance<br>
+C. Detection<br>
+D. Recovery</p>
+</li>
+<li>
+<p>Which condition does global lock ordering primarily break?<br>
+A. Mutual exclusion<br>
+B. Hold and wait<br>
+C. No preemption<br>
+D. Circular wait</p>
+</li>
+<li>
+<p>In Banker algorithm, <code>Need</code> is:<br>
+A. Available minus Allocation<br>
+B. Max minus Allocation<br>
+C. Allocation minus Max<br>
+D. Total resources minus Available</p>
+</li>
+<li>
+<p>Which statement is true?<br>
+A. Every unsafe state is deadlocked.<br>
+B. Every deadlocked state is unsafe.<br>
+C. Safe state means no process ever waits.<br>
+D. Detection prevents deadlocks by construction.</p>
+</li>
+<li>
+<p>Which recovery method is common in databases?<br>
+A. Roll back one transaction victim<br>
+B. Reboot the CPU<br>
+C. Disable mutual exclusion globally<br>
+D. Ignore wait-for cycles forever</p>
+</li>
+</ol>
+<h3>Short-answer questions</h3>
+<ol>
+<li>Why is Banker algorithm difficult to use for arbitrary user programs?</li>
+<li>Why might prevention reduce throughput?</li>
+<li>What makes victim selection important during recovery?</li>
+</ol>
+<h3>Reasoning questions</h3>
+<ol>
+<li>A system has available resources, but granting one request would leave no safe sequence. Should avoidance grant the request? Explain.</li>
+<li>A service times out while waiting for another service. Is this enough to conclude deadlock? What else would you inspect?</li>
+</ol>
+<h3>Answers</h3>
+<ol>
+<li>B - Avoidance.</li>
+<li>D - Circular wait.</li>
+<li>B - Max minus Allocation.</li>
+<li>B - Every deadlocked state is unsafe.</li>
+<li>A - Roll back one transaction victim.</li>
+</ol>
+<p>Short answers:</p>
+<ol>
+<li>Banker algorithm needs known maximum future demand and controlled resource types. General programs have dynamic locks, files, callbacks, plugins, sockets, and memory needs that are hard to declare accurately.</li>
+<li>Prevention can force all-at-once requests, strict ordering, or conservative waits, which may leave resources idle or lengthen critical sections.</li>
+<li>A bad victim choice can waste lots of work, harm high-priority users, repeatedly abort the same process, or fail to release enough resources.</li>
+</ol>
+<p>Reasoning answers:</p>
+<ol>
+<li>No. Avoidance delays the request because safety is about guaranteed eventual completion, not immediate availability.</li>
+<li>No. A timeout is evidence of waiting, not proof of deadlock. Inspect dependency graphs, held resources, retry behavior, logs, worker-pool saturation, and whether any participant can still progress.</li>
+</ol>
+<h1>5-Minute Revision Column</h1>
+<p>Revision Targets:</p>
+<ul>
+<li>Day 17: Deadlocks Part 1 - R1 Recall Revision</li>
+<li>Day 15: Classical Synchronization Problems - R2 Compression Revision</li>
+</ul>
+<h2>Day 17 - Deadlocks Part 1 - R1 Recall Revision</h2>
+<p>Core recall: A deadlock is a permanent blocked dependency among a set of processes or threads. It is not just “slow waiting.” It happens when each participant needs something that can only be released by another blocked participant in the same set. The four necessary Coffman conditions are mutual exclusion, hold and wait, no preemption, and circular wait. If all four are allowed, deadlock becomes possible. The most useful interview lens is the wait-for cycle: who is waiting for whom?</p>
+<p>Key definitions:</p>
+<ul>
+<li>Deadlock: A state where a group of processes or threads cannot progress because each waits for another in the group.</li>
+<li>Resource: Anything a process needs to continue, such as a mutex, file lock, device, buffer, semaphore permit, worker slot, or database row.</li>
+<li>Circular wait: A closed chain where P1 waits for P2, P2 waits for P3, and eventually some process waits for P1.</li>
+</ul>
+<p>Practical example: Two threads transfer money between the same accounts. Thread 1 locks account A then waits for account B. Thread 2 locks account B then waits for account A. Both are holding one lock and waiting for the other.</p>
+<p>Common traps:</p>
+<ul>
+<li>Deadlock is not the same as starvation. Starvation is unfair repeated delay while others progress; deadlock is a closed no-progress dependency.</li>
+<li>A cycle in a resource-allocation graph proves deadlock only when each resource type has one instance. With multiple instances, counts matter.</li>
+</ul>
+<p>Quick interview questions:</p>
+<ol>
+<li>Why are the Coffman conditions necessary but not always sufficient to prove a current deadlock?</li>
+<li>Why can adding more CPU cores fail to solve a lock-order deadlock?</li>
+</ol>
+<p>Mental model: Deadlock is a closed wait-for loop, not ordinary waiting. Disk I/O can finish independently; a deadlocked participant waits on someone who is also stuck inside the same dependency group.</p>
+<h2>Day 15 - Classical Synchronization Problems - R2 Compression Revision</h2>
+<p>Core recall:</p>
+<ul>
+<li>Producer-consumer models bounded handoff: producers wait when the buffer is full, consumers wait when it is empty.</li>
+<li>A mutex protects the buffer structure, but condition synchronization handles “not full” and “not empty.”</li>
+<li>Readers-writers allows concurrent readers but requires exclusive writers.</li>
+<li>Dining philosophers demonstrates circular wait over multiple resources.</li>
+<li>Sleeping barber shows capacity-limited waiting and service coordination.</li>
+</ul>
+<p>Definitions:</p>
+<ul>
+<li>Bounded buffer: A fixed-capacity queue shared by producers and consumers.</li>
+<li>Condition synchronization: Waiting until a required condition becomes true, such as “buffer not empty.”</li>
+</ul>
+<p>Example: A server request queue is producer-consumer. Accepting threads add requests; worker threads remove them. A bounded queue creates backpressure instead of unlimited memory growth.</p>
+<p>Pitfalls:</p>
+<ul>
+<li>A mutex alone does not solve producer-consumer because it does not say when the buffer has space or data.</li>
+<li>Deadlock-free does not automatically mean fair; readers-writers policies can still starve readers or writers.</li>
+</ul>
+<p>Tricky questions:</p>
+<ol>
+<li>If readers only read, why do they need synchronization?</li>
+<li>Can a dining-philosophers solution avoid deadlock but still cause starvation?</li>
+</ol>
+<p>One-line final memory: Classical synchronization problems are templates for identifying shared state, waiting conditions, invariants, and failure modes.</p>
+<h2>Final Takeaway</h2>
+<p>Deadlock handling is a strategy choice, not a single formula. Prevention removes a necessary condition, often by imposing ordering or avoiding hold-and-wait. Avoidance uses runtime safety checks and safe sequences, with Banker algorithm as the classic model. Detection allows deadlocks to occur and then finds cycles or impossible completion sets. Recovery breaks the deadlock by sacrificing work through abort, rollback, preemption, or restart.</p>
+<p>The practical answer depends on the system. Kernels prefer prevention because rollback is hard. Databases often use detection and recovery because transactions are designed to roll back. Distributed systems rely on timeouts, leases, retries, and idempotency because perfect global knowledge is difficult.</p>
+<h2>What You Should Be Able To Answer Now</h2>
+<ul>
+<li>Explain the difference between deadlock prevention, avoidance, detection, and recovery.</li>
+<li>Define safe state, unsafe state, safe sequence, and deadlocked state.</li>
+<li>Walk through the Banker algorithm safety check at a high level.</li>
+<li>Explain why an available resource may still be denied under avoidance.</li>
+<li>Compare wait-for graph detection for single-instance resources with multi-instance detection.</li>
+<li>Describe practical recovery strategies and their costs.</li>
+<li>Explain why databases can recover from deadlocks more cleanly than kernels.</li>
+<li>Answer trick questions about unsafe states, timeouts, and Banker algorithm.</li>
+</ul>
+</article>
+    </main>
+    <script>
+      (() => {
+        const article = document.querySelector(".article");
+        if (!article) return;
+        const chapterMap = {
+          "Opening Intuition": ["01", "Opening Intuition", "Why this concept exists in real systems before formal definition."],
+          "Interview Definition": ["02", "Interview Definition", "A clean interview-ready explanation with precise language."],
+          "Mental Model": ["03", "Mental Model", "A compact analogy that maps theory to practical recall."],
+          "Layer 1: What happens at a high level?": ["04", "Core Theory", "What the OS manages and how abstraction/resource management fit together."],
+          "Layer 2: What happens inside the OS?": ["05", "System Internals", "Kernel boundaries, data structures, and service flow inside the OS."],
+          "Step-by-Step Flow": ["06", "Step-by-Step Flow", "Concrete execution sequence you can narrate in interviews."],
+          "Practical System Relevance": ["07", "Practical Examples", "How the concept appears in Linux, Windows, Android, servers, and cloud."],
+          "Common Misconceptions": ["08", "Common Misconceptions", "High-frequency mistakes and what to say instead."],
+          "Tricky Interview Corners": ["09", "Tricky Interview Corners", "Edge cases and deeper follow-up traps interviewers probe."],
+          "Interview Questions": ["10", "Interview Questions", "Layered practice questions from basic to advanced."],
+          "5-Minute Revision Column": ["11", "5-Minute Revision Column", "Compressed spaced-repetition recall from prior targets."],
+          "Final Takeaway": ["12", "Final Takeaway", "The final memory model and what you should be able to answer now."]
+        };
+
+        const wrapAfterHeading = (title, className) => {
+          const heading = Array.from(article.querySelectorAll("h2")).find((el) => el.textContent?.trim() === title);
+          if (!heading) return;
+          const wrap = document.createElement("div");
+          wrap.className = className;
+          let node = heading.nextElementSibling;
+          while (node && node.tagName !== "H2") {
+            const next = node.nextElementSibling;
+            wrap.appendChild(node);
+            node = next;
+          }
+          heading.insertAdjacentElement("afterend", wrap);
+        };
+
+        wrapAfterHeading("Interview Definition", "definition-block");
+        wrapAfterHeading("5-Minute Revision Column", "revision-block");
+        wrapAfterHeading("Final Takeaway", "takeaway-block");
+        wrapAfterHeading("What You Should Be Able To Answer Now", "takeaway-block");
+
+        article.querySelectorAll("h2").forEach((heading) => {
+          const text = heading.textContent?.trim() ?? "";
+          const chapter = chapterMap[text];
+          if (!chapter) return;
+          const opener = document.createElement("div");
+          opener.className = "section-opener";
+          opener.innerHTML = "<div class=\"section-kicker\">SECTION " + chapter[0] + " / " + chapter[1].toUpperCase() + "</div><div class=\"section-summary\">" + chapter[2] + "</div>";
+          heading.insertAdjacentElement("beforebegin", opener);
+        });
+
+        const misconceptions = Array.from(article.querySelectorAll("h2")).find(
+          (el) => el.textContent?.trim() === "Common Misconceptions"
+        );
+        if (misconceptions) {
+          let node = misconceptions.nextElementSibling;
+          while (node && node.tagName !== "H2") {
+            if (node.tagName === "OL") {
+              node.querySelectorAll("li").forEach((li) => li.classList.add("trap-item"));
+            }
+            node = node.nextElementSibling;
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>

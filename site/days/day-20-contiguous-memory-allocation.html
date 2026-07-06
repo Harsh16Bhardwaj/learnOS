@@ -1,0 +1,1014 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Day 20 - Contiguous Memory Allocation</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #070707;
+        --surface: #101010;
+        --surface-soft: #151515;
+        --border: #262626;
+        --text: #d8d8d8;
+        --muted: #8f8f8f;
+        --faint: #5f5f5f;
+        --cyan: #67e8f9;
+        --amber: #f4c95d;
+        --violet: #b79cff;
+        --green: #8ee6a3;
+      }
+
+      @page {
+        size: A4;
+        margin: 18mm 17mm 20mm 17mm;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "JetBrains Mono", "IBM Plex Mono", "Roboto Mono", monospace;
+        font-size: 9.8px;
+        line-height: 1.62;
+      }
+
+      .page {
+        width: min(980px, calc(100vw - 24px));
+        margin: 0 auto;
+        padding: 12px 0 20px;
+      }
+
+      .hero {
+        margin-bottom: 14px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 12px;
+      }
+
+      .eyebrow {
+        margin: 0 0 8px;
+        font-size: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        color: var(--faint);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 24px;
+        line-height: 1.18;
+        letter-spacing: -0.04em;
+        color: #f2f2f2;
+        break-after: avoid;
+      }
+
+      .meta-line {
+        margin-top: 8px;
+        font-size: 8.8px;
+        color: var(--muted);
+      }
+
+      .subtitle {
+        max-width: 760px;
+        margin: 8px 0 0;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .revision-strip {
+        margin-top: 10px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .revision-strip span {
+        display: inline-flex;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: rgba(142, 230, 163, 0.08);
+        border: 1px solid rgba(142, 230, 163, 0.22);
+        color: var(--green);
+        font-size: 8px;
+      }
+
+      .article h2,
+      .article h3,
+      .article h4 {
+        line-height: 1.3;
+        break-after: avoid;
+      }
+
+      .article h2 {
+        margin-top: 24px;
+        margin-bottom: 8px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 5px;
+        font-size: 15px;
+        color: #f2f2f2;
+      }
+
+      .section-opener {
+        margin-top: 30px;
+        margin-bottom: 14px;
+        padding: 12px 14px;
+        background: var(--surface);
+        border-left: 3px solid var(--cyan);
+        border-radius: 8px;
+        break-inside: avoid;
+      }
+
+      .section-kicker {
+        font-size: 8px;
+        color: var(--cyan);
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+      }
+
+      .section-summary {
+        font-size: 9.2px;
+        color: #9ca3af;
+        line-height: 1.55;
+      }
+
+      .article h3 {
+        margin-top: 16px;
+        margin-bottom: 6px;
+        font-size: 12px;
+        color: var(--cyan);
+      }
+
+      .article p,
+      .article li {
+        color: var(--text);
+      }
+
+      p {
+        orphans: 3;
+        widows: 3;
+      }
+
+      .article ul,
+      .article ol {
+        padding-left: 1.15rem;
+      }
+
+      .article blockquote {
+        margin: 12px 0;
+        padding: 10px 12px;
+        border-left: 3px solid var(--amber);
+        background: rgba(244, 201, 93, 0.06);
+        border-radius: 8px;
+        color: #ddd4bd;
+        break-inside: avoid;
+      }
+
+      .article pre,
+      .article code {
+        font-family: "JetBrains Mono", "IBM Plex Mono", monospace;
+      }
+
+      .article pre {
+        background: #030303;
+        border: 1px solid #242424;
+        border-radius: 8px;
+        padding: 12px;
+        font-size: 8.8px;
+        line-height: 1.55;
+        overflow-wrap: break-word;
+        white-space: pre-wrap;
+        break-inside: avoid;
+      }
+
+      .article code {
+        color: var(--cyan);
+        background: transparent;
+        padding: 0;
+      }
+
+      .diagram-card {
+        margin: 14px 0;
+        padding: 14px;
+        background: var(--surface);
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        overflow-x: auto;
+        break-inside: avoid;
+      }
+
+      .mermaid {
+        display: flex;
+        justify-content: center;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+        margin: 14px 0;
+        break-inside: avoid;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 8.8px;
+      }
+
+      th,
+      td {
+        padding: 7px;
+        border-bottom: 1px solid #202020;
+        text-align: left;
+      }
+
+      th {
+        color: var(--cyan);
+        font-weight: 600;
+        border-bottom: 1px solid #333;
+      }
+
+      td {
+        color: #cfcfcf;
+      }
+
+      a {
+        color: var(--cyan);
+      }
+
+      .definition-block,
+      .revision-block,
+      .takeaway-block {
+        background: var(--surface);
+        border-radius: 8px;
+        padding: 12px 14px;
+        margin: 12px 0;
+        break-inside: avoid;
+      }
+
+      .definition-block {
+        border-left: 3px solid var(--violet);
+      }
+
+      .revision-block {
+        background: rgba(142, 230, 163, 0.06);
+        border: 1px solid rgba(142, 230, 163, 0.22);
+      }
+
+      .takeaway-block {
+        border-left: 3px solid var(--green);
+      }
+
+      .trap-item {
+        background: rgba(244, 201, 93, 0.06);
+        border-left: 3px solid var(--amber);
+        border-radius: 8px;
+        padding: 10px 13px;
+        margin: 8px 0;
+        break-inside: avoid;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <p class="eyebrow">LearnOS Daily / DAY 20</p>
+        <h1>Contiguous Memory Allocation</h1>
+        <p class="meta-line">40 min read - 5 min revision - Intermediate - Prerequisites: Day 19</p>
+        <p class="subtitle">Fragmentation questions remain common and practical.</p>
+        <div class="revision-strip"><span>Day 19 - Memory Management Basics - R1 - Previous day reinforcement</span><span>Day 17 - Deadlocks Part 1 - R2 - Three-day spaced recall</span><span>Day 15 - Classical Synchronization Problems - R3 - Five-day spaced recall</span></div>
+      </section>
+      <article class="article"><p>Difficulty: Intermediate<br>
+Fresh Learning: 40 minutes<br>
+Revision: 5 minutes<br>
+Prerequisites: Day 19 - Memory Management Basics: logical address, physical address, MMU, relocation, and protection<br>
+Why this topic matters in interviews: Fragmentation questions remain common because they test whether you understand memory allocation beyond definitions. Interviewers often ask you to compare internal and external fragmentation, trace first fit / best fit / worst fit, and explain why modern systems moved toward paging.</p>
+<h2>Opening Intuition</h2>
+<p>Imagine a hostel with a long row of rooms. Some students need one room, some need two adjacent rooms, and some need five adjacent rooms because they are arriving as a group. If the hostel manager gives each group one continuous stretch of rooms, placement looks simple at first: find a large enough empty stretch and assign it.</p>
+<p>The problem appears after many check-ins and check-outs. You may have ten empty rooms in total, but they are scattered as one room here, two rooms there, and three rooms somewhere else. A new group needs six adjacent rooms. The hostel has enough total empty rooms, but not enough continuous empty rooms. That is the core pain of contiguous memory allocation.</p>
+<p>Early operating systems used similar ideas. A process was loaded into one continuous block of physical memory. If a process needed 40 MB, the OS tried to find a 40 MB continuous hole in RAM. This made address calculation simple, but it created fragmentation. Some memory was wasted inside allocated partitions, and some memory was free but unusable because it was broken into small pieces.</p>
+<p>You still see this idea in practical systems even though modern general-purpose OSes rely heavily on paging. Bootloaders, embedded systems, kernel allocators, DMA buffers, huge pages, and some real-time systems still care about physically contiguous memory. So this topic is not only historical. It teaches the allocation tradeoff that later motivates paging, virtual memory, and smarter allocators.</p>
+<h2>Interview Definition</h2>
+<p>Contiguous memory allocation is a memory-management technique where each process is placed in one continuous block of physical memory. The OS keeps track of occupied partitions and free holes, then allocates a hole large enough for a process. It is simple and fast for address translation, but it suffers from internal fragmentation in fixed partitions and external fragmentation in variable partitions.</p>
+<h2>Mental Model</h2>
+<p>Think of physical memory as a single long parking lane and each process as a vehicle that needs a continuous parking space. A small car can fit in a small slot. A bus needs a long continuous slot. If the parking lane becomes full of gaps between parked vehicles, the total empty space may look large, but a bus still cannot park unless one gap is large enough.</p>
+<p>The memory manager’s job is to answer three questions:</p>
+<ol>
+<li>Where is the next large enough continuous free block?</li>
+<li>How much free memory will remain after placing the process?</li>
+<li>How painful will this placement be for future allocations?</li>
+</ol>
+<p>First fit answers quickly. Best fit tries to reduce leftover waste. Worst fit tries to keep large holes available. None of them is perfect because the future allocation pattern is unknown.</p>
+<h2>Layer 1: What happens at a high level?</h2>
+<p>In contiguous allocation, the OS divides physical memory into regions. The kernel occupies a protected region, and user processes are loaded into available memory partitions. Each process gets one continuous range:</p>
+<pre><code class="language-txt">Process P1: physical addresses 10000 to 29999
+Process P2: physical addresses 30000 to 54999
+Process P3: physical addresses 70000 to 89999
+</code></pre>
+<p>The process does not normally think in raw physical addresses. It uses logical addresses such as 0, 4, 100, or 4096 relative to its own address space. The hardware and OS can translate these using a base and limit style mechanism:</p>
+<ul>
+<li>Base register: where the process starts in physical memory.</li>
+<li>Limit register: how large the process’s legal address range is.</li>
+</ul>
+<p>If process P1 starts at physical address 10000 and tries to access logical address 240, the physical address becomes:</p>
+<pre><code class="language-txt">physical address = base + logical address
+physical address = 10000 + 240 = 10240
+</code></pre>
+<p>If P1 tries logical address 25000 but its limit is only 20000, the hardware traps because the access is outside its legal range.</p>
+<p>At this level, contiguous allocation feels attractive. It is easy to understand, easy to implement, and easy to translate. The hard part is what happens as processes come and go.</p>
+<h2>Layer 2: What happens inside the OS?</h2>
+<p>The OS maintains some data structure that records free and allocated regions. A simple version is a free list:</p>
+<div class="table-wrap"><table><thead>
+<tr>
+<th style="text-align:right">Start Address</th>
+<th style="text-align:right">Size</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right">0</td>
+<td style="text-align:right">64 MB</td>
+<td>Kernel</td>
+</tr>
+<tr>
+<td style="text-align:right">64 MB</td>
+<td style="text-align:right">120 MB</td>
+<td>Process A</td>
+</tr>
+<tr>
+<td style="text-align:right">184 MB</td>
+<td style="text-align:right">40 MB</td>
+<td>Free</td>
+</tr>
+<tr>
+<td style="text-align:right">224 MB</td>
+<td style="text-align:right">90 MB</td>
+<td>Process B</td>
+</tr>
+<tr>
+<td style="text-align:right">314 MB</td>
+<td style="text-align:right">70 MB</td>
+<td>Free</td>
+</tr>
+</tbody>
+</table></div><p>When a new process arrives, the OS searches the free holes and chooses one based on an allocation policy. After allocation, the free-list entry is updated or split. When a process exits, its memory region is returned to the free list, and adjacent free holes may be merged.</p>
+<p>For example, if a 30 MB process is placed into a 70 MB hole, the OS may split the hole:</p>
+<pre><code class="language-txt">Before:
+Free hole: start 314 MB, size 70 MB
+
+After allocating 30 MB:
+Process C: start 314 MB, size 30 MB
+Free hole: start 344 MB, size 40 MB
+</code></pre>
+<p>If later Process C exits and the neighboring 40 MB region is still free, the OS can coalesce them back into one 70 MB hole. Coalescing is important because without it, free space becomes increasingly fragmented.</p>
+<h2>Layer 3: What happens at hardware or kernel level?</h2>
+<p>The simplest hardware support for contiguous allocation uses relocation and protection registers:</p>
+<ul>
+<li>A base register stores the starting physical address of the process.</li>
+<li>A limit register stores the maximum legal logical address or process size.</li>
+<li>Every memory reference is checked against the limit.</li>
+<li>If valid, the base is added to produce the physical address.</li>
+<li>If invalid, the CPU traps into the OS.</li>
+</ul>
+<p>This design enforces isolation. A user process cannot simply access another process’s memory by guessing a physical address because its logical address must stay within its limit. The base and limit registers are privileged state. User code cannot change them directly; only the kernel can load them during dispatch or context switch.</p>
+<p>Contiguous allocation is also tied to process loading. When the OS loads a program, it must choose a physical location and relocate addresses if needed. Dynamic relocation with base registers is better than hardcoding physical addresses because a program can be loaded at different places on different runs.</p>
+<p>Hardware simplicity is the major advantage. There is no page table walk for every access, no multi-level page table structure, and no TLB dependency in the basic model. But the price is allocation inflexibility: a process needs one continuous physical chunk.</p>
+<h2>Layer 4: What can go wrong?</h2>
+<p>The main failure mode is fragmentation.</p>
+<p>Internal fragmentation happens when allocated memory contains unused space inside the allocated partition. This is common in fixed partition systems. If every partition is 100 MB and a process needs 62 MB, 38 MB is wasted inside that partition. Other processes cannot use that leftover space because the partition is already assigned.</p>
+<p>External fragmentation happens when free memory exists, but it is split into holes that are too small or poorly placed. This is common in variable partition systems. If a process needs 80 MB and free memory is split into 30 MB, 20 MB, and 40 MB holes, the total free memory is 90 MB but no single hole is large enough.</p>
+<p>Compaction can reduce external fragmentation by moving processes together to create one large free region. But compaction is expensive. Moving a process means copying memory, updating relocation information, pausing or coordinating execution, and handling I/O buffers carefully. In systems with hardware support for dynamic relocation, compaction is easier than with absolute addresses, but it is still not free.</p>
+<h2>Fixed Partition Allocation</h2>
+<p>In fixed partition allocation, memory is divided into fixed-size partitions before process allocation. Each partition can hold one process.</p>
+<p>Example:</p>
+<pre><code class="language-txt">Memory: 512 MB
+Kernel: 64 MB
+User partitions: four partitions of 112 MB each
+</code></pre>
+<p>If a process is smaller than 112 MB, the leftover space inside that partition is wasted. If a process is larger than 112 MB, it cannot run even if several partitions are free, unless the system supports overlays or another special strategy.</p>
+<p>Fixed partitions are simple:</p>
+<ul>
+<li>Easy bookkeeping.</li>
+<li>Fast allocation.</li>
+<li>Clear protection boundary.</li>
+<li>Predictable partition layout.</li>
+</ul>
+<p>But the waste can be severe:</p>
+<div class="table-wrap"><table><thead>
+<tr>
+<th style="text-align:right">Partition Size</th>
+<th style="text-align:right">Process Size</th>
+<th style="text-align:right">Waste</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right">100 MB</td>
+<td style="text-align:right">98 MB</td>
+<td style="text-align:right">2 MB</td>
+</tr>
+<tr>
+<td style="text-align:right">100 MB</td>
+<td style="text-align:right">60 MB</td>
+<td style="text-align:right">40 MB</td>
+</tr>
+<tr>
+<td style="text-align:right">100 MB</td>
+<td style="text-align:right">12 MB</td>
+<td style="text-align:right">88 MB</td>
+</tr>
+</tbody>
+</table></div><p>This wasted space is internal fragmentation because the free space is trapped inside an allocated partition.</p>
+<h2>Variable Partition Allocation</h2>
+<p>In variable partition allocation, the OS creates partitions dynamically based on process size. If a process needs 42 MB, the OS tries to allocate a 42 MB block rather than placing it into a fixed 100 MB partition.</p>
+<p>This reduces internal fragmentation because the partition can match the process size more closely. But it introduces external fragmentation because processes leave holes of different sizes when they terminate.</p>
+<p>Example:</p>
+<pre><code class="language-txt">Initial free memory: 300 MB
+Allocate A = 80 MB
+Allocate B = 60 MB
+Allocate C = 70 MB
+Free B = 60 MB
+Allocate D = 50 MB
+</code></pre>
+<p>Now there may be a 10 MB leftover hole near D, plus whatever remains at the end. Over many allocations and frees, memory becomes a patchwork of allocated blocks and small holes.</p>
+<p>Variable partition allocation is more flexible than fixed partition allocation, but the OS must choose a placement strategy carefully.</p>
+<h2>Step-by-Step Flow</h2>
+<p>Here is a practical allocation flow for a variable partition system:</p>
+<ol>
+<li>A process is created and requests a memory size.</li>
+<li>The OS checks whether the requested size is valid and available.</li>
+<li>The memory manager searches the free-list holes.</li>
+<li>The selected allocation policy chooses a hole.</li>
+<li>If the hole is larger than needed, the OS splits the hole.</li>
+<li>The OS records the allocated region in the process metadata.</li>
+<li>The dispatcher loads the process base and limit when the process runs.</li>
+<li>The CPU checks every memory reference against the limit.</li>
+<li>When the process exits, the OS marks its region free.</li>
+<li>Adjacent free holes are merged if possible.</li>
+<li>If external fragmentation becomes severe, the OS may consider compaction if supported.</li>
+</ol>
+<h2>Diagram Section</h2>
+<h3>Diagram 1: Contiguous Allocation and External Fragmentation</h3>
+<div class="diagram-card"><div class="mermaid">flowchart LR
+    A[&quot;Kernel 0-64 MB&quot;] --&gt; B[&quot;Process A 64-144 MB&quot;]
+    B --&gt; C[&quot;Free hole 144-184 MB&quot;]
+    C --&gt; D[&quot;Process B 184-274 MB&quot;]
+    D --&gt; E[&quot;Free hole 274-314 MB&quot;]
+    E --&gt; F[&quot;Process C 314-374 MB&quot;]
+    F --&gt; G[&quot;Free hole 374-512 MB&quot;]
+</div></div><p>This diagram shows the key interview issue: free memory can exist in multiple holes. A new process needs one hole large enough, not merely enough total free memory.</p>
+<h3>Diagram 2: Base and Limit Address Translation</h3>
+<div class="diagram-card"><div class="mermaid">sequenceDiagram
+    participant CPU
+    participant MMU
+    participant Kernel
+    participant RAM
+    CPU-&gt;&gt;MMU: logical address = 240
+    MMU-&gt;&gt;MMU: compare 240 with limit
+    alt address is valid
+        MMU-&gt;&gt;RAM: physical address = base + 240
+        RAM--&gt;&gt;CPU: data or instruction
+    else address is invalid
+        MMU-&gt;&gt;Kernel: protection trap
+        Kernel--&gt;&gt;CPU: terminate or signal process
+    end
+</div></div><p>This is the basic hardware protection model behind contiguous allocation. The process uses logical addresses, while the hardware checks boundaries and produces physical addresses.</p>
+<h3>Diagram 3: Compaction Before and After</h3>
+<div class="diagram-card"><div class="mermaid">flowchart TB
+    subgraph Before[&quot;Before compaction&quot;]
+        B1[&quot;P1&quot;] --&gt; B2[&quot;Free 20 MB&quot;] --&gt; B3[&quot;P2&quot;] --&gt; B4[&quot;Free 35 MB&quot;] --&gt; B5[&quot;P3&quot;] --&gt; B6[&quot;Free 25 MB&quot;]
+    end
+    subgraph After[&quot;After compaction&quot;]
+        A1[&quot;P1&quot;] --&gt; A2[&quot;P2&quot;] --&gt; A3[&quot;P3&quot;] --&gt; A4[&quot;Free 80 MB&quot;]
+    end
+</div></div><p>Compaction moves allocated processes together so scattered holes become one large hole. It improves allocation opportunities but costs CPU time, memory bandwidth, and coordination.</p>
+<h2>Allocation Algorithms</h2>
+<h3>First Fit</h3>
+<p>First fit scans the free list from the beginning and chooses the first hole large enough.</p>
+<p>Example holes:</p>
+<pre><code class="language-txt">20 MB, 80 MB, 35 MB, 100 MB
+Request: 30 MB
+First fit chooses: 80 MB
+Leftover: 50 MB
+</code></pre>
+<p>First fit is usually fast because it stops early. It does not try to find the mathematically best hole; it tries to find a good-enough hole quickly. Its common weakness is that small fragments may accumulate near the beginning of memory because that area is searched and split frequently.</p>
+<h3>Best Fit</h3>
+<p>Best fit scans for the smallest hole that can satisfy the request.</p>
+<p>Example holes:</p>
+<pre><code class="language-txt">20 MB, 80 MB, 35 MB, 100 MB
+Request: 30 MB
+Best fit chooses: 35 MB
+Leftover: 5 MB
+</code></pre>
+<p>Best fit sounds efficient because it minimizes leftover space for the current allocation. The trap is that it can create many tiny holes that are too small for future processes. It may also require scanning the entire free list unless the holes are organized by size.</p>
+<h3>Worst Fit</h3>
+<p>Worst fit chooses the largest available hole.</p>
+<p>Example holes:</p>
+<pre><code class="language-txt">20 MB, 80 MB, 35 MB, 100 MB
+Request: 30 MB
+Worst fit chooses: 100 MB
+Leftover: 70 MB
+</code></pre>
+<p>Worst fit tries to avoid tiny leftovers by splitting the largest hole. The intuition is that the remaining part may still be useful. In practice, it can waste large holes quickly and does not consistently outperform the others.</p>
+<h3>Next Fit</h3>
+<p>Next fit is a variant of first fit. Instead of always starting from the beginning, it resumes scanning from where the last allocation ended. This can reduce repeated fragmentation near the front of memory, but it may also skip useful holes and behave worse depending on workload.</p>
+<h2>Comparison Tables</h2>
+<h3>Fixed vs Variable Partition Allocation</h3>
+<div class="table-wrap"><table><thead>
+<tr>
+<th>Feature</th>
+<th>Fixed Partition</th>
+<th>Variable Partition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Partition size</td>
+<td>Chosen in advance</td>
+<td>Chosen per process</td>
+</tr>
+<tr>
+<td>Main waste</td>
+<td>Internal fragmentation</td>
+<td>External fragmentation</td>
+</tr>
+<tr>
+<td>Allocation speed</td>
+<td>Usually simple and fast</td>
+<td>Needs hole search</td>
+</tr>
+<tr>
+<td>Flexibility</td>
+<td>Low</td>
+<td>Higher</td>
+</tr>
+<tr>
+<td>Large process issue</td>
+<td>Cannot fit if larger than partition</td>
+<td>Can fit if a large enough hole exists</td>
+</tr>
+<tr>
+<td>Compaction relevance</td>
+<td>Less central</td>
+<td>Important for external fragmentation</td>
+</tr>
+</tbody>
+</table></div><h3>Internal vs External Fragmentation</h3>
+<div class="table-wrap"><table><thead>
+<tr>
+<th>Point</th>
+<th>Internal Fragmentation</th>
+<th>External Fragmentation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Where waste exists</td>
+<td>Inside allocated block</td>
+<td>Between allocated blocks</td>
+</tr>
+<tr>
+<td>Common cause</td>
+<td>Fixed-size partitions or rounded allocation</td>
+<td>Variable-size allocation and deallocation</td>
+</tr>
+<tr>
+<td>Can another process use it?</td>
+<td>No, because block is already assigned</td>
+<td>Not unless a hole is large enough</td>
+</tr>
+<tr>
+<td>Example</td>
+<td>100 MB partition holds 62 MB process</td>
+<td>Total 90 MB free split as 30 + 20 + 40</td>
+</tr>
+<tr>
+<td>Typical fix</td>
+<td>Smaller partitions, dynamic allocation, paging</td>
+<td>Compaction, paging, better placement</td>
+</tr>
+</tbody>
+</table></div><h3>First Fit vs Best Fit vs Worst Fit</h3>
+<div class="table-wrap"><table><thead>
+<tr>
+<th>Algorithm</th>
+<th>Selection rule</th>
+<th>Strength</th>
+<th>Weakness</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>First fit</td>
+<td>First large enough hole</td>
+<td>Fast and simple</td>
+<td>Can leave small holes near front</td>
+</tr>
+<tr>
+<td>Best fit</td>
+<td>Smallest sufficient hole</td>
+<td>Reduces immediate leftover</td>
+<td>Can create tiny unusable fragments</td>
+</tr>
+<tr>
+<td>Worst fit</td>
+<td>Largest hole</td>
+<td>Leaves a larger remainder</td>
+<td>Can consume large holes too aggressively</td>
+</tr>
+<tr>
+<td>Next fit</td>
+<td>First fit from last position</td>
+<td>Avoids always starting at front</td>
+<td>Workload-dependent behavior</td>
+</tr>
+</tbody>
+</table></div><h2>Practical System Relevance</h2>
+<p>Modern desktop and server operating systems usually do not allocate each user process as one contiguous physical block. Paging solves the external-fragmentation problem by allowing a process’s virtual address space to map to non-contiguous physical frames. That is why this lesson prepares you for Day 21.</p>
+<p>Still, contiguous allocation ideas remain relevant:</p>
+<ul>
+<li>Boot process: early boot code often runs before the full virtual-memory system is active, so simple contiguous memory regions matter.</li>
+<li>Kernel memory: some kernel allocations require physically contiguous memory, especially for DMA or hardware buffers.</li>
+<li>Embedded systems: small systems may use simple fixed or variable partition allocation because predictability matters more than flexibility.</li>
+<li>Huge pages: large page mappings need larger contiguous physical regions than ordinary small pages.</li>
+<li>Real-time systems: predictable allocation can matter more than maximum memory utilization.</li>
+<li>Memory allocators: user-space allocators such as malloc manage contiguous regions inside heaps and still deal with splitting, coalescing, and fragmentation.</li>
+</ul>
+<p>In Linux, general process memory is virtual and paged, but the kernel still distinguishes between normal allocations and allocations requiring physical contiguity. Device drivers may need DMA-safe buffers. The buddy allocator also works with blocks of physical pages and splits or coalesces blocks, so the fragmentation theme remains alive.</p>
+<p>In databases and servers, memory pools often allocate chunks from larger arenas. Even when physical memory is paged, allocator-level fragmentation can hurt memory usage. A server may appear to have free memory while its allocator cannot satisfy a large contiguous request inside a specific pool.</p>
+<p>In browsers, many processes and heaps are active at once. The OS may use paging, but browser engines and JavaScript runtimes still manage internal heaps where fragmentation and compaction affect latency. Garbage collectors often perform compaction for similar reasons: make allocation easier and improve locality.</p>
+<h2>Code or Pseudocode Section</h2>
+<p>Here is simple C-like pseudocode for first fit:</p>
+<pre><code class="language-c">Block *allocate_first_fit(size_t request) {
+    for (Block *hole = free_list; hole != NULL; hole = hole-&gt;next) {
+        if (hole-&gt;size &gt;= request) {
+            if (hole-&gt;size == request) {
+                remove_from_free_list(hole);
+                return hole;
+            }
+
+            Block *allocated = split_front(hole, request);
+            hole-&gt;start += request;
+            hole-&gt;size -= request;
+            return allocated;
+        }
+    }
+
+    return NULL; // no sufficiently large contiguous hole
+}
+</code></pre>
+<p>This demonstrates the central point: allocation fails if no single hole is large enough. It does not matter that total free memory across all holes might exceed the request.</p>
+<p>Coalescing on free is equally important:</p>
+<pre><code class="language-c">void free_block(Block *block) {
+    insert_sorted_by_address(&amp;free_list, block);
+
+    if (block-&gt;prev &amp;&amp; block-&gt;prev-&gt;end == block-&gt;start) {
+        merge(block-&gt;prev, block);
+        block = block-&gt;prev;
+    }
+
+    if (block-&gt;next &amp;&amp; block-&gt;end == block-&gt;next-&gt;start) {
+        merge(block, block-&gt;next);
+    }
+}
+</code></pre>
+<p>This shows why the free list is often kept sorted by address. Adjacent free blocks can be merged only if the allocator can detect they touch each other.</p>
+<p>For observation on a Linux machine, these commands connect the concept to real memory behavior:</p>
+<pre><code class="language-bash">free -h
+cat /proc/meminfo
+pmap -x &lt;pid&gt;
+vmstat 1
+</code></pre>
+<p><code>free -h</code> shows broad memory availability. <code>/proc/meminfo</code> exposes kernel memory categories. <code>pmap -x</code> shows a process’s virtual memory mappings, reminding you that modern systems mostly expose virtual regions rather than one physical contiguous block. <code>vmstat 1</code> helps you observe memory pressure and swapping behavior, which will matter more in virtual memory lessons.</p>
+<h2>Common Misconceptions</h2>
+<ul>
+<li>“If total free memory is enough, allocation must succeed.” False. Contiguous allocation needs one continuous hole large enough for the request.</li>
+<li>“Internal and external fragmentation are the same kind of waste.” False. Internal waste is inside an allocated block. External waste is free space split between allocations.</li>
+<li>“Best fit is always best.” False. Best fit can create tiny unusable holes and may require longer searches.</li>
+<li>“Compaction is a free cleanup step.” False. Compaction moves memory and can be expensive or unsafe without relocation support.</li>
+<li>“Paging is unrelated to contiguous allocation.” False. Paging is partly motivated by the limitations of contiguous allocation.</li>
+<li>“Base and limit registers are only for performance.” False. They also enforce protection by preventing illegal memory access.</li>
+<li>“Fixed partitions never suffer external fragmentation.” Mostly true in the classic sense, but they can still waste memory badly through internal fragmentation and poor partition sizing.</li>
+</ul>
+<h2>Tricky Interview Corners</h2>
+<p>One common interview trap is being asked whether external fragmentation means memory is full. It does not. External fragmentation means usable free memory is scattered. The system may have enough total free memory, but not enough continuous free memory.</p>
+<p>Another trap is assuming best fit always minimizes total waste. Best fit minimizes leftover space for the current allocation, but local optimization can create many small holes that are useless later. Allocation algorithms are workload-dependent because the OS does not know future process sizes and lifetimes.</p>
+<p>Compaction questions often hide a hardware assumption. If the system has static relocation, moving a process is hard because addresses may already be fixed. If it has dynamic relocation through base registers or page tables, moving is easier because mappings can be updated. But even then, copying memory costs time and may interfere with running processes and I/O.</p>
+<p>Interviewers may also ask why modern OSes still care about contiguous physical memory if paging exists. The answer is that some hardware operations and kernel subsystems still require contiguous physical regions. Paging makes virtual memory contiguous from the process view, but it does not magically remove every physical contiguity requirement.</p>
+<p>Finally, do not confuse contiguous virtual memory with contiguous physical memory. A process can have a virtual range that appears continuous while the OS maps it to scattered physical frames. That is the central idea behind paging.</p>
+<h2>How to Explain This in an Interview</h2>
+<h3>30-second answer</h3>
+<p>Contiguous memory allocation means each process is placed in one continuous physical memory block. It is simple because address translation can use base and limit registers, but it causes fragmentation. Fixed partitions mainly cause internal fragmentation, while variable partitions mainly cause external fragmentation. Fit algorithms decide which free hole to use.</p>
+<h3>2-minute answer</h3>
+<p>In early memory-management schemes, the OS loaded each process into a continuous region of physical memory. The process used logical addresses, and hardware added a base address after checking the limit. This made relocation and protection manageable. The difficulty is allocation over time. With fixed partitions, a process may not use the full partition, causing internal fragmentation. With variable partitions, processes leave holes when they exit, causing external fragmentation. The OS may use first fit, best fit, worst fit, or next fit to choose holes. If free space becomes scattered, compaction can move processes together, but it is expensive.</p>
+<h3>Deeper follow-up answer</h3>
+<p>The deeper design lesson is that contiguous allocation optimizes simplicity but loses flexibility. It assumes each process needs one large physical range, which becomes painful as process sizes and lifetimes vary. Paging changes the problem by splitting memory into fixed-size pages and frames so a process does not need one continuous physical region. But the fragmentation idea remains important because allocators, kernel memory, DMA buffers, huge pages, and embedded systems still face contiguity and fragmentation tradeoffs.</p>
+<h2>Interview Questions</h2>
+<h3>Basic Questions</h3>
+<ol>
+<li>What is contiguous memory allocation?</li>
+<li>Why does a process need a continuous block in this scheme?</li>
+<li>What are base and limit registers used for?</li>
+<li>What is internal fragmentation?</li>
+<li>What is external fragmentation?</li>
+</ol>
+<h3>Intermediate Questions</h3>
+<ol start="6">
+<li>Compare fixed partition allocation and variable partition allocation.</li>
+<li>Why can allocation fail even when total free memory is enough?</li>
+<li>How does first fit differ from best fit?</li>
+<li>Why can best fit create many tiny holes?</li>
+<li>What is compaction, and why is it expensive?</li>
+</ol>
+<h3>Advanced Questions</h3>
+<ol start="11">
+<li>Why did paging become more attractive than contiguous allocation?</li>
+<li>Can a modern OS still need physically contiguous memory? Give examples.</li>
+<li>How does dynamic relocation make compaction easier?</li>
+<li>Why is external fragmentation more associated with variable partitions?</li>
+<li>How would you design a free-list allocator to support coalescing?</li>
+</ol>
+<h2>Follow-Up Questions</h2>
+<p>Q: What is contiguous memory allocation?<br>
+Follow-ups:</p>
+<ul>
+<li>Does the block need to be physically contiguous or virtually contiguous?</li>
+<li>How does the OS protect one process from another?</li>
+<li>Why is this simple for address translation?</li>
+</ul>
+<p>Q: What is internal fragmentation?<br>
+Follow-ups:</p>
+<ul>
+<li>Which allocation scheme commonly causes it?</li>
+<li>Can internal fragmentation happen in modern allocators?</li>
+<li>How is it different from external fragmentation?</li>
+</ul>
+<p>Q: What is external fragmentation?<br>
+Follow-ups:</p>
+<ul>
+<li>Can total free memory be enough but still unusable?</li>
+<li>How can compaction help?</li>
+<li>Why does paging reduce this issue?</li>
+</ul>
+<p>Q: Compare first fit and best fit.<br>
+Follow-ups:</p>
+<ul>
+<li>Which is faster?</li>
+<li>Which can create smaller leftover holes?</li>
+<li>Why is the best algorithm workload-dependent?</li>
+</ul>
+<p>Q: Why is compaction costly?<br>
+Follow-ups:</p>
+<ul>
+<li>What must be moved?</li>
+<li>What metadata must be updated?</li>
+<li>Why can I/O make moving memory tricky?</li>
+</ul>
+<p>Q: Why did OSes move toward paging?<br>
+Follow-ups:</p>
+<ul>
+<li>How does paging avoid the need for one large hole?</li>
+<li>Does paging remove all fragmentation?</li>
+<li>What kind of fragmentation can paging still have?</li>
+</ul>
+<h2>Trick Questions</h2>
+<ol>
+<li>
+<p>Q: If a system has 300 MB free in total, can it always load a 200 MB process under contiguous allocation?<br>
+Expected answer: No. It needs one continuous 200 MB hole.</p>
+</li>
+<li>
+<p>Q: Is best fit always the best placement algorithm?<br>
+Expected answer: No. It may create tiny unusable holes and can be slower if it scans many holes.</p>
+</li>
+<li>
+<p>Q: Does compaction increase total physical memory?<br>
+Expected answer: No. It rearranges allocated blocks so scattered free space becomes more usable.</p>
+</li>
+<li>
+<p>Q: Does paging mean physical contiguity never matters?<br>
+Expected answer: No. Some kernel and hardware operations may still require contiguous physical memory.</p>
+</li>
+<li>
+<p>Q: If a process has a contiguous virtual address range, must it be contiguous in RAM?<br>
+Expected answer: No. With paging, virtual continuity can map to scattered physical frames.</p>
+</li>
+<li>
+<p>Q: Is external fragmentation wasted memory inside an allocated process?<br>
+Expected answer: No. That describes internal fragmentation.</p>
+</li>
+<li>
+<p>Q: Can fixed partition allocation reject a process even when memory is free?<br>
+Expected answer: Yes, if no available partition is large enough for the process.</p>
+</li>
+</ol>
+<h2>Practical Debugging / Observation</h2>
+<p>On a modern Linux system, you will not usually see “process P occupies one physical block from X to Y” because virtual memory hides physical placement. But you can still observe memory-management ideas:</p>
+<pre><code class="language-bash">free -h
+cat /proc/meminfo
+pmap -x &lt;pid&gt;
+cat /proc/&lt;pid&gt;/maps
+vmstat 1
+</code></pre>
+<p>Look for three lessons:</p>
+<ul>
+<li>A process sees virtual mappings, not raw physical RAM addresses.</li>
+<li>Memory is divided into regions with permissions such as read, write, and execute.</li>
+<li>System memory pressure can exist even when individual mappings look valid.</li>
+</ul>
+<p>If you study allocator behavior in C, you can also create and free many differently sized allocations, then observe process memory with <code>pmap</code>. The OS view and the allocator’s internal view are not identical, but the splitting and coalescing idea is similar.</p>
+<h2>Mini Quiz</h2>
+<h3>MCQs</h3>
+<ol>
+<li>
+<p>Which fragmentation is most associated with fixed partition allocation?<br>
+A. External fragmentation<br>
+B. Internal fragmentation<br>
+C. Belady’s anomaly<br>
+D. Thrashing</p>
+</li>
+<li>
+<p>Which allocation policy chooses the first sufficiently large hole?<br>
+A. Best fit<br>
+B. Worst fit<br>
+C. First fit<br>
+D. Clock</p>
+</li>
+<li>
+<p>Which condition can make contiguous allocation fail?<br>
+A. Total free memory is larger than the process<br>
+B. No single hole is large enough<br>
+C. The process has a stack<br>
+D. The CPU has registers</p>
+</li>
+<li>
+<p>What does compaction mainly target?<br>
+A. Internal fragmentation<br>
+B. External fragmentation<br>
+C. System-call overhead<br>
+D. CPU scheduling latency</p>
+</li>
+<li>
+<p>What hardware mechanism is commonly used in simple contiguous allocation?<br>
+A. Base and limit registers<br>
+B. Dining philosophers<br>
+C. Disk inode table<br>
+D. Round Robin queue</p>
+</li>
+</ol>
+<h3>Short-answer questions</h3>
+<ol>
+<li>Define contiguous memory allocation in two lines.</li>
+<li>Why is external fragmentation different from internal fragmentation?</li>
+<li>Why can compaction be expensive?</li>
+</ol>
+<h3>Reasoning questions</h3>
+<ol>
+<li>Holes are 15 MB, 70 MB, 40 MB, and 90 MB. A process requests 35 MB. Which hole does first fit choose? Which hole does best fit choose? Which hole does worst fit choose?</li>
+<li>A system has 20 MB, 25 MB, 30 MB, and 35 MB free holes. A process requests 80 MB. Explain why allocation fails under contiguous allocation but may succeed under paging.</li>
+</ol>
+<h3>Answers</h3>
+<ol>
+<li>B</li>
+<li>C</li>
+<li>B</li>
+<li>B</li>
+<li>A</li>
+</ol>
+<p>Short answers:</p>
+<ol>
+<li>Contiguous memory allocation places each process in one continuous block of physical memory. The OS tracks free holes and allocated partitions.</li>
+<li>Internal fragmentation is wasted space inside an allocated block. External fragmentation is free space split into holes between allocated blocks.</li>
+<li>Compaction copies process memory, updates relocation information, may pause work, and can conflict with active I/O or pinned memory.</li>
+</ol>
+<p>Reasoning answers:</p>
+<ol>
+<li>First fit chooses 70 MB. Best fit chooses 40 MB. Worst fit chooses 90 MB.</li>
+<li>No single contiguous hole is 80 MB, so contiguous allocation fails. Paging can place the process across separate physical frames while presenting a continuous virtual address space.</li>
+</ol>
+<h1>5-Minute Revision Column</h1>
+<p>Revision targets from prepare: Day 19 - Memory Management Basics (R1), Day 17 - Deadlocks Part 1 (R2), Day 15 - Classical Synchronization Problems (R3).</p>
+<h2>Day 19 - Memory Management Basics (R1 Recall Revision)</h2>
+<ul>
+<li>Memory management lets each process use logical or virtual addresses while the OS and MMU map them to physical memory safely.</li>
+<li>The OS is not only allocating memory; it also tracks ownership, enforces permissions, supports relocation, and reclaims memory.</li>
+<li>Key definitions: logical address means the address generated by the program; physical address means the actual RAM location; MMU means the hardware unit that performs address translation and protection checks.</li>
+<li>Practical example: two processes may both use virtual address <code>0x400000</code>, but those addresses can map to different physical frames.</li>
+<li>Common traps: a segmentation fault usually means invalid or forbidden access, not “RAM is full”; <code>malloc</code> often serves memory from a user-space heap before needing new memory from the kernel.</li>
+<li>Quick interview questions: Why can two processes use the same logical address safely? Why should user code not modify page tables or relocation registers directly?</li>
+<li>Mental model: physical memory is the building; each process gets a private apartment map; the OS manager decides which real rooms the map points to.</li>
+</ul>
+<h2>Day 17 - Deadlocks Part 1 (R2 Compression Revision)</h2>
+<ul>
+<li>Deadlock is permanent waiting caused by a closed dependency cycle among processes or threads.</li>
+<li>The four Coffman conditions are mutual exclusion, hold and wait, no preemption, and circular wait.</li>
+<li>Resource-allocation graphs show request edges and assignment edges; a wait-for cycle is the important signal.</li>
+<li>Deadlock is not the same as slow I/O, sleeping, or starvation.</li>
+<li>A cycle proves deadlock directly only when each resource type has a single instance.</li>
+</ul>
+<p>Definitions:</p>
+<ul>
+<li>Deadlock: a group is stuck because each member waits for another member.</li>
+<li>Hold and wait: a process keeps one resource while requesting another.</li>
+</ul>
+<p>Traps:</p>
+<ul>
+<li>More CPU cores do not prevent deadlock.</li>
+<li>Atomic instructions can implement locks but do not prevent circular wait.</li>
+</ul>
+<p>Quick questions:</p>
+<ol>
+<li>Can deadlock happen without mutexes?</li>
+<li>Why do all four Coffman conditions matter?</li>
+</ol>
+<h2>Day 15 - Classical Synchronization Problems (R3 Flash Revision)</h2>
+<p>Classical synchronization problems are templates for reasoning about shared state and waiting conditions.</p>
+<p>Must remember:</p>
+<ul>
+<li>Producer-consumer: bounded buffer, not-empty, and not-full coordination.</li>
+<li>Readers-writers: concurrent reads are allowed, but writers need exclusive access.</li>
+<li>Dining philosophers: multiple resources plus circular wait can create deadlock.</li>
+</ul>
+<p>Killer pitfall: a mutex alone protects a buffer’s structure, but it does not tell consumers when the buffer is non-empty or producers when it is not full.</p>
+<p>Tricky question: Can a deadlock-free synchronization solution still starve a thread? Yes, fairness is a separate property.</p>
+<h2>Final Takeaway</h2>
+<p>Contiguous memory allocation is simple because each process gets one continuous physical block and address translation can use base and limit registers. Its weakness is fragmentation. Fixed partitions waste space inside allocated blocks, while variable partitions scatter free memory into holes. Fit algorithms choose holes using different tradeoffs, but no policy can perfectly predict future allocations. Compaction can repair external fragmentation, but it costs time and coordination. Paging becomes attractive because it removes the need for a process to occupy one continuous physical region.</p>
+<h2>What You Should Be Able To Answer Now</h2>
+<ul>
+<li>Explain contiguous memory allocation in interview-ready language.</li>
+<li>Distinguish fixed partition and variable partition allocation.</li>
+<li>Compare internal fragmentation and external fragmentation.</li>
+<li>Trace first fit, best fit, worst fit, and next fit on a hole list.</li>
+<li>Explain why compaction helps and why it is expensive.</li>
+<li>Describe how base and limit registers provide relocation and protection.</li>
+<li>Explain why paging solves the single-large-hole problem.</li>
+<li>Connect fragmentation to real systems such as kernel buffers, allocators, huge pages, and embedded memory.</li>
+</ul>
+</article>
+    </main>
+    <script>
+      (() => {
+        const article = document.querySelector(".article");
+        if (!article) return;
+        const chapterMap = {
+          "Opening Intuition": ["01", "Opening Intuition", "Why this concept exists in real systems before formal definition."],
+          "Interview Definition": ["02", "Interview Definition", "A clean interview-ready explanation with precise language."],
+          "Mental Model": ["03", "Mental Model", "A compact analogy that maps theory to practical recall."],
+          "Layer 1: What happens at a high level?": ["04", "Core Theory", "What the OS manages and how abstraction/resource management fit together."],
+          "Layer 2: What happens inside the OS?": ["05", "System Internals", "Kernel boundaries, data structures, and service flow inside the OS."],
+          "Step-by-Step Flow": ["06", "Step-by-Step Flow", "Concrete execution sequence you can narrate in interviews."],
+          "Practical System Relevance": ["07", "Practical Examples", "How the concept appears in Linux, Windows, Android, servers, and cloud."],
+          "Common Misconceptions": ["08", "Common Misconceptions", "High-frequency mistakes and what to say instead."],
+          "Tricky Interview Corners": ["09", "Tricky Interview Corners", "Edge cases and deeper follow-up traps interviewers probe."],
+          "Interview Questions": ["10", "Interview Questions", "Layered practice questions from basic to advanced."],
+          "5-Minute Revision Column": ["11", "5-Minute Revision Column", "Compressed spaced-repetition recall from prior targets."],
+          "Final Takeaway": ["12", "Final Takeaway", "The final memory model and what you should be able to answer now."]
+        };
+
+        const wrapAfterHeading = (title, className) => {
+          const heading = Array.from(article.querySelectorAll("h2")).find((el) => el.textContent?.trim() === title);
+          if (!heading) return;
+          const wrap = document.createElement("div");
+          wrap.className = className;
+          let node = heading.nextElementSibling;
+          while (node && node.tagName !== "H2") {
+            const next = node.nextElementSibling;
+            wrap.appendChild(node);
+            node = next;
+          }
+          heading.insertAdjacentElement("afterend", wrap);
+        };
+
+        wrapAfterHeading("Interview Definition", "definition-block");
+        wrapAfterHeading("5-Minute Revision Column", "revision-block");
+        wrapAfterHeading("Final Takeaway", "takeaway-block");
+        wrapAfterHeading("What You Should Be Able To Answer Now", "takeaway-block");
+
+        article.querySelectorAll("h2").forEach((heading) => {
+          const text = heading.textContent?.trim() ?? "";
+          const chapter = chapterMap[text];
+          if (!chapter) return;
+          const opener = document.createElement("div");
+          opener.className = "section-opener";
+          opener.innerHTML = "<div class=\"section-kicker\">SECTION " + chapter[0] + " / " + chapter[1].toUpperCase() + "</div><div class=\"section-summary\">" + chapter[2] + "</div>";
+          heading.insertAdjacentElement("beforebegin", opener);
+        });
+
+        const misconceptions = Array.from(article.querySelectorAll("h2")).find(
+          (el) => el.textContent?.trim() === "Common Misconceptions"
+        );
+        if (misconceptions) {
+          let node = misconceptions.nextElementSibling;
+          while (node && node.tagName !== "H2") {
+            if (node.tagName === "OL") {
+              node.querySelectorAll("li").forEach((li) => li.classList.add("trap-item"));
+            }
+            node = node.nextElementSibling;
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>

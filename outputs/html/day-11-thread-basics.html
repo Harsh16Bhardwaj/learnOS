@@ -1,0 +1,902 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Day 11 - Thread Basics</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #070707;
+        --surface: #101010;
+        --surface-soft: #151515;
+        --border: #262626;
+        --text: #d8d8d8;
+        --muted: #8f8f8f;
+        --faint: #5f5f5f;
+        --cyan: #67e8f9;
+        --amber: #f4c95d;
+        --violet: #b79cff;
+        --green: #8ee6a3;
+      }
+
+      @page {
+        size: A4;
+        margin: 18mm 17mm 20mm 17mm;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "JetBrains Mono", "IBM Plex Mono", "Roboto Mono", monospace;
+        font-size: 9.8px;
+        line-height: 1.62;
+      }
+
+      .page {
+        width: min(980px, calc(100vw - 24px));
+        margin: 0 auto;
+        padding: 12px 0 20px;
+      }
+
+      .hero {
+        margin-bottom: 14px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 12px;
+      }
+
+      .eyebrow {
+        margin: 0 0 8px;
+        font-size: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        color: var(--faint);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 24px;
+        line-height: 1.18;
+        letter-spacing: -0.04em;
+        color: #f2f2f2;
+        break-after: avoid;
+      }
+
+      .meta-line {
+        margin-top: 8px;
+        font-size: 8.8px;
+        color: var(--muted);
+      }
+
+      .subtitle {
+        max-width: 760px;
+        margin: 8px 0 0;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .revision-strip {
+        margin-top: 10px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .revision-strip span {
+        display: inline-flex;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: rgba(142, 230, 163, 0.08);
+        border: 1px solid rgba(142, 230, 163, 0.22);
+        color: var(--green);
+        font-size: 8px;
+      }
+
+      .article h2,
+      .article h3,
+      .article h4 {
+        line-height: 1.3;
+        break-after: avoid;
+      }
+
+      .article h2 {
+        margin-top: 24px;
+        margin-bottom: 8px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 5px;
+        font-size: 15px;
+        color: #f2f2f2;
+      }
+
+      .section-opener {
+        margin-top: 30px;
+        margin-bottom: 14px;
+        padding: 12px 14px;
+        background: var(--surface);
+        border-left: 3px solid var(--cyan);
+        border-radius: 8px;
+        break-inside: avoid;
+      }
+
+      .section-kicker {
+        font-size: 8px;
+        color: var(--cyan);
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+      }
+
+      .section-summary {
+        font-size: 9.2px;
+        color: #9ca3af;
+        line-height: 1.55;
+      }
+
+      .article h3 {
+        margin-top: 16px;
+        margin-bottom: 6px;
+        font-size: 12px;
+        color: var(--cyan);
+      }
+
+      .article p,
+      .article li {
+        color: var(--text);
+      }
+
+      p {
+        orphans: 3;
+        widows: 3;
+      }
+
+      .article ul,
+      .article ol {
+        padding-left: 1.15rem;
+      }
+
+      .article blockquote {
+        margin: 12px 0;
+        padding: 10px 12px;
+        border-left: 3px solid var(--amber);
+        background: rgba(244, 201, 93, 0.06);
+        border-radius: 8px;
+        color: #ddd4bd;
+        break-inside: avoid;
+      }
+
+      .article pre,
+      .article code {
+        font-family: "JetBrains Mono", "IBM Plex Mono", monospace;
+      }
+
+      .article pre {
+        background: #030303;
+        border: 1px solid #242424;
+        border-radius: 8px;
+        padding: 12px;
+        font-size: 8.8px;
+        line-height: 1.55;
+        overflow-wrap: break-word;
+        white-space: pre-wrap;
+        break-inside: avoid;
+      }
+
+      .article code {
+        color: var(--cyan);
+        background: transparent;
+        padding: 0;
+      }
+
+      .diagram-card {
+        margin: 14px 0;
+        padding: 14px;
+        background: var(--surface);
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        overflow-x: auto;
+        break-inside: avoid;
+      }
+
+      .mermaid {
+        display: flex;
+        justify-content: center;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+        margin: 14px 0;
+        break-inside: avoid;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 8.8px;
+      }
+
+      th,
+      td {
+        padding: 7px;
+        border-bottom: 1px solid #202020;
+        text-align: left;
+      }
+
+      th {
+        color: var(--cyan);
+        font-weight: 600;
+        border-bottom: 1px solid #333;
+      }
+
+      td {
+        color: #cfcfcf;
+      }
+
+      a {
+        color: var(--cyan);
+      }
+
+      .definition-block,
+      .revision-block,
+      .takeaway-block {
+        background: var(--surface);
+        border-radius: 8px;
+        padding: 12px 14px;
+        margin: 12px 0;
+        break-inside: avoid;
+      }
+
+      .definition-block {
+        border-left: 3px solid var(--violet);
+      }
+
+      .revision-block {
+        background: rgba(142, 230, 163, 0.06);
+        border: 1px solid rgba(142, 230, 163, 0.22);
+      }
+
+      .takeaway-block {
+        border-left: 3px solid var(--green);
+      }
+
+      .trap-item {
+        background: rgba(244, 201, 93, 0.06);
+        border-left: 3px solid var(--amber);
+        border-radius: 8px;
+        padding: 10px 13px;
+        margin: 8px 0;
+        break-inside: avoid;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <p class="eyebrow">LearnOS Daily / DAY 11</p>
+        <h1>Thread Basics</h1>
+        <p class="meta-line">40 min read - 5 min revision - Beginner - Prerequisites: Days 05-10</p>
+        <p class="subtitle">Bridges from process isolation to lightweight concurrency.</p>
+        <div class="revision-strip"><span>Day 10 - Scheduling Algorithms Part 2 - R1 - Previous day reinforcement</span><span>Day 08 - Process Scheduling Basics - R2 - Three-day spaced recall</span></div>
+      </section>
+      <article class="article"><p>Difficulty: Beginner<br>
+Fresh Learning: 40 minutes<br>
+Revision: 5 minutes<br>
+Prerequisites: Days 05-10: process address space, PCB, process states, context switching, CPU scheduling, Round Robin, MLFQ<br>
+Why this topic matters in interviews: Threads are the bridge between isolated processes and practical concurrency. Interviewers use them to test whether you understand shared memory, lightweight execution, scheduling, performance tradeoffs, and the bugs that appear when multiple flows of control run inside one process.</p>
+<p>Imagine a browser with one tab loading a web page, another playing music, a third running JavaScript, and a background task downloading a file. If each activity had to be a completely separate heavyweight process, the browser would still work, but it would spend more memory, communication would be clumsier, and some activities would be slower to coordinate. If everything ran in only one execution path, one slow network request or long script could freeze the whole browser experience.</p>
+<p>Threads solve this middle problem. They let one process contain multiple execution flows. Those flows can share the same code, heap, open files, and process resources, while each thread keeps its own execution state such as program counter, registers, and stack. This is why a server can handle many client requests, a UI app can keep responding while background work continues, and a database can flush logs while query workers keep running.</p>
+<p>The key interview idea is simple but deep: a process is a resource container; a thread is a schedulable execution path inside that container. Once you understand that sentence, many later topics become easier: race conditions, mutexes, semaphores, condition variables, deadlocks, thread pools, and concurrency versus parallelism.</p>
+<h2>Interview Definition</h2>
+<p>A thread is the smallest schedulable unit of execution within a process. Multiple threads in the same process share the process address space and resources, such as code, heap, global variables, and open files, but each thread has its own program counter, CPU registers, stack, and thread control information. Threads are lighter than processes because creating and switching between threads usually requires less resource isolation work than creating and switching between separate processes.</p>
+<p>In an interview, say: a process owns resources; a thread executes instructions using those resources. Threads improve responsiveness and concurrency, but shared memory makes synchronization necessary.</p>
+<h2>Mental Model</h2>
+<p>Think of a process as a workshop. The workshop has shared tools, storage shelves, electricity, doors, and a work plan. A thread is a worker inside that workshop. Several workers can use the same shelves and tools, but each worker has their own clipboard showing what they are doing right now.</p>
+<p>The shared workshop is useful because workers can coordinate quickly without shipping materials between buildings. But it also creates danger. If two workers update the same inventory sheet at the same time without rules, the final count may be wrong. If one worker locks a cabinet and waits for another locked cabinet, and the second worker does the reverse, both may be stuck.</p>
+<p>This is the right mental model for threads:</p>
+<ul>
+<li>Shared process resources make communication cheap.</li>
+<li>Private thread state keeps each execution path independent.</li>
+<li>The scheduler can run, pause, and resume threads.</li>
+<li>Synchronization is required when threads touch shared mutable data.</li>
+</ul>
+<h2>Layer 1: What happens at a high level?</h2>
+<p>At a high level, a thread is a path of execution inside a process. A single-threaded process has one path: it starts, executes instructions in order, calls functions, returns from functions, and eventually exits. A multithreaded process has more than one such path active within the same process.</p>
+<p>For example, a simple text editor might use:</p>
+<ul>
+<li>One UI thread to handle typing, menu clicks, and screen updates.</li>
+<li>One background thread to autosave the file.</li>
+<li>One spell-checking thread to scan text.</li>
+<li>One indexing thread to update search data.</li>
+</ul>
+<p>All of these threads belong to the same process. They can access the same heap objects, configuration, file handles, and loaded code. The OS scheduler may run one thread, pause it, run another, and later resume the first. On a multicore CPU, two or more threads from the same process may run truly at the same time on different cores.</p>
+<p>This gives three important benefits.</p>
+<p>First, responsiveness improves. If the UI thread stays free while a background worker performs disk or network work, the app does not feel frozen.</p>
+<p>Second, resource sharing becomes cheaper. Threads can communicate through shared memory instead of using heavier inter-process communication.</p>
+<p>Third, parallelism becomes possible on multicore systems. If work can be split safely, multiple threads can execute at the same time.</p>
+<p>But threads are not magic performance switches. If threads fight over the same lock, wait on slow I/O, update shared data incorrectly, or exceed the useful number of CPU cores, they may make performance worse and correctness harder.</p>
+<h2>Layer 2: What happens inside the OS?</h2>
+<p>Inside the OS, the scheduler needs something schedulable. In many modern systems, the schedulable entity is effectively a thread or kernel task, not just the old textbook idea of a whole process. A process provides an address space and resource ownership. Threads provide runnable execution contexts.</p>
+<p>The OS stores per-process information such as:</p>
+<ul>
+<li>Virtual address space mappings.</li>
+<li>Open file table references.</li>
+<li>Credentials and permissions.</li>
+<li>Signal or exception handling configuration.</li>
+<li>Process identifier and parent-child relationship.</li>
+</ul>
+<p>The OS stores per-thread information such as:</p>
+<ul>
+<li>Thread identifier.</li>
+<li>Thread state: ready, running, blocked, terminated.</li>
+<li>Program counter.</li>
+<li>CPU register snapshot.</li>
+<li>Stack pointer.</li>
+<li>Scheduling priority or policy.</li>
+<li>Kernel stack or kernel-mode execution state.</li>
+<li>Thread-local storage pointer.</li>
+</ul>
+<p>This per-thread metadata is often called a Thread Control Block, or TCB. The exact structure differs by OS, but the conceptual role is consistent: it stores enough thread-specific information to stop and later resume that thread.</p>
+<p>When a thread blocks for I/O, the whole process does not necessarily block. Another ready thread from the same process can continue. This is one major reason threads are useful in servers and interactive applications. A web server can have one request thread waiting for disk or database I/O while another request thread continues using the CPU.</p>
+<h2>Layer 3: What happens at hardware or kernel level?</h2>
+<p>At the hardware level, a CPU core executes one instruction stream at a time. The currently running thread has values loaded into CPU registers, including the program counter or instruction pointer, stack pointer, and general-purpose registers. When the OS switches from one thread to another, it must save the current thread’s CPU state and load the next thread’s CPU state.</p>
+<p>A thread context switch inside the same process can be cheaper than a process context switch because the address space may remain the same. If the memory mappings do not change, the OS may avoid some expensive memory-management work such as changing page table roots or flushing address-translation caches. However, a thread switch is still not free. Registers must be saved and restored, scheduler code must run, caches may be disturbed, and lock contention may increase.</p>
+<p>Kernel-level threads are known to the OS kernel. The kernel can schedule them independently across CPU cores. If one kernel-level thread blocks in a system call, the kernel can run another thread from the same process.</p>
+<p>User-level threads are managed mostly by a user-space runtime or library. The kernel may see only one underlying schedulable entity for many user-level threads. This makes user-level thread creation and switching fast, but it creates a major trap: if the underlying kernel thread blocks, all user-level threads mapped onto it may be unable to run.</p>
+<p>Modern systems often combine ideas. Many language runtimes provide lightweight user-mode tasks, green threads, goroutines, fibers, or async tasks, but they ultimately map execution onto kernel threads so the OS can use CPU cores.</p>
+<h2>Layer 4: What can go wrong?</h2>
+<p>The main danger of threads is shared mutable state. If two threads read and write the same variable without synchronization, the final result can depend on timing. That timing may change across runs, CPU cores, compiler optimizations, and input load. This is the root of race conditions.</p>
+<p>Another problem is deadlock. If Thread A holds Lock 1 and waits for Lock 2, while Thread B holds Lock 2 and waits for Lock 1, both are blocked. Threads make deadlock easier to create because shared resources are common.</p>
+<p>Threads can also hurt performance. Too many runnable threads increase scheduling overhead and context switching. Too many blocked threads consume memory for stacks and kernel metadata. Too much locking can serialize the program, removing the benefit of parallelism. False sharing can cause multiple cores to repeatedly invalidate cache lines even when threads update logically separate variables.</p>
+<p>A good interview answer should therefore avoid saying “threads are always faster.” Threads are useful when they express concurrency, hide I/O latency, improve responsiveness, or use multiple cores effectively. They are harmful when they create synchronization overhead, nondeterministic bugs, or unnecessary scheduling pressure.</p>
+<h2>Step-by-Step Flow</h2>
+<p>Here is a practical flow for creating and running a thread:</p>
+<ol>
+<li>A process starts with at least one main thread.</li>
+<li>The program asks the OS or runtime to create another thread.</li>
+<li>The OS or runtime allocates thread-specific state, including a stack and TCB-like metadata.</li>
+<li>The new thread is placed in a ready state.</li>
+<li>The scheduler selects the thread when CPU time is available.</li>
+<li>The dispatcher loads the thread’s register state and stack pointer.</li>
+<li>The thread begins executing its start routine.</li>
+<li>If it blocks for I/O or a lock, the scheduler can run another ready thread.</li>
+<li>If its time slice expires, it may be preempted and placed back into a ready queue.</li>
+<li>When the thread finishes, its return value and resources are collected by the runtime or joined by another thread.</li>
+</ol>
+<p>For a context switch between two threads of the same process:</p>
+<ol>
+<li>Timer interrupt, blocking call, yield, or priority decision triggers scheduling.</li>
+<li>CPU enters kernel mode if the kernel is involved.</li>
+<li>Current thread registers and program counter are saved in its thread state.</li>
+<li>Scheduler chooses another ready thread.</li>
+<li>If the next thread belongs to the same process, the address space may remain unchanged.</li>
+<li>The next thread’s registers and stack pointer are restored.</li>
+<li>CPU resumes at the next thread’s saved program counter.</li>
+</ol>
+<h2>Diagram Section</h2>
+<div class="diagram-card"><div class="mermaid">flowchart TD
+    P[&quot;Process: shared resource container&quot;] --&gt; Code[&quot;Code / text section&quot;]
+    P --&gt; Heap[&quot;Heap and global data&quot;]
+    P --&gt; Files[&quot;Open files and sockets&quot;]
+    P --&gt; VM[&quot;Virtual address space&quot;]
+    P --&gt; T1[&quot;Thread 1: PC + registers + stack&quot;]
+    P --&gt; T2[&quot;Thread 2: PC + registers + stack&quot;]
+    P --&gt; T3[&quot;Thread 3: PC + registers + stack&quot;]
+    T1 --&gt; S[&quot;OS scheduler chooses runnable threads&quot;]
+    T2 --&gt; S
+    T3 --&gt; S
+</div></div><p>This diagram separates the resource container from the execution paths. The process owns the shared environment. Each thread owns the state needed to continue its own instruction stream.</p>
+<div class="diagram-card"><div class="mermaid">sequenceDiagram
+    participant Main as Main Thread
+    participant Kernel as Kernel / Runtime
+    participant Worker as Worker Thread
+    participant Scheduler as Scheduler
+    Main-&gt;&gt;Kernel: create_thread(worker_function)
+    Kernel-&gt;&gt;Kernel: allocate stack and thread metadata
+    Kernel-&gt;&gt;Scheduler: mark worker ready
+    Scheduler-&gt;&gt;Worker: dispatch CPU time
+    Worker-&gt;&gt;Worker: execute worker_function
+    Worker--&gt;&gt;Scheduler: blocks, yields, or is preempted
+    Main-&gt;&gt;Kernel: join(worker)
+    Kernel--&gt;&gt;Main: return worker result after completion
+</div></div><p>This sequence shows that thread creation is not only a function call. Some runtime or kernel structure must exist so the new execution path can be scheduled, blocked, resumed, and eventually joined.</p>
+<div class="diagram-card"><div class="mermaid">stateDiagram-v2
+    New --&gt; Ready: created
+    Ready --&gt; Running: scheduled
+    Running --&gt; Ready: preempted
+    Running --&gt; Blocked: waits for I/O or lock
+    Blocked --&gt; Ready: event occurs
+    Running --&gt; Terminated: function returns
+</div></div><p>Thread states look similar to process states because both represent schedulable execution. The difference is that several threads can share one process address space.</p>
+<h2>Practical System Relevance</h2>
+<ul>
+<li>Linux represents schedulable execution through task-like kernel structures. Threads in the same process can share memory mappings and file tables while still being scheduled independently.</li>
+<li>Windows processes contain one or more threads, and the scheduler runs threads rather than abstract process containers.</li>
+<li>Android apps use a main UI thread; long work on that thread can cause an Application Not Responding failure because the UI event loop stops responding.</li>
+<li>Browsers use multiple processes for isolation and multiple threads for work such as rendering, networking, JavaScript execution, and background tasks.</li>
+<li>Databases use worker threads for query execution, background checkpointing, logging, compaction, and connection handling.</li>
+<li>Web servers commonly use thread pools or event loops with worker threads to avoid creating a new OS thread for every request.</li>
+<li>Cloud services use threads to overlap I/O, handle concurrent requests, and use multiple cores, but they also use limits to avoid thread explosion.</li>
+<li>Containers do not remove threads. A containerized process can still create threads; the kernel still schedules those threads, subject to cgroup CPU and memory limits.</li>
+</ul>
+<h2>Code or Pseudocode Section</h2>
+<p>Here is C-like pseudocode showing what a thread is meant to express:</p>
+<pre><code class="language-c">void *download_file(void *arg) {
+    fetch_bytes_from_network(arg);
+    return NULL;
+}
+
+int main() {
+    thread_t worker;
+
+    create_thread(&amp;worker, download_file, &quot;notes.pdf&quot;);
+
+    keep_ui_responsive();
+
+    join_thread(worker);
+    return 0;
+}
+</code></pre>
+<p>The point is not the exact API. The point is separation of execution. The main thread can continue handling UI work while the worker thread waits on network I/O. Both threads still belong to the same process and can share memory, so the program must be careful with shared variables.</p>
+<p>A dangerous shared counter example:</p>
+<pre><code class="language-c">int counter = 0;
+
+void *worker(void *arg) {
+    for (int i = 0; i &lt; 100000; i++) {
+        counter = counter + 1;
+    }
+    return NULL;
+}
+</code></pre>
+<p>Two threads running this function may not produce <code>200000</code>. The expression <code>counter = counter + 1</code> is not a single indivisible operation. It usually means load, add, and store. If two threads interleave those steps, one update can overwrite the other. This previews Day 13: race conditions.</p>
+<p>Useful observation commands:</p>
+<pre><code class="language-bash">ps -eLf
+top -H
+htop
+strace -f ./program
+</code></pre>
+<p>On Linux, <code>ps -eLf</code> can show threads, <code>top -H</code> can show thread-level CPU usage, and <code>strace -f</code> follows child processes or threads depending on the program behavior. On Windows, Task Manager and Process Explorer can show per-process thread counts and thread activity.</p>
+<h2>Common Misconceptions</h2>
+<ol>
+<li>Threads and processes are the same. A process is a resource container with an address space; a thread is an execution path inside a process.</li>
+<li>Threads are always faster than processes. Threads are often cheaper to create and switch, but poor synchronization, lock contention, and cache effects can make threaded programs slower.</li>
+<li>Threads do not need scheduling. Threads are schedulable entities. The OS or runtime decides when each runnable thread gets CPU time.</li>
+<li>If one thread blocks, the whole process always blocks. With kernel-level threads, another ready thread in the same process can continue running.</li>
+<li>All thread memory is shared. Threads share the process address space, but each thread has its own stack and execution state.</li>
+<li>More threads always improve responsiveness. Too many threads can increase context switching, memory use, and lock contention.</li>
+<li>User-level threads and kernel-level threads have the same blocking behavior. User-level threads can be very fast, but blocking the underlying kernel thread may block many user-level threads.</li>
+<li>A thread-safe program is automatically fast. Correct synchronization can still serialize execution or create contention.</li>
+</ol>
+<h2>Tricky Interview Corners</h2>
+<p>The first tricky corner is the process-versus-thread boundary. A process normally has a separate address space. A thread shares the address space of its process. This is why inter-thread communication through memory is cheap, while inter-process communication usually needs pipes, sockets, shared memory, files, or other OS mechanisms.</p>
+<p>The second tricky corner is thread context switching. A thread switch is usually lighter than a process switch, especially when both threads share the same address space. But it still has overhead: kernel scheduling, register save and restore, cache disruption, and possible synchronization effects.</p>
+<p>The third tricky corner is blocking. In a many-to-one user-level threading model, a blocking system call can block all user-level threads mapped onto that one kernel thread. In a one-to-one model, each user thread maps to a kernel thread, so the kernel can schedule another thread while one blocks, but creating many threads can be more expensive.</p>
+<p>The fourth tricky corner is shared stack confusion. Threads do not share a single call stack. Each thread needs its own stack because each thread has its own function calls, local variables, return addresses, and stack pointer. However, a thread can still access shared heap memory and global variables.</p>
+<p>The fifth tricky corner is parallelism. A single-core CPU can run multiple threads concurrently by interleaving them, but not truly in parallel. Multiple cores allow true parallel execution, but only if there are multiple runnable threads and the workload can be split safely.</p>
+<h2>Comparison Tables</h2>
+<div class="table-wrap"><table><thead>
+<tr>
+<th>Feature</th>
+<th>Process</th>
+<th>Thread</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Main role</td>
+<td>Resource ownership and isolation</td>
+<td>Execution path</td>
+</tr>
+<tr>
+<td>Address space</td>
+<td>Usually separate</td>
+<td>Shared within process</td>
+</tr>
+<tr>
+<td>Communication</td>
+<td>IPC often needed</td>
+<td>Shared memory possible</td>
+</tr>
+<tr>
+<td>Creation cost</td>
+<td>Usually higher</td>
+<td>Usually lower</td>
+</tr>
+<tr>
+<td>Context switch</td>
+<td>Usually heavier</td>
+<td>Usually lighter</td>
+</tr>
+<tr>
+<td>Failure impact</td>
+<td>More isolated</td>
+<td>One bad thread can corrupt process state</td>
+</tr>
+<tr>
+<td>Typical use</td>
+<td>Isolation, separate programs</td>
+<td>Concurrency inside one program</td>
+</tr>
+</tbody>
+</table></div><div class="table-wrap"><table><thead>
+<tr>
+<th>Feature</th>
+<th>User-Level Threads</th>
+<th>Kernel-Level Threads</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Managed by</td>
+<td>User-space library/runtime</td>
+<td>OS kernel</td>
+</tr>
+<tr>
+<td>Creation/switch cost</td>
+<td>Very low</td>
+<td>Higher than pure user-level</td>
+</tr>
+<tr>
+<td>Kernel awareness</td>
+<td>Kernel may not see each user thread</td>
+<td>Kernel schedules each thread</td>
+</tr>
+<tr>
+<td>Blocking problem</td>
+<td>One blocking syscall may block all mapped threads</td>
+<td>Other threads can still run</td>
+</tr>
+<tr>
+<td>Parallelism on cores</td>
+<td>Limited unless mapped to multiple kernel threads</td>
+<td>Kernel can run threads on different cores</td>
+</tr>
+<tr>
+<td>Example idea</td>
+<td>Green threads/fibers</td>
+<td>POSIX/Windows kernel-scheduled threads</td>
+</tr>
+</tbody>
+</table></div><h2>How to Explain This in an Interview</h2>
+<h3>30-second answer</h3>
+<p>A thread is the smallest unit of execution inside a process. Threads in the same process share code, heap, global variables, open files, and address space, but each thread has its own program counter, registers, and stack. Threads are useful for concurrency, responsiveness, and parallelism, but shared memory means we need synchronization.</p>
+<h3>2-minute answer</h3>
+<p>A process is like a container for resources, while a thread is a running execution path inside that container. A process may have one main thread or many threads. Multiple threads can work on different tasks while sharing the same process resources. This makes communication cheaper than between processes because threads can use shared memory. For example, a browser or server may use separate threads for UI, networking, disk work, and request handling.</p>
+<p>The OS or runtime maintains per-thread state such as thread ID, state, stack pointer, registers, program counter, and scheduling metadata. In kernel-level threading, the OS scheduler can run different threads on different CPU cores or switch between them when one blocks or its quantum expires.</p>
+<p>The tradeoff is safety. Shared memory can cause race conditions, deadlocks, and visibility bugs unless locks, atomic operations, or other synchronization mechanisms are used.</p>
+<h3>Deeper follow-up answer</h3>
+<p>Threading models matter. User-level threads are fast because the runtime can create and switch them without always entering the kernel, but if the kernel only sees one schedulable entity, a blocking system call can block all user-level threads in that process. Kernel-level threads are visible to the OS and can be scheduled independently, including on multiple cores, but they cost more to create and manage. Modern runtimes often mix these ideas by scheduling lightweight tasks onto a pool of kernel threads.</p>
+<h2>Interview Questions</h2>
+<h3>Basic Questions</h3>
+<ol>
+<li>What is a thread?</li>
+<li>How is a thread different from a process?</li>
+<li>What resources are shared between threads of the same process?</li>
+<li>What state is private to each thread?</li>
+<li>Why are threads considered lightweight compared with processes?</li>
+</ol>
+<h3>Intermediate Questions</h3>
+<ol start="6">
+<li>Why can a multithreaded application remain responsive during I/O?</li>
+<li>What is a Thread Control Block?</li>
+<li>What happens during a thread context switch?</li>
+<li>What is the difference between user-level and kernel-level threads?</li>
+<li>Why does shared memory make threads both useful and dangerous?</li>
+</ol>
+<h3>Advanced Questions</h3>
+<ol start="11">
+<li>Can two threads of the same process run on different CPU cores?</li>
+<li>Why might too many threads reduce performance?</li>
+<li>How can a blocking system call affect user-level threads?</li>
+<li>Why is a thread switch usually cheaper than a process switch?</li>
+<li>How do threads prepare us for race conditions and locks?</li>
+</ol>
+<h2>Follow-Up Questions</h2>
+<p>Q: What is a thread?<br>
+Follow-ups:</p>
+<ul>
+<li>What does “smallest schedulable unit” mean?</li>
+<li>Is a thread a complete program?</li>
+<li>Can a process exist without any thread?</li>
+<li>What happens to a process when all its threads finish?</li>
+</ul>
+<p>Q: How is a thread different from a process?<br>
+Follow-ups:</p>
+<ul>
+<li>Which one owns the address space?</li>
+<li>Which one has a stack?</li>
+<li>Why is inter-thread communication usually cheaper?</li>
+<li>Why is process isolation safer?</li>
+</ul>
+<p>Q: What is shared between threads?<br>
+Follow-ups:</p>
+<ul>
+<li>Are global variables shared?</li>
+<li>Are file descriptors or handles shared?</li>
+<li>Is the heap shared?</li>
+<li>Is the stack shared?</li>
+</ul>
+<p>Q: Why are threads useful in servers?<br>
+Follow-ups:</p>
+<ul>
+<li>What happens when one request waits for I/O?</li>
+<li>Why do servers use thread pools?</li>
+<li>What is the danger of one thread per request without limits?</li>
+<li>How do threads interact with CPU cores?</li>
+</ul>
+<p>Q: What are user-level threads?<br>
+Follow-ups:</p>
+<ul>
+<li>Why are they fast?</li>
+<li>What is the blocking syscall problem?</li>
+<li>Can they use multiple cores by themselves?</li>
+<li>How do modern runtimes reduce this limitation?</li>
+</ul>
+<p>Q: What are kernel-level threads?<br>
+Follow-ups:</p>
+<ul>
+<li>Why can the OS schedule them independently?</li>
+<li>Why are they more expensive than user-level threads?</li>
+<li>What happens if one kernel-level thread blocks?</li>
+<li>How does this model help parallelism?</li>
+</ul>
+<p>Q: Are threads always better than processes?<br>
+Follow-ups:</p>
+<ul>
+<li>When is process isolation preferred?</li>
+<li>What bugs become easier with threads?</li>
+<li>What performance costs can threads introduce?</li>
+<li>Why might a browser use both processes and threads?</li>
+</ul>
+<h2>Trick Questions</h2>
+<ol>
+<li>
+<p>Q: If two threads are in the same process, do they share the same stack?<br>
+Expected answer: No. Each thread has its own stack. They share the process address space, heap, globals, code, and many resources, but each needs its own call stack and stack pointer.</p>
+</li>
+<li>
+<p>Q: If a process has four threads, does it always run four times faster?<br>
+Expected answer: No. Speedup depends on available cores, workload independence, synchronization overhead, I/O behavior, and contention.</p>
+</li>
+<li>
+<p>Q: If one thread crashes, can the whole process be affected?<br>
+Expected answer: Yes. Threads share an address space, so memory corruption or an unhandled fatal error in one thread can bring down or corrupt the entire process.</p>
+</li>
+<li>
+<p>Q: Is a thread context switch free because threads share memory?<br>
+Expected answer: No. It may be cheaper than a process switch, but the OS still saves and restores CPU state and may disturb caches.</p>
+</li>
+<li>
+<p>Q: If one thread is waiting for disk I/O, is it still using the CPU?<br>
+Expected answer: Usually no. It is blocked, and the scheduler can run another ready thread or process.</p>
+</li>
+<li>
+<p>Q: Do user-level threads always allow true parallelism on multiple cores?<br>
+Expected answer: Not by themselves if the kernel sees only one underlying thread. Parallelism usually requires mapping work onto multiple kernel-scheduled threads.</p>
+</li>
+<li>
+<p>Q: Are local variables always safe from thread interference?<br>
+Expected answer: Usually local variables on a thread’s own stack are private, but pointers or references to shared heap objects can still create races.</p>
+</li>
+</ol>
+<h2>Practical Debugging / Observation</h2>
+<p>To observe threads, look for thread count, per-thread CPU use, blocked threads, and whether many threads are sleeping or runnable.</p>
+<pre><code class="language-bash">ps -eLf | head
+top -H -p &lt;pid&gt;
+htop
+cat /proc/&lt;pid&gt;/status
+ls /proc/&lt;pid&gt;/task
+strace -f -p &lt;pid&gt;
+</code></pre>
+<p>What to observe:</p>
+<ul>
+<li><code>ps -eLf</code> shows lightweight process/thread entries on Linux-like systems.</li>
+<li><code>top -H</code> shows CPU usage per thread.</li>
+<li><code>/proc/&lt;pid&gt;/task</code> contains entries for each thread in a process on Linux.</li>
+<li><code>strace -f</code> helps reveal whether threads are blocked in system calls.</li>
+<li>A high thread count with low CPU usage may mean threads are mostly waiting.</li>
+<li>High CPU usage across several threads may indicate real parallel CPU work.</li>
+</ul>
+<p>On Windows, use Task Manager, Resource Monitor, or Process Explorer to inspect thread count, CPU activity, and wait states. In interviews, you do not need tool memorization as much as the observation principle: threads can be inspected as schedulable execution units within a process.</p>
+<h2>Mini Quiz</h2>
+<h3>MCQs</h3>
+<ol>
+<li>
+<p>What is the best description of a thread?<br>
+A. A file on disk<br>
+B. A schedulable execution path inside a process<br>
+C. A complete operating system<br>
+D. A hardware interrupt<br>
+Answer: B</p>
+</li>
+<li>
+<p>Which memory area is typically private to each thread?<br>
+A. Heap<br>
+B. Global data<br>
+C. Stack<br>
+D. Code section<br>
+Answer: C</p>
+</li>
+<li>
+<p>Why is a thread switch often cheaper than a process switch?<br>
+A. Threads never use registers<br>
+B. Threads do not execute instructions<br>
+C. Threads in the same process may share the same address space<br>
+D. Threads cannot block<br>
+Answer: C</p>
+</li>
+<li>
+<p>What is a common risk of multithreading?<br>
+A. Race conditions on shared data<br>
+B. No CPU scheduling<br>
+C. No memory use<br>
+D. No need for synchronization<br>
+Answer: A</p>
+</li>
+<li>
+<p>Which model lets the kernel schedule each thread independently?<br>
+A. Pure user-level threading only<br>
+B. Kernel-level threading<br>
+C. Single-threaded execution<br>
+D. Static linking<br>
+Answer: B</p>
+</li>
+</ol>
+<h3>Short-Answer Questions</h3>
+<ol>
+<li>
+<p>Name three things shared by threads in the same process.<br>
+Answer: Code, heap/global data, open files or sockets, and address space are common examples.</p>
+</li>
+<li>
+<p>Name three things private to each thread.<br>
+Answer: Program counter, CPU register state, stack, thread ID, and thread-local metadata.</p>
+</li>
+<li>
+<p>Why can threads improve UI responsiveness?<br>
+Answer: Long-running or blocking work can run on a worker thread while the UI thread continues processing events.</p>
+</li>
+</ol>
+<h3>Reasoning Questions</h3>
+<ol>
+<li>
+<p>A server creates one thread per request and suddenly becomes slower under heavy load. Why?<br>
+Answer: Too many threads can increase memory use, scheduling overhead, context switches, and lock contention. A bounded thread pool or event-driven design may behave better.</p>
+</li>
+<li>
+<p>A program has two threads incrementing the same integer. The final value is sometimes wrong. What concept explains this?<br>
+Answer: Race condition. The increment is not atomic, so interleavings can lose updates unless synchronization or atomic operations are used.</p>
+</li>
+</ol>
+<h1>5-Minute Revision Column</h1>
+<p>Revision Targets:</p>
+<ul>
+<li>Day 10: Scheduling Algorithms Part 2 - R1 Recall Revision</li>
+<li>Day 8: Process Scheduling Basics - R2 Compression Revision</li>
+</ul>
+<h2>Day 10 - Scheduling Algorithms Part 2 - R1 Recall</h2>
+<p>Core recall: Round Robin is a preemptive time-sharing algorithm. Each ready process or thread receives a fixed time quantum. If it finishes early, it leaves the queue; if it uses the full quantum and remains runnable, it goes to the back of the ready queue. This improves fairness and response time compared with FCFS, but the quantum size is crucial. A very large quantum behaves like FCFS. A very small quantum creates too much context-switch overhead.</p>
+<p>Key definitions:</p>
+<ul>
+<li>Round Robin: Preemptive scheduling where each runnable task receives a bounded time slice.</li>
+<li>Time quantum: Maximum CPU time a task gets before preemption.</li>
+<li>MLFQ: Multilevel Feedback Queue, an adaptive scheduler that moves tasks between priority queues based on behavior.</li>
+</ul>
+<p>Practical use: Interactive systems use time slicing so one CPU-heavy task does not freeze every other runnable task. MLFQ-like thinking rewards tasks that block quickly for I/O and demotes tasks that repeatedly consume full quanta.</p>
+<p>Pitfalls:</p>
+<ul>
+<li>Fair turns do not guarantee minimum average waiting time.</li>
+<li>A smaller quantum is not always better because switching has overhead.</li>
+<li>MLFQ does not know the future; it estimates behavior from past CPU use.</li>
+</ul>
+<p>Quick interview questions:</p>
+<ol>
+<li>Why does Round Robin improve response time over FCFS?</li>
+<li>What happens if the time quantum is too small or too large?</li>
+</ol>
+<p>Mental model: Round Robin is a meeting timer. MLFQ is a building manager who moves people between fast and slow lines based on how they behave.</p>
+<h2>Day 8 - Process Scheduling Basics - R2 Compression</h2>
+<p>Core recall:</p>
+<ul>
+<li>Scheduling decides which ready task gets the CPU next.</li>
+<li>The scheduler chooses; the dispatcher performs the low-level handoff.</li>
+<li>Scheduling goals include CPU utilization, throughput, waiting time, turnaround time, response time, priority, and fairness.</li>
+<li>Preemptive scheduling can interrupt a running task; non-preemptive scheduling waits until the task blocks or exits.</li>
+<li>A task waiting for I/O is not ready to use the CPU.</li>
+</ul>
+<p>Key definitions:</p>
+<ul>
+<li>Scheduler: Kernel component or logic that selects the next runnable task.</li>
+<li>Dispatcher: Mechanism that transfers CPU control to the selected task.</li>
+<li>Ready queue: Collection of runnable tasks waiting for CPU time.</li>
+</ul>
+<p>Pitfalls:</p>
+<ul>
+<li>Scheduling is not the same as context switching.</li>
+<li>A ready task is not currently running; it is eligible to run.</li>
+</ul>
+<p>Quick interview questions:</p>
+<ol>
+<li>Why should an I/O-waiting process not stay on the CPU?</li>
+<li>Why can maximizing CPU utilization still produce bad user responsiveness?</li>
+</ol>
+<p>Mental model: The CPU is a service counter. Scheduling is the queue policy that decides who gets served next and why.</p>
+<h2>Final Takeaway</h2>
+<p>Threads let one process contain multiple independent execution paths while sharing the same resource container. Each thread has its own program counter, registers, stack, and scheduling state, but threads in the same process share code, heap, globals, open files, and address space. This makes communication cheap and responsiveness better, but it creates correctness risks around shared mutable data. Kernel-level threads are visible to the OS scheduler and can run independently across cores. User-level threads can be faster to manage but need careful mapping to avoid blocking and parallelism limits. The interview-safe summary is: processes isolate resources; threads share resources and execute concurrently.</p>
+<h2>What You Should Be Able To Answer Now</h2>
+<ul>
+<li>Define a thread in an interview-friendly way.</li>
+<li>Explain the difference between a process and a thread.</li>
+<li>List what threads share and what each thread owns privately.</li>
+<li>Explain why threads are lighter than processes but not free.</li>
+<li>Compare user-level and kernel-level threads.</li>
+<li>Describe what happens during thread creation and thread context switching.</li>
+<li>Explain why threads improve responsiveness and concurrency.</li>
+<li>Identify thread-related traps such as race conditions, deadlocks, and excessive context switching.</li>
+</ul>
+</article>
+    </main>
+    <script>
+      (() => {
+        const article = document.querySelector(".article");
+        if (!article) return;
+        const chapterMap = {
+          "Opening Intuition": ["01", "Opening Intuition", "Why this concept exists in real systems before formal definition."],
+          "Interview Definition": ["02", "Interview Definition", "A clean interview-ready explanation with precise language."],
+          "Mental Model": ["03", "Mental Model", "A compact analogy that maps theory to practical recall."],
+          "Layer 1: What happens at a high level?": ["04", "Core Theory", "What the OS manages and how abstraction/resource management fit together."],
+          "Layer 2: What happens inside the OS?": ["05", "System Internals", "Kernel boundaries, data structures, and service flow inside the OS."],
+          "Step-by-Step Flow": ["06", "Step-by-Step Flow", "Concrete execution sequence you can narrate in interviews."],
+          "Practical System Relevance": ["07", "Practical Examples", "How the concept appears in Linux, Windows, Android, servers, and cloud."],
+          "Common Misconceptions": ["08", "Common Misconceptions", "High-frequency mistakes and what to say instead."],
+          "Tricky Interview Corners": ["09", "Tricky Interview Corners", "Edge cases and deeper follow-up traps interviewers probe."],
+          "Interview Questions": ["10", "Interview Questions", "Layered practice questions from basic to advanced."],
+          "5-Minute Revision Column": ["11", "5-Minute Revision Column", "Compressed spaced-repetition recall from prior targets."],
+          "Final Takeaway": ["12", "Final Takeaway", "The final memory model and what you should be able to answer now."]
+        };
+
+        const wrapAfterHeading = (title, className) => {
+          const heading = Array.from(article.querySelectorAll("h2")).find((el) => el.textContent?.trim() === title);
+          if (!heading) return;
+          const wrap = document.createElement("div");
+          wrap.className = className;
+          let node = heading.nextElementSibling;
+          while (node && node.tagName !== "H2") {
+            const next = node.nextElementSibling;
+            wrap.appendChild(node);
+            node = next;
+          }
+          heading.insertAdjacentElement("afterend", wrap);
+        };
+
+        wrapAfterHeading("Interview Definition", "definition-block");
+        wrapAfterHeading("5-Minute Revision Column", "revision-block");
+        wrapAfterHeading("Final Takeaway", "takeaway-block");
+        wrapAfterHeading("What You Should Be Able To Answer Now", "takeaway-block");
+
+        article.querySelectorAll("h2").forEach((heading) => {
+          const text = heading.textContent?.trim() ?? "";
+          const chapter = chapterMap[text];
+          if (!chapter) return;
+          const opener = document.createElement("div");
+          opener.className = "section-opener";
+          opener.innerHTML = "<div class=\"section-kicker\">SECTION " + chapter[0] + " / " + chapter[1].toUpperCase() + "</div><div class=\"section-summary\">" + chapter[2] + "</div>";
+          heading.insertAdjacentElement("beforebegin", opener);
+        });
+
+        const misconceptions = Array.from(article.querySelectorAll("h2")).find(
+          (el) => el.textContent?.trim() === "Common Misconceptions"
+        );
+        if (misconceptions) {
+          let node = misconceptions.nextElementSibling;
+          while (node && node.tagName !== "H2") {
+            if (node.tagName === "OL") {
+              node.querySelectorAll("li").forEach((li) => li.classList.add("trap-item"));
+            }
+            node = node.nextElementSibling;
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>

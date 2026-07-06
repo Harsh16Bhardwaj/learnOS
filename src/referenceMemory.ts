@@ -58,7 +58,7 @@ export function readReference(topic: Topic, config: AppConfig): DayReference | n
 
 function linesFromSection(markdownSource: string, heading: string): string[] {
   const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const match = markdownSource.match(new RegExp(`##\\s+${escaped}\\n([\\s\\S]*?)(\\n##\\s+|\\n#\\s+|$)`, "i"));
+  const match = markdownSource.match(new RegExp(`#{1,2}\\s+${escaped}\\n([\\s\\S]*?)(\\n##\\s+|\\n#\\s+|$)`, "i"));
   if (!match) {
     return [];
   }
@@ -73,11 +73,55 @@ function toPlain(line: string): string {
     line
       .replace(/^[-*]\s+/, "")
       .replace(/^\d+\.\s+/, "")
+      .replace(/^Q:\s*/i, "")
+      .replace(/^Expected answer:\s*/i, "")
       .replace(/`/g, "")
       .replace(/\*\*/g, "")
       .replace(/\s+/g, " ")
       .trim()
   );
+}
+
+function definitionEntries(markdownSource: string): Record<string, string> {
+  const sourceSections = [
+    ...linesFromSection(markdownSource, "Key Definitions"),
+    ...linesFromSection(markdownSource, "5-Minute Revision Column")
+  ];
+
+  return sourceSections
+    .filter((line) => /^[-*]\s+[^:]{2,80}:\s+/.test(line) || /^[^:]{2,80}:\s+/.test(line))
+    .slice(0, 8)
+    .reduce<Record<string, string>>((acc, line) => {
+      const [left, ...rest] = toPlain(line).split(":");
+      if (left && rest.length > 0) {
+        acc[left.trim()] = rest.join(":").trim();
+      }
+      return acc;
+    }, {});
+}
+
+function questionEntries(markdownSource: string): Array<{ question: string; answer: string }> {
+  const lines = linesFromSection(markdownSource, "Trick Questions");
+  const questions: Array<{ question: string; answer: string }> = [];
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    const questionMatch = line.match(/^(?:\d+\.\s+)?Q:\s*(.+)$/i);
+    if (!questionMatch) {
+      continue;
+    }
+    const nextLine = lines[index + 1] ?? "";
+    const answerMatch = nextLine.match(/^Expected answer:\s*(.+)$/i);
+    questions.push({
+      question: toPlain(questionMatch[1]),
+      answer: answerMatch ? toPlain(answerMatch[1]) : ""
+    });
+    if (questions.length >= 8) {
+      break;
+    }
+  }
+
+  return questions;
 }
 
 export function buildReferenceFromMarkdown(args: {
@@ -89,31 +133,18 @@ export function buildReferenceFromMarkdown(args: {
     .filter((line) => !line.startsWith("```"))
     .slice(0, 4)
     .map(toPlain);
-  const definitions = linesFromSection(args.markdownSource, "5-Minute Revision Column")
-    .filter((line) => line.toLowerCase().includes("operating system:") || line.toLowerCase().includes("kernel:") || line.toLowerCase().includes("system call:"))
-    .slice(0, 3)
-    .reduce<Record<string, string>>((acc, line) => {
-      const [left, ...rest] = toPlain(line).split(":");
-      if (left && rest.length > 0) {
-        acc[left.trim()] = rest.join(":").trim();
-      }
-      return acc;
-    }, {});
+  const definitions = definitionEntries(args.markdownSource);
 
   const mentalModelLines = linesFromSection(args.markdownSource, "Mental Model").slice(0, 3).map(toPlain);
   const practicalUses = linesFromSection(args.markdownSource, "Practical System Relevance")
-    .filter((line) => line.startsWith("-"))
+    .filter((line) => line.startsWith("-") || /^In\s+/.test(line))
     .map(toPlain)
     .slice(0, 8);
   const misconceptions = linesFromSection(args.markdownSource, "Common Misconceptions")
-    .filter((line) => /^\d+\./.test(line))
+    .filter((line) => /^[-*]\s+/.test(line) || /^\d+\./.test(line))
     .map(toPlain)
     .slice(0, 6);
-  const tricky = linesFromSection(args.markdownSource, "Trick Questions")
-    .filter((line) => /^\d+\.\s+Q:/.test(line))
-    .map((line) => toPlain(line.replace(/^\d+\.\s+Q:\s*/i, "")))
-    .slice(0, 5)
-    .map((question) => ({ question, answer: "" }));
+  const tricky = questionEntries(args.markdownSource);
   const interviewSection = linesFromSection(args.markdownSource, "How to Explain This in an Interview").map(toPlain);
 
   return {

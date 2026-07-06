@@ -1,0 +1,68 @@
+{
+  "day": 8,
+  "topic": "Process Scheduling Basics",
+  "difficulty": "Intermediate",
+  "core_summary": [
+    "Process scheduling is the operating system activity of selecting a ready process or thread to run on the CPU according to a scheduling policy.",
+    "The scheduler chooses what should run next from the ready queue, while the dispatcher gives CPU control to the selected task by performing the low-level handoff needed to resume it.",
+    "In an interview, say: scheduling decides which runnable task gets CPU time, using criteria such as CPU utilization, throughput, waiting time, turnaround time, response time, priority, and fairness."
+  ],
+  "key_definitions": {},
+  "mental_model": "Think of the CPU as a busy service counter and the OS scheduler as the queue manager. Many people are waiting. Some only need a quick form stamped. Some need long processing. Some step away because they are waiting for a document. Some are urgent because they are holding up a customer-facing process. The queue manager has to decide who gets the counter next. If one person occupies the counter for too long, everyone else waits. If the manager switches people every few seconds, the counter wastes time repeatedly collecting papers and resetting context. If urgent users never get priority, the office feels unresponsive. If short jobs are always preferred, long jobs may starve. This model captures the main tension of scheduling. The OS is not only trying to keep the CPU busy. It is trying to keep the whole system useful. A desktop values responsiveness. A batch machine may value throughput. A real-time system may value deadlines. A server may value tail latency and fairness across clients. The scheduler is the policy that turns these goals into CPU allocation decisions.",
+  "core_examples": [
+    {
+      "name": "Opening an application",
+      "point": "The OS loads executable code, creates a process, assigns memory, schedules CPU time, and services I/O."
+    },
+    {
+      "name": "Reading a file",
+      "point": "The app requests bytes while the OS handles permissions, metadata lookup, filesystem mapping, and device access."
+    }
+  ],
+  "practical_uses": [],
+  "pitfalls": [
+    "Misconception: Scheduling and context switching are the same thing.",
+    "Misconception: A process waiting for I/O should still be scheduled because it is active.",
+    "Misconception: The best scheduler always maximizes CPU utilization.",
+    "Misconception: Preemptive scheduling means the OS can interrupt safely at literally any machine instruction."
+  ],
+  "misconceptions": [
+    "Misconception: Scheduling and context switching are the same thing.",
+    "Misconception: A process waiting for I/O should still be scheduled because it is active.",
+    "Misconception: The best scheduler always maximizes CPU utilization.",
+    "Misconception: Preemptive scheduling means the OS can interrupt safely at literally any machine instruction.",
+    "Misconception: More threads always improve scheduling.",
+    "Misconception: I/O-bound tasks are less important because they use little CPU."
+  ],
+  "tricky_questions": [
+    {
+      "question": "If a process is in the ready queue, is it currently using the CPU?",
+      "answer": ""
+    },
+    {
+      "question": "If a process is waiting for disk I/O, should the CPU keep checking it by running that process?",
+      "answer": ""
+    },
+    {
+      "question": "Does every system call cause a different process to be scheduled?",
+      "answer": ""
+    },
+    {
+      "question": "Is the scheduler the code that saves and restores registers?",
+      "answer": ""
+    },
+    {
+      "question": "Is preemptive scheduling always better than non-preemptive scheduling?",
+      "answer": ""
+    }
+  ],
+  "interview_ready_answer": {
+    "short": "### 30-second answer",
+    "medium": "Process scheduling is how the OS decides which ready process or thread should run on the CPU next. The scheduler chooses from the ready queue using policy goals like CPU utilization, throughput, waiting time, response time, fairness, and priority. The dispatcher then gives CPU control to the selected task, often through a context switch."
+  },
+  "revision_history": {
+    "times_revised": 2,
+    "last_revised_on_day": 11,
+    "revision_strength": "R3"
+  }
+}

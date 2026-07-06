@@ -1,0 +1,91 @@
+{
+  "day": 14,
+  "topic": "Mutex, Locks, and Semaphores",
+  "difficulty": "Intermediate",
+  "core_summary": [
+    "A mutex is a mutual-exclusion lock that allows only one thread to enter a protected critical section at a time, usually with ownership: the thread that locks it should unlock it. A semaphore is a synchronization counter controlled by wait and signal operations; it can represent either a single permit or multiple identical permits. Locks are the general idea of restricting access; mutexes and semaphores are specific tools used to implement coordination.",
+    "In an interview, say: use a mutex to protect shared data that must be modified by one thread at a time. Use a counting semaphore to limit access to a fixed number of identical resources, such as database connections. A binary semaphore can behave like a one-permit gate, but unlike a mutex it is usually not ownership-based."
+  ],
+  "key_definitions": {
+    "Lock": "a general synchronization mechanism that restricts access to a critical section or resource.",
+    "Mutex": "a mutual-exclusion lock with ownership; one thread acquires it, enters the critical section, and the same thread releases it.",
+    "Critical section": "code that accesses shared mutable state and must be protected from unsafe concurrent execution.",
+    "Binary semaphore": "a semaphore with only 0 or 1 permit available.",
+    "Counting semaphore": "a semaphore whose count represents multiple available permits for identical resources.",
+    "Wait/P operation": "decrements a semaphore if a permit is available; otherwise blocks or waits.",
+    "Signal/V operation": "increments a semaphore and may wake a waiting thread.",
+    "Blocking lock": "a lock that puts the waiting thread to sleep when the lock is unavailable."
+  },
+  "mental_model": "Think of a mutex as the only key to a small room where a shared whiteboard is updated. If one person has the key, nobody else can enter and modify the whiteboard. The key is owned: the person who took it must return it. Think of a counting semaphore as a tray of limited entry passes. If a database pool has five connections, the tray starts with five passes. A worker must take one pass before using a connection and return it when done. The pass does not necessarily identify a specific connection by itself; it controls the number of concurrent users. The useful interview distinction is:",
+  "core_examples": [
+    {
+      "name": "Opening an application",
+      "point": "The OS loads executable code, creates a process, assigns memory, schedules CPU time, and services I/O."
+    },
+    {
+      "name": "Reading a file",
+      "point": "The app requests bytes while the OS handles permissions, metadata lookup, filesystem mapping, and device access."
+    }
+  ],
+  "practical_uses": [
+    "In Linux user programs, POSIX mutexes and semaphores are common abstractions exposed through pthreads and related APIs. The kernel also uses locks internally to protect shared structures such as run queues, filesystem metadata, memory-management structures, and device-driver state. Linux often uses spinlocks in kernel paths where sleeping is not valid, and sleeping locks where waiting may take longer.",
+    "In Windows, synchronization objects include mutexes, semaphores, critical sections, events, and slim reader-writer locks. A Windows mutex can be used across processes, while a critical section is usually process-local and optimized for threads inside one process.",
+    "In Android, Java and Kotlin code often use synchronized blocks, locks, semaphores, handlers, coroutines, and executors to coordinate background work with the main UI thread. The reason UI frameworks restrict direct background-thread UI updates is that shared UI state must remain consistently ordered.",
+    "In browsers, the JavaScript main thread avoids many shared-memory races by running one event at a time, but browser engines themselves use many locks internally across rendering, networking, storage, and compositing threads. SharedArrayBuffer and Web Workers require explicit synchronization mechanisms because they reintroduce shared memory.",
+    "In databases, locks and semaphores show up as row locks, table locks, latch-like internal locks, connection-pool semaphores, transaction locks, and isolation mechanisms. A database connection pool is a classic counting-semaphore example.",
+    "In servers and cloud systems, mutexes protect in-process caches, rate-limiter counters, refresh-token state, metrics buffers, and job queues. Semaphores limit expensive concurrency: maximum uploads, maximum active database calls, maximum background jobs, or maximum outbound requests."
+  ],
+  "pitfalls": [
+    "&quot;A mutex and a semaphore are the same.&quot; False. A mutex protects a critical section with ownership. A semaphore controls permits and may allow more than one thread.",
+    "&quot;A binary semaphore is always a mutex.&quot; False. It can behave like a one-permit gate, but typical semaphore semantics do not enforce the same ownership rule as a mutex.",
+    "&quot;Locks remove all concurrency bugs.&quot; False. They help only if they protect the correct data, all access paths obey the rule, and lock ordering is safe.",
+    "&quot;Spinlocks are faster than blocking locks.&quot; Not always. Spinning can be faster for tiny waits, but it wastes CPU if the lock is held for long."
+  ],
+  "misconceptions": [
+    "&quot;A mutex and a semaphore are the same.&quot; False. A mutex protects a critical section with ownership. A semaphore controls permits and may allow more than one thread.",
+    "&quot;A binary semaphore is always a mutex.&quot; False. It can behave like a one-permit gate, but typical semaphore semantics do not enforce the same ownership rule as a mutex.",
+    "&quot;Locks remove all concurrency bugs.&quot; False. They help only if they protect the correct data, all access paths obey the rule, and lock ordering is safe.",
+    "&quot;Spinlocks are faster than blocking locks.&quot; Not always. Spinning can be faster for tiny waits, but it wastes CPU if the lock is held for long.",
+    "&quot;One global lock is the safest design.&quot; It may be simple, but it can destroy concurrency and create large contention bottlenecks.",
+    "&quot;Semaphores are only for mutual exclusion.&quot; Counting semaphores are often better understood as capacity controllers."
+  ],
+  "tricky_questions": [
+    {
+      "question": "If a semaphore has count 1, is it always exactly the same as a mutex?",
+      "answer": "No. It can create similar mutual exclusion, but a mutex usually has ownership rules and is intended to protect a critical section. A binary semaphore is a one-permit synchronization counter and may be used for signaling."
+    },
+    {
+      "question": "If code uses a lock, is it automatically thread-safe?",
+      "answer": "No. The lock must protect the right invariant, and every access path must follow the same rule."
+    },
+    {
+      "question": "Is a spinlock always faster because it avoids sleep and wake-up?",
+      "answer": "No. It can be faster for very short waits, but wastes CPU when the wait is long."
+    },
+    {
+      "question": "Can a counting semaphore accidentally allow too much concurrency?",
+      "answer": "Yes. If code signals too many times or initializes the count incorrectly, the semaphore can expose more permits than real resources."
+    },
+    {
+      "question": "Should a mutex be held while doing slow network I/O?",
+      "answer": "Usually no. Holding a lock across slow I/O increases contention and can cause severe latency or deadlock risks."
+    },
+    {
+      "question": "Does a lock prevent context switches?",
+      "answer": "No. The scheduler can still switch threads. The lock prevents other cooperating threads from entering the protected critical section."
+    },
+    {
+      "question": "Can two different locks still protect the same data safely?",
+      "answer": "Only with a very clear protocol. If different code paths use different locks for the same invariant, the data is usually not truly protected."
+    }
+  ],
+  "interview_ready_answer": {
+    "short": "### 30-second answer",
+    "medium": "A mutex protects a critical section by allowing only one thread at a time, usually with ownership. A semaphore is a counter of permits: wait consumes a permit, signal returns one. Use a mutex when protecting shared data; use a counting semaphore when limiting access to a fixed number of identical resources."
+  },
+  "revision_history": {
+    "times_revised": 2,
+    "last_revised_on_day": 17,
+    "revision_strength": "R3"
+  }
+}

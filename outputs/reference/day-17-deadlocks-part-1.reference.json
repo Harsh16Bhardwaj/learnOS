@@ -1,0 +1,92 @@
+{
+  "day": 17,
+  "topic": "Deadlocks Part 1",
+  "difficulty": "Intermediate",
+  "core_summary": [
+    "A deadlock is a situation where a set of processes or threads are permanently blocked because each one is waiting for a resource or event that can only be released or produced by another member of the same set. In operating systems, deadlock commonly occurs when resources are acquired in incompatible orders and the system allows processes to hold some resources while waiting for others.",
+    "In an interview, say: deadlock is not just &quot;waiting.&quot; It is indefinite waiting caused by a circular dependency. The classic necessary conditions are mutual exclusion, hold and wait, no preemption, and circular wait. If all four hold at the same time, deadlock can occur."
+  ],
+  "key_definitions": {
+    "Deadlock": "a state where a group of processes or threads are permanently blocked because each is waiting for another in the same group.",
+    "Resource": "anything a process may need before it can continue, such as a mutex, file lock, device, memory buffer, database row, or semaphore permit.",
+    "Resource instance": "one identical unit of a resource type. A printer pool with three printers has three instances.",
+    "Request edge": "in a resource-allocation graph, an edge from process to resource showing that the process is waiting for that resource.",
+    "Assignment edge": "in a resource-allocation graph, an edge from resource to process showing that the resource is currently held by that process.",
+    "Mutual exclusion": "at least one resource is non-shareable, so only one process can use it at a time.",
+    "Hold and wait": "a process holds at least one resource while waiting for another.",
+    "No preemption": "the OS cannot forcibly take the resource away; the holder must release it voluntarily."
+  },
+  "mental_model": "Think of deadlock as a group of people holding keys to rooms while standing in front of other locked rooms. Person A holds the key to room 1 and needs room 2. Person B holds the key to room 2 and needs room 3. Person C holds the key to room 3 and needs room 1. Nobody can enter the next room, and nobody wants to release the key they already have until their next step succeeds. The mature version of the mental model is a wait-for cycle. Do not focus only on the resources. Ask: who is waiting for whom? If A can progress only after B releases something, and B can progress only after C releases something, and C can progress only after A releases something, the dependency graph has closed into a cycle. This is different from ordinary waiting. If a thread waits for disk I/O, the disk can finish independently. If a consumer waits on a condition variable, a producer can add work and signal it. In a deadlock, every path to progress depends on another blocked participant in the same closed group.",
+  "core_examples": [
+    {
+      "name": "Opening an application",
+      "point": "The OS loads executable code, creates a process, assigns memory, schedules CPU time, and services I/O."
+    },
+    {
+      "name": "Reading a file",
+      "point": "The app requests bytes while the OS handles permissions, metadata lookup, filesystem mapping, and device access."
+    }
+  ],
+  "practical_uses": [
+    "In Linux, deadlock can occur in user-space programs with pthread mutexes, file locks, semaphores, or IPC resources. Kernel developers also worry about lock ordering between scheduler locks, filesystem locks, memory-management locks, and device-driver locks. Development tooling can check lock dependency patterns, but production systems still rely heavily on disciplined design.",
+    "In Windows applications, deadlocks can occur with mutexes, critical sections, events, UI message waits, and COM or RPC calls. A classic UI deadlock happens when the UI thread waits synchronously for a background thread while the background thread tries to marshal work back to the UI thread.",
+    "In Android, app developers can deadlock by blocking the main thread while waiting for work that needs the main thread to continue. Android also has a visible symptom called ANR, or Application Not Responding, when the main thread is blocked too long. Not every ANR is a deadlock, but deadlocks are one possible cause.",
+    "In databases, deadlock is a normal operational concern. Two transactions may update rows in different orders. Many database engines detect cycles in the transaction wait-for graph and abort one transaction as the victim. This is why application code should be prepared to retry transactions.",
+    "In browsers, deadlocks are avoided partly by event-loop design and process isolation, but browser engines themselves are highly concurrent. Rendering, networking, storage, GPU, and extension subsystems can still face dependency bugs. The browser may appear frozen if a main event loop waits for work that cannot complete.",
+    "In servers, thread-pool deadlocks happen when tasks submit subtasks to the same bounded pool and then wait synchronously for them. The resource is not a mutex; it is worker capacity. This matters in cloud services because one bad dependency pattern can turn load spikes into stuck request queues.",
+    "In containers and distributed systems, deadlock-like dependency cycles can appear across services. Service A waits on Service B while holding a database connection. Service B waits on Service C while holding a lock. Service C calls back into Service A. The OS may not see a kernel-level deadlock, but the application dependency graph is still stuck."
+  ],
+  "pitfalls": [
+    "&quot;Deadlock means the whole computer is frozen.&quot; False. Only a set of processes or threads may be deadlocked while the rest of the system runs normally.",
+    "&quot;Any long wait is a deadlock.&quot; False. A long wait can be slow I/O, starvation, heavy load, or a valid blocking operation. Deadlock requires a circular dependency with no internal progress.",
+    "&quot;Deadlock and starvation are the same.&quot; False. In starvation, other work may continue and the unlucky process may theoretically run later. In deadlock, the blocked set cannot progress without outside intervention.",
+    "&quot;More CPU cores prevent deadlock.&quot; False. More cores can even make bad interleavings easier to hit."
+  ],
+  "misconceptions": [
+    "&quot;Deadlock means the whole computer is frozen.&quot; False. Only a set of processes or threads may be deadlocked while the rest of the system runs normally.",
+    "&quot;Any long wait is a deadlock.&quot; False. A long wait can be slow I/O, starvation, heavy load, or a valid blocking operation. Deadlock requires a circular dependency with no internal progress.",
+    "&quot;Deadlock and starvation are the same.&quot; False. In starvation, other work may continue and the unlucky process may theoretically run later. In deadlock, the blocked set cannot progress without outside intervention.",
+    "&quot;More CPU cores prevent deadlock.&quot; False. More cores can even make bad interleavings easier to hit.",
+    "&quot;Atomic instructions prevent deadlock.&quot; False. Atomic instructions implement locks and counters; they do not enforce safe lock ordering.",
+    "&quot;A single process cannot be involved in deadlock.&quot; False. A process with multiple threads can deadlock internally. Even one thread can self-deadlock if it tries to acquire a non-recursive lock it already holds."
+  ],
+  "tricky_questions": [
+    {
+      "question": "If a process is sleeping, is it deadlocked?",
+      "answer": "Not necessarily. Sleeping is a normal blocked state. Deadlock requires an unbreakable dependency cycle among waiting actors."
+    },
+    {
+      "question": "If the system has four Coffman conditions, is it currently deadlocked?",
+      "answer": "Not necessarily. The conditions make deadlock possible. A specific deadlock requires the right allocation and wait cycle."
+    },
+    {
+      "question": "Does a cycle in a resource-allocation graph always prove deadlock?",
+      "answer": "Only when each resource type has a single instance. With multiple instances, a cycle may be possible without being an actual deadlock."
+    },
+    {
+      "question": "Can a deadlock happen without mutexes?",
+      "answer": "Yes. It can involve semaphores, file locks, database rows, worker slots, buffers, or service calls."
+    },
+    {
+      "question": "Can adding more threads fix a thread-pool deadlock?",
+      "answer": "It may hide the symptom temporarily, but the dependency design is still unsafe. The correct fix is to avoid blocking workers on work queued to the same exhausted pool or to separate pools and use async composition."
+    },
+    {
+      "question": "If a lock uses atomic instructions, can it still deadlock?",
+      "answer": "Yes. Atomicity helps implement mutual exclusion; it does not prevent circular wait."
+    },
+    {
+      "question": "Is deadlock always an OS bug?",
+      "answer": "No. Many deadlocks are application-level design bugs. The OS provides primitives, but the program decides resource acquisition order."
+    }
+  ],
+  "interview_ready_answer": {
+    "short": "### 30-second answer",
+    "medium": "A deadlock happens when a set of processes or threads are permanently blocked because each is waiting for a resource held by another member of the same set. The classic necessary conditions are mutual exclusion, hold and wait, no preemption, and circular wait. The most important signal is a cycle in the wait-for relationship."
+  },
+  "revision_history": {
+    "times_revised": 2,
+    "last_revised_on_day": 20,
+    "revision_strength": "R3"
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "day": 6,
+  "topic": "Process States and Lifecycle",
+  "difficulty": "Beginner",
+  "core_summary": [
+    "A process state describes the current execution condition of a process from the operating system's point of view. Common states are new, ready, running, waiting or blocked, and terminated. The OS moves a process between these states based on events such as creation, scheduler dispatch, timer interrupts, I/O requests, I/O completion, and program exit.",
+    "In an interview, say: process states help the OS decide whether a process needs CPU time, is waiting for an event, has just been created, or has finished. They are stored as part of process management metadata, usually associated with the PCB."
+  ],
+  "key_definitions": {},
+  "mental_model": "Think of a busy hospital emergency department. Patients are registered, wait in a queue, enter the treatment room, pause while waiting for lab results, return for treatment after results arrive, and eventually get discharged. The doctor is the CPU. The hospital coordinator is the OS scheduler. The patient's file is the PCB. A patient who is waiting for lab results should not occupy the treatment room. Similarly, a process waiting for disk or network I/O should not occupy the CPU. A patient ready for the doctor but not yet selected belongs in the waiting queue. Similarly, a ready process can run, but only after the scheduler chooses it. A discharged patient should not stay in the active queue. Similarly, a terminated process must be cleaned up after the parent or OS collects its status. This model is useful because it separates &quot;can make progress now&quot; from &quot;exists in the system.&quot; Many interview mistakes happen when students assume every live process is using the CPU. Most processes on a normal laptop are alive but sleeping or waiting most of the time.",
+  "core_examples": [
+    {
+      "name": "Opening an application",
+      "point": "The OS loads executable code, creates a process, assigns memory, schedules CPU time, and services I/O."
+    },
+    {
+      "name": "Reading a file",
+      "point": "The app requests bytes while the OS handles permissions, metadata lookup, filesystem mapping, and device access."
+    }
+  ],
+  "practical_uses": [],
+  "pitfalls": [],
+  "misconceptions": [],
+  "tricky_questions": [
+    {
+      "question": "If a process is waiting for disk I/O, is it using the CPU?",
+      "answer": ""
+    },
+    {
+      "question": "If a process is ready, is it blocked?",
+      "answer": ""
+    },
+    {
+      "question": "Can a process move from waiting directly to running?",
+      "answer": ""
+    },
+    {
+      "question": "Is a zombie process dangerous because it keeps executing secretly?",
+      "answer": ""
+    },
+    {
+      "question": "If top shows 0 percent CPU for a process, is the process necessarily terminated?",
+      "answer": ""
+    }
+  ],
+  "interview_ready_answer": {
+    "short": "### 30-second answer",
+    "medium": "Process states describe where a process is in its execution lifecycle. The common states are new, ready, running, waiting or blocked, and terminated. The OS moves processes between these states based on events like creation, scheduler dispatch, timer preemption, I/O requests, I/O completion, and exit."
+  },
+  "revision_history": {
+    "times_revised": 2,
+    "last_revised_on_day": 9,
+    "revision_strength": "R3"
+  }
+}

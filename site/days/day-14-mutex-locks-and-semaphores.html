@@ -1,0 +1,897 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Day 14 - Mutex, Locks, and Semaphores</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #070707;
+        --surface: #101010;
+        --surface-soft: #151515;
+        --border: #262626;
+        --text: #d8d8d8;
+        --muted: #8f8f8f;
+        --faint: #5f5f5f;
+        --cyan: #67e8f9;
+        --amber: #f4c95d;
+        --violet: #b79cff;
+        --green: #8ee6a3;
+      }
+
+      @page {
+        size: A4;
+        margin: 18mm 17mm 20mm 17mm;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "JetBrains Mono", "IBM Plex Mono", "Roboto Mono", monospace;
+        font-size: 9.8px;
+        line-height: 1.62;
+      }
+
+      .page {
+        width: min(980px, calc(100vw - 24px));
+        margin: 0 auto;
+        padding: 12px 0 20px;
+      }
+
+      .hero {
+        margin-bottom: 14px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 12px;
+      }
+
+      .eyebrow {
+        margin: 0 0 8px;
+        font-size: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        color: var(--faint);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 24px;
+        line-height: 1.18;
+        letter-spacing: -0.04em;
+        color: #f2f2f2;
+        break-after: avoid;
+      }
+
+      .meta-line {
+        margin-top: 8px;
+        font-size: 8.8px;
+        color: var(--muted);
+      }
+
+      .subtitle {
+        max-width: 760px;
+        margin: 8px 0 0;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .revision-strip {
+        margin-top: 10px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .revision-strip span {
+        display: inline-flex;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: rgba(142, 230, 163, 0.08);
+        border: 1px solid rgba(142, 230, 163, 0.22);
+        color: var(--green);
+        font-size: 8px;
+      }
+
+      .article h2,
+      .article h3,
+      .article h4 {
+        line-height: 1.3;
+        break-after: avoid;
+      }
+
+      .article h2 {
+        margin-top: 24px;
+        margin-bottom: 8px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 5px;
+        font-size: 15px;
+        color: #f2f2f2;
+      }
+
+      .section-opener {
+        margin-top: 30px;
+        margin-bottom: 14px;
+        padding: 12px 14px;
+        background: var(--surface);
+        border-left: 3px solid var(--cyan);
+        border-radius: 8px;
+        break-inside: avoid;
+      }
+
+      .section-kicker {
+        font-size: 8px;
+        color: var(--cyan);
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+      }
+
+      .section-summary {
+        font-size: 9.2px;
+        color: #9ca3af;
+        line-height: 1.55;
+      }
+
+      .article h3 {
+        margin-top: 16px;
+        margin-bottom: 6px;
+        font-size: 12px;
+        color: var(--cyan);
+      }
+
+      .article p,
+      .article li {
+        color: var(--text);
+      }
+
+      p {
+        orphans: 3;
+        widows: 3;
+      }
+
+      .article ul,
+      .article ol {
+        padding-left: 1.15rem;
+      }
+
+      .article blockquote {
+        margin: 12px 0;
+        padding: 10px 12px;
+        border-left: 3px solid var(--amber);
+        background: rgba(244, 201, 93, 0.06);
+        border-radius: 8px;
+        color: #ddd4bd;
+        break-inside: avoid;
+      }
+
+      .article pre,
+      .article code {
+        font-family: "JetBrains Mono", "IBM Plex Mono", monospace;
+      }
+
+      .article pre {
+        background: #030303;
+        border: 1px solid #242424;
+        border-radius: 8px;
+        padding: 12px;
+        font-size: 8.8px;
+        line-height: 1.55;
+        overflow-wrap: break-word;
+        white-space: pre-wrap;
+        break-inside: avoid;
+      }
+
+      .article code {
+        color: var(--cyan);
+        background: transparent;
+        padding: 0;
+      }
+
+      .diagram-card {
+        margin: 14px 0;
+        padding: 14px;
+        background: var(--surface);
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        overflow-x: auto;
+        break-inside: avoid;
+      }
+
+      .mermaid {
+        display: flex;
+        justify-content: center;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+        margin: 14px 0;
+        break-inside: avoid;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 8.8px;
+      }
+
+      th,
+      td {
+        padding: 7px;
+        border-bottom: 1px solid #202020;
+        text-align: left;
+      }
+
+      th {
+        color: var(--cyan);
+        font-weight: 600;
+        border-bottom: 1px solid #333;
+      }
+
+      td {
+        color: #cfcfcf;
+      }
+
+      a {
+        color: var(--cyan);
+      }
+
+      .definition-block,
+      .revision-block,
+      .takeaway-block {
+        background: var(--surface);
+        border-radius: 8px;
+        padding: 12px 14px;
+        margin: 12px 0;
+        break-inside: avoid;
+      }
+
+      .definition-block {
+        border-left: 3px solid var(--violet);
+      }
+
+      .revision-block {
+        background: rgba(142, 230, 163, 0.06);
+        border: 1px solid rgba(142, 230, 163, 0.22);
+      }
+
+      .takeaway-block {
+        border-left: 3px solid var(--green);
+      }
+
+      .trap-item {
+        background: rgba(244, 201, 93, 0.06);
+        border-left: 3px solid var(--amber);
+        border-radius: 8px;
+        padding: 10px 13px;
+        margin: 8px 0;
+        break-inside: avoid;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <p class="eyebrow">LearnOS Daily / DAY 14</p>
+        <h1>Mutex, Locks, and Semaphores</h1>
+        <p class="meta-line">40 min read - 5 min revision - Intermediate - Prerequisites: Day 13</p>
+        <p class="subtitle">Interviewers often probe semantic differences and correct use.</p>
+        <div class="revision-strip"><span>Day 13 - Race Conditions - R1 - Previous day reinforcement</span><span>Day 11 - Thread Basics - R2 - Three-day spaced recall</span></div>
+      </section>
+      <article class="article"><p>Difficulty: Intermediate<br>
+Fresh Learning: 40 minutes<br>
+Revision: 5 minutes<br>
+Prerequisites: Day 13 - Race Conditions; critical sections; shared address space; basic thread scheduling<br>
+Why this topic matters in interviews: Interviewers often probe whether you know the semantic difference between a mutex, a binary semaphore, and a counting semaphore, and whether you can choose the right primitive without creating races, deadlocks, starvation, or unnecessary performance loss.</p>
+<p>Imagine an online ticketing server selling the last seat for a concert. Two requests arrive at nearly the same time. Both read “1 seat left.” Both try to reserve it. If the update is not protected, the system may sell the same seat twice. Race conditions explained the bug yesterday. Today is about the tools used to stop that bug from happening.</p>
+<p>Locks, mutexes, and semaphores are operating-system synchronization tools. They exist because threads are useful only if shared state can be protected. Without synchronization, shared memory becomes fast but unsafe. With synchronization, the OS and runtime can enforce rules such as “only one thread may update this data at a time” or “only five threads may use this limited resource at once.”</p>
+<p>The key idea is not “add a lock everywhere.” The key idea is to protect the correct critical section with the correct primitive for the invariant you care about.</p>
+<h2>Interview Definition</h2>
+<p>A mutex is a mutual-exclusion lock that allows only one thread to enter a protected critical section at a time, usually with ownership: the thread that locks it should unlock it. A semaphore is a synchronization counter controlled by wait and signal operations; it can represent either a single permit or multiple identical permits. Locks are the general idea of restricting access; mutexes and semaphores are specific tools used to implement coordination.</p>
+<p>In an interview, say: use a mutex to protect shared data that must be modified by one thread at a time. Use a counting semaphore to limit access to a fixed number of identical resources, such as database connections. A binary semaphore can behave like a one-permit gate, but unlike a mutex it is usually not ownership-based.</p>
+<h2>Key Definitions</h2>
+<ul>
+<li>Lock: a general synchronization mechanism that restricts access to a critical section or resource.</li>
+<li>Mutex: a mutual-exclusion lock with ownership; one thread acquires it, enters the critical section, and the same thread releases it.</li>
+<li>Critical section: code that accesses shared mutable state and must be protected from unsafe concurrent execution.</li>
+<li>Binary semaphore: a semaphore with only 0 or 1 permit available.</li>
+<li>Counting semaphore: a semaphore whose count represents multiple available permits for identical resources.</li>
+<li>Wait/P operation: decrements a semaphore if a permit is available; otherwise blocks or waits.</li>
+<li>Signal/V operation: increments a semaphore and may wake a waiting thread.</li>
+<li>Blocking lock: a lock that puts the waiting thread to sleep when the lock is unavailable.</li>
+<li>Spinlock: a lock where the waiting thread repeatedly checks until the lock becomes available.</li>
+<li>Ownership: the rule that the thread that acquired the lock is responsible for releasing it.</li>
+</ul>
+<h2>Mental Model</h2>
+<p>Think of a mutex as the only key to a small room where a shared whiteboard is updated. If one person has the key, nobody else can enter and modify the whiteboard. The key is owned: the person who took it must return it.</p>
+<p>Think of a counting semaphore as a tray of limited entry passes. If a database pool has five connections, the tray starts with five passes. A worker must take one pass before using a connection and return it when done. The pass does not necessarily identify a specific connection by itself; it controls the number of concurrent users.</p>
+<p>The useful interview distinction is:</p>
+<ul>
+<li>Mutex protects correctness of a shared invariant.</li>
+<li>Semaphore controls availability of permits.</li>
+<li>Binary semaphore can look like a lock, but the ownership semantics are different.</li>
+<li>Spin versus block is about what a waiting thread does while it cannot proceed.</li>
+</ul>
+<h2>Layer 1: What happens at a high level?</h2>
+<p>At a high level, synchronization creates an ordering rule around shared state. Yesterday’s race-condition example showed that <code>counter++</code> is not one indivisible operation. It is a read, a modification, and a write. A mutex makes that entire logical update behave like a protected region.</p>
+<p>Without a mutex:</p>
+<pre><code class="language-txt">Thread A reads counter = 10
+Thread B reads counter = 10
+Thread A writes counter = 11
+Thread B writes counter = 11
+</code></pre>
+<p>The expected result was 12, but the actual result is 11.</p>
+<p>With a mutex:</p>
+<pre><code class="language-txt">Thread A locks mutex
+Thread A reads counter = 10
+Thread A writes counter = 11
+Thread A unlocks mutex
+Thread B locks mutex
+Thread B reads counter = 11
+Thread B writes counter = 12
+Thread B unlocks mutex
+</code></pre>
+<p>The scheduler may still switch between threads, but it cannot let both threads execute the protected counter update at the same time if both follow the same mutex rule.</p>
+<p>Semaphores solve a related but different problem. Suppose a server has only 10 database connections. You do not want one thread at a time; you want up to 10 threads at a time. A counting semaphore starts at 10. Each worker waits before using the pool and signals when it returns the resource. If all 10 permits are in use, the next worker waits.</p>
+<h2>Layer 2: What happens inside the OS?</h2>
+<p>Inside the OS or threading runtime, a mutex is represented by small shared state: locked or unlocked, optional owner thread, and a queue or list of waiters. When a thread tries to acquire a locked mutex, the implementation must choose whether to spin briefly, block, or use a hybrid strategy.</p>
+<p>Blocking usually means the thread is moved out of the running state and placed into a waiting state. The scheduler can give the CPU to another runnable thread. When the mutex is released, one or more waiting threads may be woken and moved back to the ready queue.</p>
+<p>Semaphore internals are similar, but the central value is a counter rather than a simple owned lock. A wait operation checks the count:</p>
+<ul>
+<li>If count is greater than 0, decrement it and proceed.</li>
+<li>If count is 0, block or wait.</li>
+</ul>
+<p>A signal operation increments the count or wakes a waiting thread. In many implementations, the wake-up and counter update must be atomic so that no permit is lost.</p>
+<p>The OS is not protecting your business rule by itself. It only enforces the primitive’s rule. If one code path updates a shared list under a mutex and another code path updates the same list without the mutex, the program is still unsafe.</p>
+<h2>Layer 3: What happens at hardware or kernel level?</h2>
+<p>At the lowest level, synchronization depends on atomic CPU instructions and memory-ordering rules. A lock implementation needs a way to change lock state without two cores both believing they acquired the same lock. CPUs provide instructions such as test-and-set, compare-and-swap, exchange, load-linked/store-conditional, or similar atomic operations depending on architecture.</p>
+<p>A simplified spinlock acquisition might look like this:</p>
+<pre><code class="language-c">while (atomic_exchange(&amp;lock, 1) == 1) {
+    // keep trying until the old value was 0
+}
+</code></pre>
+<p>The atomic exchange is the important part. If two CPU cores execute it at the same time, the hardware still serializes the update so only one core observes the unlocked value first.</p>
+<p>Kernel implementations also care about memory visibility. Lock acquire and lock release often act as memory barriers. That means writes made inside the critical section become visible in the right order to another thread that later acquires the same lock. Without these ordering guarantees, one CPU core might see stale or reordered values.</p>
+<p>In kernel code, spinlocks are common when the protected section is tiny and sleeping is not allowed, such as in interrupt-sensitive paths. In user-level application code, blocking mutexes are usually preferred for longer waits because spinning wastes CPU time.</p>
+<h2>Layer 4: What can go wrong?</h2>
+<p>Synchronization fixes races only when used correctly. It can also introduce new problems.</p>
+<p>Deadlock happens when threads wait forever for resources held by each other. For example, Thread A holds <code>lock_user</code> and waits for <code>lock_account</code>, while Thread B holds <code>lock_account</code> and waits for <code>lock_user</code>.</p>
+<p>Starvation happens when a thread keeps waiting because other threads repeatedly get the lock first. This can happen with unfair locks or priority scheduling interactions.</p>
+<p>Priority inversion happens when a low-priority thread holds a lock needed by a high-priority thread, while medium-priority threads keep running and delay the low-priority thread from releasing the lock. Some systems use priority inheritance to reduce this.</p>
+<p>Performance collapse happens when the lock is too coarse. If every operation grabs one global lock, threads spend more time waiting than doing useful work.</p>
+<p>Incorrect release is also dangerous. Releasing a mutex from a thread that did not acquire it may be an error. Signaling a semaphore too many times can create phantom permits and allow too many threads into a resource-limited region.</p>
+<h2>Step-by-Step Flow</h2>
+<h3>Mutex-protected update</h3>
+<ol>
+<li>Thread reaches code that updates shared state.</li>
+<li>Thread calls <code>lock(mutex)</code>.</li>
+<li>If the mutex is free, the thread becomes the owner.</li>
+<li>If the mutex is already locked, the thread waits or spins depending on implementation.</li>
+<li>The owner executes the critical section.</li>
+<li>The owner updates the shared invariant completely.</li>
+<li>The owner calls <code>unlock(mutex)</code>.</li>
+<li>The mutex becomes available and one waiting thread may be woken.</li>
+</ol>
+<h3>Counting semaphore resource access</h3>
+<ol>
+<li>A resource pool starts with N equivalent resources.</li>
+<li>The semaphore count is initialized to N.</li>
+<li>A worker calls <code>wait(semaphore)</code> before using the pool.</li>
+<li>If count is positive, count is decremented and the worker proceeds.</li>
+<li>If count is zero, the worker waits.</li>
+<li>After using the resource, the worker calls <code>signal(semaphore)</code>.</li>
+<li>The count increases or a waiting worker is allowed to proceed.</li>
+</ol>
+<h2>Diagram Section</h2>
+<h3>Mutex critical-section flow</h3>
+<div class="diagram-card"><div class="mermaid">flowchart TD
+    A[Thread wants shared data] --&gt; B{Mutex free?}
+    B -- Yes --&gt; C[Acquire mutex]
+    B -- No --&gt; D[Wait or spin]
+    D --&gt; B
+    C --&gt; E[Execute critical section]
+    E --&gt; F[Update shared invariant]
+    F --&gt; G[Release mutex]
+    G --&gt; H[Another thread may proceed]
+</div></div><p>This diagram shows why the mutex must wrap the entire invariant update, not only one assignment line. The protected region should contain the full read-modify-write sequence.</p>
+<h3>Counting semaphore permits</h3>
+<div class="diagram-card"><div class="mermaid">sequenceDiagram
+    participant W1 as Worker 1
+    participant W2 as Worker 2
+    participant W3 as Worker 3
+    participant S as Semaphore count = 2
+    participant P as Resource Pool
+    W1-&gt;&gt;S: wait()
+    S--&gt;&gt;W1: permit granted, count = 1
+    W1-&gt;&gt;P: use resource
+    W2-&gt;&gt;S: wait()
+    S--&gt;&gt;W2: permit granted, count = 0
+    W2-&gt;&gt;P: use resource
+    W3-&gt;&gt;S: wait()
+    S--&gt;&gt;W3: block, no permit
+    W1-&gt;&gt;S: signal()
+    S--&gt;&gt;W3: wake and grant permit
+    W3-&gt;&gt;P: use resource
+</div></div><p>The semaphore is not protecting one specific object like a mutex usually does. It is limiting how many workers can use a set of equivalent resources at the same time.</p>
+<h3>Lock-order deadlock risk</h3>
+<div class="diagram-card"><div class="mermaid">flowchart LR
+    A[Thread A holds Lock 1] --&gt; B[Thread A waits for Lock 2]
+    C[Thread B holds Lock 2] --&gt; D[Thread B waits for Lock 1]
+    B --&gt; C
+    D --&gt; A
+</div></div><p>The fix is usually to enforce a consistent lock ordering rule, reduce nested locks, use timeouts carefully, or redesign the shared-state ownership.</p>
+<h2>Practical System Relevance</h2>
+<p>In Linux user programs, POSIX mutexes and semaphores are common abstractions exposed through pthreads and related APIs. The kernel also uses locks internally to protect shared structures such as run queues, filesystem metadata, memory-management structures, and device-driver state. Linux often uses spinlocks in kernel paths where sleeping is not valid, and sleeping locks where waiting may take longer.</p>
+<p>In Windows, synchronization objects include mutexes, semaphores, critical sections, events, and slim reader-writer locks. A Windows mutex can be used across processes, while a critical section is usually process-local and optimized for threads inside one process.</p>
+<p>In Android, Java and Kotlin code often use synchronized blocks, locks, semaphores, handlers, coroutines, and executors to coordinate background work with the main UI thread. The reason UI frameworks restrict direct background-thread UI updates is that shared UI state must remain consistently ordered.</p>
+<p>In browsers, the JavaScript main thread avoids many shared-memory races by running one event at a time, but browser engines themselves use many locks internally across rendering, networking, storage, and compositing threads. SharedArrayBuffer and Web Workers require explicit synchronization mechanisms because they reintroduce shared memory.</p>
+<p>In databases, locks and semaphores show up as row locks, table locks, latch-like internal locks, connection-pool semaphores, transaction locks, and isolation mechanisms. A database connection pool is a classic counting-semaphore example.</p>
+<p>In servers and cloud systems, mutexes protect in-process caches, rate-limiter counters, refresh-token state, metrics buffers, and job queues. Semaphores limit expensive concurrency: maximum uploads, maximum active database calls, maximum background jobs, or maximum outbound requests.</p>
+<h2>Code or Pseudocode Section</h2>
+<h3>Mutex around a shared counter</h3>
+<pre><code class="language-c">pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+int counter = 0;
+
+void increment(void) {
+    pthread_mutex_lock(&amp;lock);
+    counter = counter + 1;
+    pthread_mutex_unlock(&amp;lock);
+}
+</code></pre>
+<p>This demonstrates mutual exclusion. The important part is that every access path that modifies <code>counter</code> must follow the same locking rule. If one function increments without the mutex, the invariant is not protected.</p>
+<h3>Semaphore for a connection pool</h3>
+<pre><code class="language-c">sem_t permits;
+
+void init_pool(void) {
+    sem_init(&amp;permits, 0, 5); // five connections may be used concurrently
+}
+
+void handle_request(void) {
+    sem_wait(&amp;permits);
+    use_database_connection();
+    sem_post(&amp;permits);
+}
+</code></pre>
+<p>This demonstrates capacity control. The semaphore does not say which exact connection object is used. It says only that no more than five request handlers should enter the limited region.</p>
+<h3>Safer cleanup shape</h3>
+<pre><code class="language-c">pthread_mutex_lock(&amp;lock);
+// update shared state
+pthread_mutex_unlock(&amp;lock);
+</code></pre>
+<p>In real code, be careful with early returns, exceptions, and error paths. Many languages provide RAII, <code>defer</code>, <code>finally</code>, or scoped locks so the release happens even if the protected code exits early.</p>
+<h3>Observation commands</h3>
+<pre><code class="language-bash">top -H -p &lt;pid&gt;
+ps -L -p &lt;pid&gt;
+strace -f ./program
+perf top
+</code></pre>
+<p>Use <code>top -H</code> or <code>ps -L</code> to observe threads. Use <code>strace -f</code> to see futex-like waiting behavior on Linux when user-space mutexes need kernel help. Use performance tools to detect time spent waiting on locks, high context-switch rates, or CPU wasted in spin loops.</p>
+<h2>Common Misconceptions</h2>
+<ul>
+<li>“A mutex and a semaphore are the same.” False. A mutex protects a critical section with ownership. A semaphore controls permits and may allow more than one thread.</li>
+<li>“A binary semaphore is always a mutex.” False. It can behave like a one-permit gate, but typical semaphore semantics do not enforce the same ownership rule as a mutex.</li>
+<li>“Locks remove all concurrency bugs.” False. They help only if they protect the correct data, all access paths obey the rule, and lock ordering is safe.</li>
+<li>“Spinlocks are faster than blocking locks.” Not always. Spinning can be faster for tiny waits, but it wastes CPU if the lock is held for long.</li>
+<li>“One global lock is the safest design.” It may be simple, but it can destroy concurrency and create large contention bottlenecks.</li>
+<li>“Semaphores are only for mutual exclusion.” Counting semaphores are often better understood as capacity controllers.</li>
+<li>“Unlocking is just cleanup.” Unlocking is part of correctness. It publishes the completed update and allows progress.</li>
+<li>“Volatile replaces locks.” It does not provide mutual exclusion or protect compound invariants.</li>
+</ul>
+<h2>Tricky Interview Corners</h2>
+<h3>Why context matters more than names</h3>
+<p>Different languages and operating systems use slightly different names. The interview goal is not to memorize every API. The goal is to explain the semantics: ownership, permit count, blocking behavior, fairness, and the invariant being protected.</p>
+<h3>Why a mutex should be released by the owner</h3>
+<p>Ownership prevents one thread from accidentally opening a critical section while another thread is still relying on exclusive access. If non-owners could casually unlock a mutex, reasoning about shared-state correctness would become much harder.</p>
+<h3>Why spinlocks exist at all</h3>
+<p>If a lock is held for only a few CPU instructions, putting the thread to sleep and waking it later may cost more than briefly spinning. Kernel code also has contexts where sleeping is not allowed. That is why spinlocks exist, even though they are dangerous for long waits.</p>
+<h3>Why semaphore over-release is a serious bug</h3>
+<p>If a counting semaphore starts at 5 and code accidentally signals twice after one resource use, the count may grow beyond the real resource capacity. Then the program may allow more workers than resources, defeating the entire purpose.</p>
+<h3>Why locks can reduce performance</h3>
+<p>Locks serialize work. If many threads fight for the same lock, a multicore program can behave like a single-threaded program plus extra overhead. Lock contention also causes context switches, cache invalidation, and scheduling delays.</p>
+<h2>Comparison Tables</h2>
+<h3>Mutex vs Binary Semaphore vs Counting Semaphore</h3>
+<div class="table-wrap"><table><thead>
+<tr>
+<th>Feature</th>
+<th>Mutex</th>
+<th>Binary Semaphore</th>
+<th>Counting Semaphore</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Main purpose</td>
+<td>Protect shared data</td>
+<td>One-permit signaling or gating</td>
+<td>Limit access to N resources</td>
+</tr>
+<tr>
+<td>Count</td>
+<td>Locked/unlocked</td>
+<td>0 or 1</td>
+<td>0 to N or more depending on use</td>
+</tr>
+<tr>
+<td>Ownership</td>
+<td>Usually yes</td>
+<td>Usually no strict ownership</td>
+<td>Usually no strict ownership</td>
+</tr>
+<tr>
+<td>Typical use</td>
+<td>Critical section</td>
+<td>Signal between threads, one-slot gate</td>
+<td>Connection pool, worker limit</td>
+</tr>
+<tr>
+<td>Release rule</td>
+<td>Owner releases</td>
+<td>Any designed signaler may signal</td>
+<td>Releaser returns a permit</td>
+</tr>
+<tr>
+<td>Interview trap</td>
+<td>Too broad or wrong lock</td>
+<td>Calling it identical to mutex</td>
+<td>Over-signaling creates phantom permits</td>
+</tr>
+</tbody>
+</table></div><h3>Blocking vs Spinning</h3>
+<div class="table-wrap"><table><thead>
+<tr>
+<th>Waiting style</th>
+<th>What happens</th>
+<th>Good for</th>
+<th>Risk</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Blocking</td>
+<td>Thread sleeps; scheduler runs another thread</td>
+<td>Longer waits, user apps, I/O waits</td>
+<td>Sleep/wake overhead</td>
+</tr>
+<tr>
+<td>Spinning</td>
+<td>Thread repeatedly checks lock</td>
+<td>Very short waits, low-level kernel paths</td>
+<td>Wastes CPU if wait is long</td>
+</tr>
+<tr>
+<td>Hybrid</td>
+<td>Spin briefly, then block</td>
+<td>Modern runtimes and OS locks</td>
+<td>More complex implementation</td>
+</tr>
+</tbody>
+</table></div><h3>Coarse-Grained vs Fine-Grained Locks</h3>
+<div class="table-wrap"><table><thead>
+<tr>
+<th>Style</th>
+<th>Meaning</th>
+<th>Advantage</th>
+<th>Disadvantage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Coarse-grained</td>
+<td>One lock protects a large structure</td>
+<td>Simple reasoning</td>
+<td>High contention</td>
+</tr>
+<tr>
+<td>Fine-grained</td>
+<td>Multiple locks protect smaller parts</td>
+<td>More concurrency</td>
+<td>More deadlock and ordering risk</td>
+</tr>
+</tbody>
+</table></div><h2>How to Explain This in an Interview</h2>
+<h3>30-second answer</h3>
+<p>A mutex protects a critical section by allowing only one thread at a time, usually with ownership. A semaphore is a counter of permits: wait consumes a permit, signal returns one. Use a mutex when protecting shared data; use a counting semaphore when limiting access to a fixed number of identical resources.</p>
+<h3>2-minute answer</h3>
+<p>Race conditions happen when multiple threads touch shared state without a correct ordering rule. A mutex creates mutual exclusion around the critical section, so one thread completes the protected update before another enters. This is ideal for shared structures like counters, maps, queues, and account balances. A semaphore is different: it represents available permits. A binary semaphore has one permit, while a counting semaphore has multiple permits and is useful for resource pools, such as five database connections. Blocking locks put waiting threads to sleep; spinlocks keep checking and are useful only for very short waits or special kernel contexts. The main dangers are deadlock, starvation, priority inversion, forgotten unlocks, and overly broad locking.</p>
+<h3>Deeper follow-up answer</h3>
+<p>At implementation level, lock acquisition relies on atomic CPU operations such as compare-and-swap or exchange, plus memory-ordering guarantees. If the lock is unavailable, the runtime may spin briefly or ask the kernel to block the thread. On release, waiting threads may be woken. Correctness depends on all access paths obeying the same synchronization discipline. Performance depends on keeping critical sections short, choosing the right granularity, avoiding lock-order cycles, and using semaphores only for permit-style coordination rather than pretending they are always mutexes.</p>
+<h2>Interview Questions</h2>
+<h3>Basic Questions</h3>
+<ol>
+<li>What is a mutex?</li>
+<li>What is a critical section?</li>
+<li>What problem does a lock solve after a race condition is identified?</li>
+<li>What is a semaphore?</li>
+<li>What is the difference between a binary semaphore and a counting semaphore?</li>
+</ol>
+<h3>Intermediate Questions</h3>
+<ol start="6">
+<li>How is a mutex different from a binary semaphore?</li>
+<li>When would you use a counting semaphore instead of a mutex?</li>
+<li>What is the difference between blocking and spinning?</li>
+<li>Why should critical sections usually be short?</li>
+<li>What can go wrong if a lock is not released on every path?</li>
+</ol>
+<h3>Advanced Questions</h3>
+<ol start="11">
+<li>Why are atomic CPU instructions needed to implement locks?</li>
+<li>How can a lock introduce deadlock?</li>
+<li>What is priority inversion, and how can priority inheritance help?</li>
+<li>Why can fine-grained locking improve performance but increase complexity?</li>
+<li>Why is over-signaling a semaphore dangerous?</li>
+</ol>
+<h2>Follow-Up Questions</h2>
+<p>Q: What is a mutex?<br>
+Follow-ups:</p>
+<ul>
+<li>What does ownership mean?</li>
+<li>Can two threads hold the same mutex at the same time?</li>
+<li>What should happen if a thread tries to lock an already locked mutex?</li>
+<li>What is the difference between recursive and non-recursive mutex behavior?</li>
+</ul>
+<p>Q: How is a semaphore different from a mutex?<br>
+Follow-ups:</p>
+<ul>
+<li>Why is a counting semaphore useful for a resource pool?</li>
+<li>Can a semaphore allow more than one thread through?</li>
+<li>What happens when the semaphore count is zero?</li>
+<li>Why can a binary semaphore still be semantically different from a mutex?</li>
+</ul>
+<p>Q: Why are spinlocks sometimes used?<br>
+Follow-ups:</p>
+<ul>
+<li>Why are they bad for long waits?</li>
+<li>Why might kernel code use them?</li>
+<li>What happens to CPU utilization while spinning?</li>
+<li>What is a hybrid lock strategy?</li>
+</ul>
+<p>Q: How do locks cause deadlock?<br>
+Follow-ups:</p>
+<ul>
+<li>What is circular wait?</li>
+<li>How does lock ordering help?</li>
+<li>Can timeouts solve deadlock completely?</li>
+<li>Why will deadlocks appear in the next OS topic sequence?</li>
+</ul>
+<p>Q: What makes a good critical section?<br>
+Follow-ups:</p>
+<ul>
+<li>Should I include I/O inside a lock?</li>
+<li>What happens if the section is too broad?</li>
+<li>What happens if the section is too narrow?</li>
+<li>How do you decide which data a lock protects?</li>
+</ul>
+<h2>Trick Questions</h2>
+<p>Q: If a semaphore has count 1, is it always exactly the same as a mutex?<br>
+Expected answer: No. It can create similar mutual exclusion, but a mutex usually has ownership rules and is intended to protect a critical section. A binary semaphore is a one-permit synchronization counter and may be used for signaling.</p>
+<p>Q: If code uses a lock, is it automatically thread-safe?<br>
+Expected answer: No. The lock must protect the right invariant, and every access path must follow the same rule.</p>
+<p>Q: Is a spinlock always faster because it avoids sleep and wake-up?<br>
+Expected answer: No. It can be faster for very short waits, but wastes CPU when the wait is long.</p>
+<p>Q: Can a counting semaphore accidentally allow too much concurrency?<br>
+Expected answer: Yes. If code signals too many times or initializes the count incorrectly, the semaphore can expose more permits than real resources.</p>
+<p>Q: Should a mutex be held while doing slow network I/O?<br>
+Expected answer: Usually no. Holding a lock across slow I/O increases contention and can cause severe latency or deadlock risks.</p>
+<p>Q: Does a lock prevent context switches?<br>
+Expected answer: No. The scheduler can still switch threads. The lock prevents other cooperating threads from entering the protected critical section.</p>
+<p>Q: Can two different locks still protect the same data safely?<br>
+Expected answer: Only with a very clear protocol. If different code paths use different locks for the same invariant, the data is usually not truly protected.</p>
+<h2>Practical Debugging / Observation</h2>
+<p>When a program has synchronization issues, symptoms often look indirect: high CPU usage, low throughput, rare wrong results, hung requests, or threads waiting forever.</p>
+<p>Useful observations:</p>
+<pre><code class="language-bash">ps -L -p &lt;pid&gt;
+top -H -p &lt;pid&gt;
+strace -f -p &lt;pid&gt;
+perf top
+</code></pre>
+<p>What to look for:</p>
+<ul>
+<li>Many threads sleeping can mean blocking on locks, I/O, or condition variables.</li>
+<li>High CPU with little progress can mean spinning, busy waiting, or lock contention.</li>
+<li>A process stuck in futex-related waits on Linux often indicates user-space synchronization that needed kernel blocking.</li>
+<li>Long request latency with low CPU can mean threads are blocked on a shared resource, connection pool, or global lock.</li>
+<li>Rare wrong results usually point back to missing or incomplete synchronization, not just performance.</li>
+</ul>
+<p>In interviews, do not claim you would “just add more threads.” If the bottleneck is lock contention or a small semaphore-limited pool, more threads can make the system worse.</p>
+<h2>Mini Quiz</h2>
+<h3>MCQs</h3>
+<ol>
+<li>
+<p>Which primitive is best for protecting one shared map from concurrent updates?
+A. Counting semaphore initialized to 100<br>
+B. Mutex<br>
+C. Sleep call<br>
+D. More threads<br>
+Answer: B</p>
+</li>
+<li>
+<p>A semaphore initialized to 5 is best described as:
+A. A five-owner mutex<br>
+B. A permit counter allowing up to five concurrent entries<br>
+C. A CPU scheduler<br>
+D. A memory allocator<br>
+Answer: B</p>
+</li>
+<li>
+<p>What is a major risk of holding a lock too long?
+A. More concurrency<br>
+B. Lower contention<br>
+C. Reduced throughput and higher latency<br>
+D. Automatic deadlock prevention<br>
+Answer: C</p>
+</li>
+<li>
+<p>What does a spinlock do while waiting?
+A. Sleeps until an interrupt<br>
+B. Repeatedly checks for availability<br>
+C. Sends an email<br>
+D. Creates a new process<br>
+Answer: B</p>
+</li>
+<li>
+<p>Why are atomic instructions needed for lock implementation?
+A. To make file systems faster<br>
+B. To ensure only one thread can change lock state first<br>
+C. To avoid all context switches<br>
+D. To disable virtual memory<br>
+Answer: B</p>
+</li>
+</ol>
+<h3>Short-Answer Questions</h3>
+<ol>
+<li>
+<p>Define mutex in one sentence.<br>
+Answer: A mutex is an ownership-based mutual-exclusion lock used to allow only one thread at a time into a protected critical section.</p>
+</li>
+<li>
+<p>Give one real use of a counting semaphore.<br>
+Answer: Limiting a web server to at most N active database connections from a fixed-size connection pool.</p>
+</li>
+<li>
+<p>Why is a binary semaphore not always the same as a mutex?<br>
+Answer: A binary semaphore has one permit, but a mutex usually has ownership semantics and is specifically meant for critical-section protection.</p>
+</li>
+</ol>
+<h3>Reasoning Questions</h3>
+<ol>
+<li>
+<p>A service has 200 request threads but only 20 database connections. Which primitive fits the connection limit and why?<br>
+Answer: A counting semaphore initialized to 20 fits because it represents 20 permits for 20 equivalent database connections.</p>
+</li>
+<li>
+<p>Two threads deadlock because one takes lock A then B and the other takes lock B then A. What design rule helps?<br>
+Answer: Enforce a global lock ordering rule, such as always acquiring A before B, or redesign to avoid nested locking.</p>
+</li>
+</ol>
+<h1>5-Minute Revision Column</h1>
+<p>Revision Targets:</p>
+<ul>
+<li>Day 13: Race Conditions - R1 Recall Revision</li>
+<li>Day 11: Thread Basics - R2 Compression Revision</li>
+</ul>
+<h2>Day 13 - Race Conditions (R1)</h2>
+<p>Core recall: A race condition is a correctness bug where the final result depends on unpredictable timing or interleaving between execution flows. It usually appears when multiple threads, processes, interrupts, or async tasks access shared state and at least one writes without proper synchronization. The classic lost-update bug happens when two threads both read the same old value, compute separately, and write back a result that overwrites one update.</p>
+<p>Key definitions:</p>
+<ul>
+<li>Shared data: state visible to more than one execution flow.</li>
+<li>Critical section: code that touches shared mutable state and must be protected.</li>
+<li>Atomic operation: an operation that appears indivisible to other threads.</li>
+</ul>
+<p>Pitfalls:</p>
+<ul>
+<li>Race conditions do not require multiple CPU cores; preemption on one core is enough.</li>
+<li><code>counter++</code> is not automatically atomic.</li>
+<li>Locks help only if they protect the entire invariant and all access paths obey the same rule.</li>
+</ul>
+<p>Tricky questions:</p>
+<ol>
+<li>If a race appears only once in a million runs, is it still a real bug? Yes.</li>
+<li>If two threads only read immutable data, is that a race? Usually no.</li>
+</ol>
+<p>One-line memory: Race condition = timing-dependent correctness failure on shared state.</p>
+<h2>Day 11 - Thread Basics (R2)</h2>
+<p>Core recall:</p>
+<ul>
+<li>A process owns resources; a thread executes instructions inside those resources.</li>
+<li>Threads in the same process share code, heap, globals, and open files.</li>
+<li>Each thread has its own stack, registers, program counter, and scheduling state.</li>
+<li>Threads improve responsiveness and concurrency, but they make shared-memory correctness harder.</li>
+<li>Too many threads can increase context switching, memory use, and lock contention.</li>
+</ul>
+<p>Definitions:</p>
+<ul>
+<li>Thread: smallest schedulable execution unit inside a process.</li>
+<li>TCB: thread-specific metadata needed to stop and resume a thread.</li>
+</ul>
+<p>Example: A browser can use threads for networking, rendering, background work, and UI responsiveness while sharing process resources.</p>
+<p>Pitfalls:</p>
+<ul>
+<li>Threads are not the same as processes.</li>
+<li>Threads are not always faster; synchronization overhead can dominate.</li>
+</ul>
+<p>Tricky questions:</p>
+<ol>
+<li>Do threads in the same process share the same stack? No.</li>
+<li>If one kernel-level thread blocks on I/O, can another thread in the same process run? Yes, if it is ready.</li>
+</ol>
+<p>One-line memory: Threads are cheap execution paths inside a process, powerful because they share memory and risky for the same reason.</p>
+<h2>Final Takeaway</h2>
+<p>Mutexes, locks, and semaphores are synchronization tools used to turn unsafe concurrent access into controlled coordination. A mutex is best for protecting shared data and critical sections. A counting semaphore is best for limiting access to a fixed number of identical resources. Blocking and spinning are different waiting strategies, and each has a cost. Correct synchronization requires choosing the right primitive, protecting the right invariant, keeping critical sections short, and avoiding deadlock-prone lock ordering.</p>
+<h2>What You Should Be Able To Answer Now</h2>
+<ul>
+<li>Explain why race conditions lead naturally to locks and semaphores.</li>
+<li>Define mutex, binary semaphore, and counting semaphore.</li>
+<li>Compare mutex ownership with semaphore permit counting.</li>
+<li>Choose between a mutex and a counting semaphore for practical scenarios.</li>
+<li>Explain blocking versus spinning.</li>
+<li>Describe how atomic CPU instructions help implement locks.</li>
+<li>Identify deadlock, starvation, priority inversion, and over-signaling risks.</li>
+<li>Answer interview follow-ups about critical-section design and lock granularity.</li>
+</ul>
+</article>
+    </main>
+    <script>
+      (() => {
+        const article = document.querySelector(".article");
+        if (!article) return;
+        const chapterMap = {
+          "Opening Intuition": ["01", "Opening Intuition", "Why this concept exists in real systems before formal definition."],
+          "Interview Definition": ["02", "Interview Definition", "A clean interview-ready explanation with precise language."],
+          "Mental Model": ["03", "Mental Model", "A compact analogy that maps theory to practical recall."],
+          "Layer 1: What happens at a high level?": ["04", "Core Theory", "What the OS manages and how abstraction/resource management fit together."],
+          "Layer 2: What happens inside the OS?": ["05", "System Internals", "Kernel boundaries, data structures, and service flow inside the OS."],
+          "Step-by-Step Flow": ["06", "Step-by-Step Flow", "Concrete execution sequence you can narrate in interviews."],
+          "Practical System Relevance": ["07", "Practical Examples", "How the concept appears in Linux, Windows, Android, servers, and cloud."],
+          "Common Misconceptions": ["08", "Common Misconceptions", "High-frequency mistakes and what to say instead."],
+          "Tricky Interview Corners": ["09", "Tricky Interview Corners", "Edge cases and deeper follow-up traps interviewers probe."],
+          "Interview Questions": ["10", "Interview Questions", "Layered practice questions from basic to advanced."],
+          "5-Minute Revision Column": ["11", "5-Minute Revision Column", "Compressed spaced-repetition recall from prior targets."],
+          "Final Takeaway": ["12", "Final Takeaway", "The final memory model and what you should be able to answer now."]
+        };
+
+        const wrapAfterHeading = (title, className) => {
+          const heading = Array.from(article.querySelectorAll("h2")).find((el) => el.textContent?.trim() === title);
+          if (!heading) return;
+          const wrap = document.createElement("div");
+          wrap.className = className;
+          let node = heading.nextElementSibling;
+          while (node && node.tagName !== "H2") {
+            const next = node.nextElementSibling;
+            wrap.appendChild(node);
+            node = next;
+          }
+          heading.insertAdjacentElement("afterend", wrap);
+        };
+
+        wrapAfterHeading("Interview Definition", "definition-block");
+        wrapAfterHeading("5-Minute Revision Column", "revision-block");
+        wrapAfterHeading("Final Takeaway", "takeaway-block");
+        wrapAfterHeading("What You Should Be Able To Answer Now", "takeaway-block");
+
+        article.querySelectorAll("h2").forEach((heading) => {
+          const text = heading.textContent?.trim() ?? "";
+          const chapter = chapterMap[text];
+          if (!chapter) return;
+          const opener = document.createElement("div");
+          opener.className = "section-opener";
+          opener.innerHTML = "<div class=\"section-kicker\">SECTION " + chapter[0] + " / " + chapter[1].toUpperCase() + "</div><div class=\"section-summary\">" + chapter[2] + "</div>";
+          heading.insertAdjacentElement("beforebegin", opener);
+        });
+
+        const misconceptions = Array.from(article.querySelectorAll("h2")).find(
+          (el) => el.textContent?.trim() === "Common Misconceptions"
+        );
+        if (misconceptions) {
+          let node = misconceptions.nextElementSibling;
+          while (node && node.tagName !== "H2") {
+            if (node.tagName === "OL") {
+              node.querySelectorAll("li").forEach((li) => li.classList.add("trap-item"));
+            }
+            node = node.nextElementSibling;
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>

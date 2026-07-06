@@ -1,0 +1,92 @@
+{
+  "day": 15,
+  "topic": "Classical Synchronization Problems",
+  "difficulty": "Intermediate",
+  "core_summary": [
+    "Classical synchronization problems are well-known concurrency scenarios used to model common coordination challenges among threads or processes. Producer-consumer models bounded buffers, readers-writers models shared data with many readers and fewer writers, dining philosophers models circular waiting and deadlock, and sleeping barber models waiting-room capacity and service coordination. They help interviewers test whether you can combine mutual exclusion, condition synchronization, ordering, and fairness.",
+    "In an interview, say: these problems are templates for reasoning about shared state. Producer-consumer is about buffer capacity and empty/full conditions. Readers-writers is about allowing concurrent reads but exclusive writes. Dining philosophers is about avoiding circular wait. The real skill is identifying the invariant, the waiting condition, and the failure mode."
+  ],
+  "key_definitions": {
+    "Producer-consumer problem": "a synchronization problem where producer threads add items to a shared buffer and consumer threads remove items from it.",
+    "Bounded buffer": "a fixed-capacity queue or storage area shared by producers and consumers.",
+    "Condition synchronization": "coordination where a thread waits until a required condition becomes true, such as &quot;buffer not empty&quot; or &quot;buffer not full.&quot;",
+    "Readers-writers problem": "a synchronization problem where multiple readers may access shared data concurrently, but writers require exclusive access.",
+    "Reader preference": "a readers-writers policy that favors readers and can delay writers.",
+    "Writer preference": "a readers-writers policy that gives waiting writers priority and can delay readers.",
+    "Dining philosophers problem": "a deadlock-prone synchronization problem where each participant needs two shared resources and circular waiting may occur.",
+    "Deadlock": "a state where threads wait forever because each is holding a resource and waiting for another resource held by someone else."
+  },
+  "mental_model": "Think of synchronization problems as traffic rules at shared facilities. Producer-consumer is a delivery counter with limited shelves. Producers bring packages to the shelf. Consumers take packages from the shelf. If the shelf is full, producers must wait. If the shelf is empty, consumers must wait. A mutex protects the shelf data structure, while counting semaphores track available empty slots and filled slots. Readers-writers is a library reading room. Many students can read the same book copy if nobody is editing it. But when a librarian updates the book, nobody should read a half-updated version. Readers can share access; writers need exclusive access. The hard part is fairness: if readers keep arriving, a writer may never get a turn.",
+  "core_examples": [
+    {
+      "name": "Opening an application",
+      "point": "The OS loads executable code, creates a process, assigns memory, schedules CPU time, and services I/O."
+    },
+    {
+      "name": "Reading a file",
+      "point": "The app requests bytes while the OS handles permissions, metadata lookup, filesystem mapping, and device access."
+    }
+  ],
+  "practical_uses": [
+    "In Linux, producer-consumer patterns appear in kernel buffers, device-driver queues, network packet queues, pipes, logging paths, and work queues. The exact primitives vary by context: kernel code may use spinlocks where sleeping is not allowed and sleeping locks or wait queues when blocking is valid.",
+    "In Windows, synchronization objects such as mutexes, semaphores, events, condition variables, and slim reader-writer locks support the same patterns. A reader-writer lock is useful for shared configuration, routing tables, or caches that are read often and written occasionally.",
+    "In Android, producer-consumer appears between background worker threads and the main UI thread. Work is posted to queues, and the UI thread consumes messages in order. Long work on the UI thread blocks consumption and makes the app feel frozen.",
+    "In browsers, event loops, task queues, rendering pipelines, network loaders, and storage systems all use producer-consumer shapes. JavaScript hides some shared-memory complexity on the main thread, but browser engines themselves are highly concurrent.",
+    "In databases, readers-writers is central. Many transactions may read shared data, but writes need isolation. Real databases use sophisticated locks, latches, MVCC, and isolation levels, but the interview foundation starts with &quot;readers can share, writers need exclusive access.&quot;",
+    "In servers and cloud systems, bounded buffers protect memory. A service that accepts unlimited queued work can crash under load. A bounded queue plus worker pool is a producer-consumer design with backpressure.",
+    "In containers, the host kernel still schedules threads. A containerized service with a bounded worker queue still needs synchronization. CPU quotas can make poor synchronization worse because blocked or spinning threads compete within limited CPU time."
+  ],
+  "pitfalls": [
+    "&quot;Producer-consumer is only about queues.&quot; False. It is about bounded handoff between producers and consumers. Queues are the common implementation.",
+    "&quot;A mutex alone solves producer-consumer.&quot; Not enough. A mutex protects the buffer, but producers also need to wait when full and consumers need to wait when empty.",
+    "&quot;Readers never need synchronization because they only read.&quot; False. Readers need coordination with writers or they may observe inconsistent data.",
+    "&quot;Readers-writers is always faster than a normal mutex.&quot; Not always. If writes are frequent or critical sections are tiny, reader-writer lock overhead can outweigh the benefit."
+  ],
+  "misconceptions": [
+    "&quot;Producer-consumer is only about queues.&quot; False. It is about bounded handoff between producers and consumers. Queues are the common implementation.",
+    "&quot;A mutex alone solves producer-consumer.&quot; Not enough. A mutex protects the buffer, but producers also need to wait when full and consumers need to wait when empty.",
+    "&quot;Readers never need synchronization because they only read.&quot; False. Readers need coordination with writers or they may observe inconsistent data.",
+    "&quot;Readers-writers is always faster than a normal mutex.&quot; Not always. If writes are frequent or critical sections are tiny, reader-writer lock overhead can outweigh the benefit.",
+    "&quot;Dining philosophers is unrealistic.&quot; The fork story is artificial, but circular wait across multiple locks is extremely real.",
+    "&quot;Deadlock and starvation are the same.&quot; False. Deadlock is a cycle of permanent waiting. Starvation is unfair repeated delay even though progress is possible."
+  ],
+  "tricky_questions": [
+    {
+      "question": "If producer-consumer uses a mutex, can consumers safely remove from an empty buffer?",
+      "answer": "No. The mutex protects the buffer from concurrent mutation, but it does not guarantee that an item exists. Consumers still need to wait for the not-empty condition."
+    },
+    {
+      "question": "If many readers only read, do they need any synchronization?",
+      "answer": "Yes, because writers may update the data concurrently. Readers need coordination with writers to avoid seeing inconsistent state."
+    },
+    {
+      "question": "Is dining philosophers only about philosophers and forks?",
+      "answer": "No. It models any situation where threads acquire multiple resources and may form circular wait."
+    },
+    {
+      "question": "If a writer is waiting, should new readers always be allowed in?",
+      "answer": "It depends on the policy, but always allowing new readers can starve the writer."
+    },
+    {
+      "question": "Does signal guarantee the waiting thread immediately owns the lock?",
+      "answer": "No. Depending on the primitive, it may only make the waiter ready. The waiter usually has to reacquire the lock and re-check the condition."
+    },
+    {
+      "question": "Is a larger buffer always better in producer-consumer?",
+      "answer": "No. Larger buffers can smooth bursts, but they also increase memory usage and latency by allowing more work to wait in the system."
+    },
+    {
+      "question": "Can a deadlock-free solution still starve a thread?",
+      "answer": "Yes. Deadlock freedom does not automatically imply fairness."
+    }
+  ],
+  "interview_ready_answer": {
+    "short": "### 30-second answer",
+    "medium": "Classical synchronization problems are standard patterns for coordinating threads. Producer-consumer handles a bounded buffer with producers adding and consumers removing. Readers-writers allows many readers but requires exclusive writers. Dining philosophers shows how circular wait over multiple resources causes deadlock. The key is to identify the shared state, the waiting condition, and the failure mode."
+  },
+  "revision_history": {
+    "times_revised": 3,
+    "last_revised_on_day": 20,
+    "revision_strength": "R3"
+  }
+}

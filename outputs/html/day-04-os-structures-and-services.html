@@ -1,0 +1,954 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Day 04 - OS Structures and Services</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #070707;
+        --surface: #101010;
+        --surface-soft: #151515;
+        --border: #262626;
+        --text: #d8d8d8;
+        --muted: #8f8f8f;
+        --faint: #5f5f5f;
+        --cyan: #67e8f9;
+        --amber: #f4c95d;
+        --violet: #b79cff;
+        --green: #8ee6a3;
+      }
+
+      @page {
+        size: A4;
+        margin: 18mm 17mm 20mm 17mm;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "JetBrains Mono", "IBM Plex Mono", "Roboto Mono", monospace;
+        font-size: 9.8px;
+        line-height: 1.62;
+      }
+
+      .page {
+        width: min(980px, calc(100vw - 24px));
+        margin: 0 auto;
+        padding: 12px 0 20px;
+      }
+
+      .hero {
+        margin-bottom: 14px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 12px;
+      }
+
+      .eyebrow {
+        margin: 0 0 8px;
+        font-size: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        color: var(--faint);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 24px;
+        line-height: 1.18;
+        letter-spacing: -0.04em;
+        color: #f2f2f2;
+        break-after: avoid;
+      }
+
+      .meta-line {
+        margin-top: 8px;
+        font-size: 8.8px;
+        color: var(--muted);
+      }
+
+      .subtitle {
+        max-width: 760px;
+        margin: 8px 0 0;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .revision-strip {
+        margin-top: 10px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .revision-strip span {
+        display: inline-flex;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: rgba(142, 230, 163, 0.08);
+        border: 1px solid rgba(142, 230, 163, 0.22);
+        color: var(--green);
+        font-size: 8px;
+      }
+
+      .article h2,
+      .article h3,
+      .article h4 {
+        line-height: 1.3;
+        break-after: avoid;
+      }
+
+      .article h2 {
+        margin-top: 24px;
+        margin-bottom: 8px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 5px;
+        font-size: 15px;
+        color: #f2f2f2;
+      }
+
+      .section-opener {
+        margin-top: 30px;
+        margin-bottom: 14px;
+        padding: 12px 14px;
+        background: var(--surface);
+        border-left: 3px solid var(--cyan);
+        border-radius: 8px;
+        break-inside: avoid;
+      }
+
+      .section-kicker {
+        font-size: 8px;
+        color: var(--cyan);
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+      }
+
+      .section-summary {
+        font-size: 9.2px;
+        color: #9ca3af;
+        line-height: 1.55;
+      }
+
+      .article h3 {
+        margin-top: 16px;
+        margin-bottom: 6px;
+        font-size: 12px;
+        color: var(--cyan);
+      }
+
+      .article p,
+      .article li {
+        color: var(--text);
+      }
+
+      p {
+        orphans: 3;
+        widows: 3;
+      }
+
+      .article ul,
+      .article ol {
+        padding-left: 1.15rem;
+      }
+
+      .article blockquote {
+        margin: 12px 0;
+        padding: 10px 12px;
+        border-left: 3px solid var(--amber);
+        background: rgba(244, 201, 93, 0.06);
+        border-radius: 8px;
+        color: #ddd4bd;
+        break-inside: avoid;
+      }
+
+      .article pre,
+      .article code {
+        font-family: "JetBrains Mono", "IBM Plex Mono", monospace;
+      }
+
+      .article pre {
+        background: #030303;
+        border: 1px solid #242424;
+        border-radius: 8px;
+        padding: 12px;
+        font-size: 8.8px;
+        line-height: 1.55;
+        overflow-wrap: break-word;
+        white-space: pre-wrap;
+        break-inside: avoid;
+      }
+
+      .article code {
+        color: var(--cyan);
+        background: transparent;
+        padding: 0;
+      }
+
+      .diagram-card {
+        margin: 14px 0;
+        padding: 14px;
+        background: var(--surface);
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        overflow-x: auto;
+        break-inside: avoid;
+      }
+
+      .mermaid {
+        display: flex;
+        justify-content: center;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+        margin: 14px 0;
+        break-inside: avoid;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 8.8px;
+      }
+
+      th,
+      td {
+        padding: 7px;
+        border-bottom: 1px solid #202020;
+        text-align: left;
+      }
+
+      th {
+        color: var(--cyan);
+        font-weight: 600;
+        border-bottom: 1px solid #333;
+      }
+
+      td {
+        color: #cfcfcf;
+      }
+
+      a {
+        color: var(--cyan);
+      }
+
+      .definition-block,
+      .revision-block,
+      .takeaway-block {
+        background: var(--surface);
+        border-radius: 8px;
+        padding: 12px 14px;
+        margin: 12px 0;
+        break-inside: avoid;
+      }
+
+      .definition-block {
+        border-left: 3px solid var(--violet);
+      }
+
+      .revision-block {
+        background: rgba(142, 230, 163, 0.06);
+        border: 1px solid rgba(142, 230, 163, 0.22);
+      }
+
+      .takeaway-block {
+        border-left: 3px solid var(--green);
+      }
+
+      .trap-item {
+        background: rgba(244, 201, 93, 0.06);
+        border-left: 3px solid var(--amber);
+        border-radius: 8px;
+        padding: 10px 13px;
+        margin: 8px 0;
+        break-inside: avoid;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <p class="eyebrow">LearnOS Daily / DAY 04</p>
+        <h1>OS Structures and Services</h1>
+        <p class="meta-line">40 min read - 5 min revision - Intermediate - Prerequisites: Days 01-03</p>
+        <p class="subtitle">Helps compare kernel designs and the tradeoffs behind them.</p>
+        <div class="revision-strip"><span>Day 03 - Kernel, User Mode, and System Calls - R1 - Previous day reinforcement</span><span>Day 01 - What is an Operating System? - R2 - Three-day spaced recall</span></div>
+      </section>
+      <article class="article"><p>Difficulty: Intermediate<br>
+Fresh Learning: 40 minutes<br>
+Revision: 5 minutes<br>
+Prerequisites: Days 01-03: OS basics, computer architecture, interrupts, kernel mode, user mode, and system calls<br>
+Why this topic matters in interviews: Interviewers use OS structure questions to test whether you understand not just what an OS does, but how design choices affect performance, reliability, security, maintainability, and system-call behavior.</p>
+<h2>Opening Intuition</h2>
+<p>Imagine two machines.</p>
+<p>On the first machine, almost every important OS service lives in one large privileged kernel: file systems, memory management, process scheduling, device drivers, networking, and system-call handling. When an application reads a file or sends a packet, the request quickly enters this privileged core, and the kernel can coordinate many services with low overhead.</p>
+<p>On the second machine, the kernel is intentionally tiny. It mainly provides low-level communication, address spaces, and scheduling. File systems, device drivers, and many services run as separate user-space servers. If a driver crashes, the whole OS may not collapse. But a simple file read may require more communication between separate components.</p>
+<p>Both machines are trying to solve the same problem: how should an operating system organize its responsibilities?</p>
+<p>This is the topic of OS structures and services. An OS is not just a random collection of code. It has an internal architecture. That architecture decides where services live, how modules communicate, how much code runs with kernel privilege, how failures spread, and how easily the OS can evolve.</p>
+<p>You see these choices every day. Linux is commonly described as a monolithic kernel with strong modularity: much of the core OS work runs in kernel space, while loadable modules allow drivers and features to be added or removed. Windows uses a layered and modular design with a large privileged kernel and executive services. Mobile operating systems build app frameworks and security layers on top of kernel services. Cloud virtual machines depend on hypervisors and virtualization support. Containers rely on one shared kernel but use OS services such as namespaces and cgroups to isolate processes.</p>
+<p>Without structure, an OS would become a fragile pile of code. Every service would depend on every other service. A small driver bug could corrupt memory anywhere. A feature change in one place could unexpectedly break scheduling, file systems, or device handling. Structure gives the OS a way to divide responsibility.</p>
+<p>The tradeoff is that no structure is perfect. A monolithic kernel is fast and direct, but a bug in privileged code can be dangerous. A microkernel improves isolation and separation, but communication overhead and design complexity can rise. A layered system is easier to reason about, but strict layers can be inefficient. A modular kernel is flexible, but modules still often run with high privilege. Virtual machines provide strong isolation, but they add another layer of resource management.</p>
+<p>The interview point is simple: OS design is tradeoff management. The best answer is not “monolithic is bad” or “microkernel is always better.” A strong answer explains what each design optimizes and what cost it pays.</p>
+<h2>Interview Definition</h2>
+<p>OS structure describes how an operating system organizes its kernel, services, drivers, user interfaces, system-call handlers, and resource-management components.</p>
+<p>OS services are the functions the operating system provides to users, applications, and the system itself, such as process management, memory management, file management, I/O handling, protection, security, networking, accounting, and error handling.</p>
+<p>In an interview, say: an OS structure is the architectural design of the operating system, while OS services are the actual capabilities exposed by that design. Monolithic, microkernel, layered, modular, and virtual-machine designs differ mainly in where services run, how they communicate, and what tradeoffs they make between performance, isolation, reliability, and maintainability.</p>
+<h2>Mental Model</h2>
+<p>Think of an operating system as a large hospital.</p>
+<p>The hospital must provide many services: emergency care, surgery, labs, pharmacy, patient records, security, billing, scheduling, and maintenance. One design could place every department in one tightly connected central building. Requests move quickly because everyone is nearby, but a fire or failure in the central building affects many critical functions.</p>
+<p>Another design could keep only emergency coordination in the central building and move labs, pharmacy, records, and maintenance into separate buildings. A lab failure may not shut down surgery, but communication takes more coordination.</p>
+<p>A layered design is like arranging hospital services by authority: public reception, diagnosis, specialist care, operating rooms, and critical infrastructure. A modular design is like allowing new departments to be attached to the hospital without rebuilding it. A virtual-machine design is like splitting one physical hospital campus into multiple isolated mini-hospitals, each believing it has its own building, equipment, and staff.</p>
+<p>This mental model helps because OS structure is about responsibility boundaries:</p>
+<ul>
+<li>Which services are central?</li>
+<li>Which services are separated?</li>
+<li>Which parts are trusted?</li>
+<li>Which failures are isolated?</li>
+<li>Which requests take the shortest path?</li>
+<li>Which design is easier to extend?</li>
+</ul>
+<p>An interviewer wants to hear that you can reason about those boundaries, not just memorize architecture names.</p>
+<h2>Layer 1: What happens at a high level?</h2>
+<p>At a high level, an operating system provides services to applications and users while managing hardware resources underneath.</p>
+<p>Applications ask for services through APIs and system calls. For example, a program may request file access, memory allocation, process creation, network communication, or timer events. The OS receives those requests, checks permissions, coordinates hardware and internal data structures, and returns results.</p>
+<p>The structure of the OS decides the path of that request.</p>
+<p>In a monolithic kernel, many services run inside the kernel address space. A file read may enter the kernel, pass through the system-call layer, reach the virtual file system, interact with cache structures, call a filesystem implementation, and use a device driver, all inside privileged kernel code.</p>
+<p>In a microkernel, the same file read may enter a small kernel, then communicate with a user-space filesystem server and possibly a user-space driver or device service. The kernel mainly coordinates message passing, scheduling, and low-level protection.</p>
+<p>In a layered OS, services are arranged in conceptual levels. Higher layers use lower layers. For example, user programs sit above system-call interfaces, which sit above file and process services, which sit above memory and device control.</p>
+<p>In a modular kernel, the kernel has a core plus modules that can be loaded or unloaded. Device drivers, filesystems, and networking features may be compiled as modules. The system can extend itself without rebuilding the entire kernel.</p>
+<p>In a virtual-machine structure, a hypervisor presents virtual hardware to guest operating systems. Each guest OS believes it controls a machine, but the hypervisor multiplexes the real CPU, memory, storage, and devices.</p>
+<p>The high-level question is always: when an application requests an OS service, how many boundaries does the request cross, and where does the trusted code run?</p>
+<h2>Layer 2: What happens inside the OS?</h2>
+<p>Inside the OS, structure affects both code organization and runtime behavior.</p>
+<p>The system-call interface is usually the front door. A user program calls a library function such as <code>read</code>, <code>CreateFile</code>, <code>socket</code>, <code>fork</code>, or <code>mmap</code>. If the request needs protected OS work, execution crosses from user mode into kernel mode. The kernel then dispatches to the relevant service.</p>
+<p>In a monolithic design, the dispatch often stays inside one privileged address space. The scheduler, memory manager, file system, networking stack, and drivers can share kernel data structures and call each other directly. This is efficient, but it increases the amount of code that can damage the system if it contains a bug.</p>
+<p>In a microkernel design, the kernel tries to keep only essential mechanisms in privileged space. It may provide:</p>
+<ul>
+<li>Address-space management.</li>
+<li>Thread or process scheduling.</li>
+<li>Inter-process communication.</li>
+<li>Low-level interrupt handling.</li>
+<li>Basic synchronization.</li>
+</ul>
+<p>Higher-level services may run as user-space servers:</p>
+<ul>
+<li>Filesystem server.</li>
+<li>Device-driver server.</li>
+<li>Network server.</li>
+<li>Process manager.</li>
+<li>Security service.</li>
+</ul>
+<p>This separation can improve fault isolation. If a user-space driver fails, the kernel may be able to restart it. But operations can require extra message passing and context switches. The design must be careful to avoid turning every common operation into a long chain of communication.</p>
+<p>In a layered design, each layer exposes an interface to the layer above it and relies on services from the layer below it. This helps teaching, verification, and reasoning. However, real operating systems often cannot stay perfectly layered because performance and hardware realities force shortcuts.</p>
+<p>In a modular kernel, the kernel keeps a core architecture but supports dynamically attachable pieces. Linux kernel modules are a common example. A driver can be loaded when hardware appears. A filesystem module can be added without compiling a completely new kernel image. The benefit is flexibility. The risk is that modules may still run in kernel mode, so a bad module can still crash or compromise the kernel.</p>
+<p>Virtual machines add a different kind of structure. The hypervisor creates isolated execution environments. A guest OS runs its own kernel, system calls, page tables, drivers, and services, but the hypervisor ultimately controls physical resources. This is powerful for cloud systems, testing, isolation, and running multiple OSes on one machine.</p>
+<h2>Layer 3: What happens at hardware or kernel level?</h2>
+<p>At the hardware and kernel level, OS structure is shaped by privilege, address spaces, interrupts, traps, and memory protection.</p>
+<p>Kernel code usually runs in a privileged CPU mode. It can execute instructions that user programs cannot, such as changing page tables, configuring interrupt handling, controlling devices, or manipulating privileged CPU state. This is why placing a service inside the kernel is a serious decision. Kernel-space code has speed and direct access, but also high blast radius.</p>
+<p>Memory protection is central. A monolithic kernel typically has one kernel address space where many services share privileged memory. If a driver writes through a bad pointer, it may corrupt unrelated kernel structures. That is why kernel bugs are dangerous.</p>
+<p>A microkernel uses address-space separation more aggressively. Services can run in user space with their own protected memory. Communication happens through inter-process communication rather than direct function calls. This means hardware protection can help contain faults.</p>
+<p>Interrupts also matter. Device interrupts enter the kernel or a low-level handler. In a monolithic kernel, the interrupt path may quickly reach an in-kernel driver. In a microkernel, interrupt handling may be split so the kernel receives the interrupt and notifies a user-space driver or service. That separation improves isolation but requires efficient IPC.</p>
+<p>Virtualization depends heavily on hardware support. Modern CPUs provide virtualization extensions so a guest OS can run efficiently while still being controlled by a hypervisor. The hypervisor must manage privileged instructions, virtual memory translation, virtual devices, and scheduling of virtual CPUs onto physical CPUs. Nested page tables, trap handling, and device virtualization are examples of hardware-level concerns behind virtual machines.</p>
+<p>The key hardware-level insight is this: OS structure is not only an abstract software diagram. It decides how often the CPU crosses protection boundaries, how memory is protected, how interrupts are routed, and how much privileged code the system trusts.</p>
+<h2>Layer 4: What can go wrong?</h2>
+<p>Several things can go wrong depending on the structure.</p>
+<p>In a monolithic kernel, one buggy driver can crash the whole system because drivers often run with kernel privilege. A memory corruption bug in kernel space is much more severe than a normal user-space bug. Security vulnerabilities are also dangerous because compromised kernel code can bypass most protections.</p>
+<p>In a microkernel, the system can become slower or more complex if too many services communicate too often. The design may look clean on paper but require careful optimization in practice. If message passing is inefficient, ordinary operations like file I/O and networking can suffer.</p>
+<p>In a layered OS, strict layering can add overhead or make some features awkward. Real systems often need cross-layer coordination. For example, the memory manager, file cache, and filesystem may need to cooperate closely. If the layers are too rigid, performance can drop.</p>
+<p>In a modular kernel, flexibility can create compatibility and trust problems. A module compiled for the wrong kernel version may fail. A poorly written module can still crash the system. Loading third-party kernel modules also expands the trusted code base.</p>
+<p>In virtual machines, isolation is strong but not free. The hypervisor must share physical resources among guests. A noisy guest can create resource pressure. Virtualized I/O can be slower than native I/O unless paravirtualized drivers or hardware passthrough are used. VM sprawl can also waste resources if many guests run full OS stacks unnecessarily.</p>
+<p>The deeper interview trap is assuming architecture alone guarantees quality. A monolithic kernel can be reliable if engineered carefully. A microkernel can be insecure if services are badly designed. A modular system can be flexible but risky. A virtualized system can be isolated but resource-heavy. Structure gives a design direction, not automatic correctness.</p>
+<h2>Step-by-Step Flow</h2>
+<p>Here is a practical flow for a simple file read request in different OS structures.</p>
+<ol>
+<li>A user program calls a library function such as <code>read(fd, buffer, size)</code>.</li>
+<li>The library places arguments according to the OS ABI and enters the kernel through a system call.</li>
+<li>The kernel validates the file descriptor, buffer pointer, size, and permissions.</li>
+<li>In a monolithic kernel, the request may move through in-kernel file, cache, filesystem, block, and driver layers.</li>
+<li>In a microkernel, the kernel may forward or coordinate the request with a user-space filesystem or device service through IPC.</li>
+<li>In a layered design, the request moves through conceptual layers from user interface to system-call layer to filesystem to device handling.</li>
+<li>In a modular kernel, the active filesystem or driver may be a loaded module attached to the kernel.</li>
+<li>In a virtual machine, the guest OS handles the system call, but its virtual disk operation may be translated by the hypervisor to real storage I/O.</li>
+<li>The OS copies data or maps results safely back to the user process.</li>
+<li>Control returns to user mode with a success value or error code.</li>
+</ol>
+<p>The same user-level operation can therefore travel through different internal paths depending on OS structure.</p>
+<h2>Diagram Section</h2>
+<h3>Diagram 1: OS Service Request Paths</h3>
+<div class="diagram-card"><div class="mermaid">flowchart TD
+    A[User application] --&gt; B[Library API]
+    B --&gt; C[System call boundary]
+    C --&gt; D{OS structure}
+    D --&gt; E[Monolithic kernel: direct in-kernel services]
+    D --&gt; F[Microkernel: kernel plus user-space servers]
+    D --&gt; G[Modular kernel: core plus loaded modules]
+    D --&gt; H[Virtual machine: guest OS plus hypervisor]
+    E --&gt; I[Hardware resources]
+    F --&gt; I
+    G --&gt; I
+    H --&gt; I
+</div></div><p>This diagram shows that the user program may call the same apparent API, but the internal path depends on the OS architecture.</p>
+<h3>Diagram 2: Monolithic vs Microkernel Responsibility Split</h3>
+<div class="diagram-card"><div class="mermaid">flowchart LR
+    subgraph M[Monolithic kernel style]
+      M1[System calls] --&gt; M2[Process manager]
+      M2 --&gt; M3[Memory manager]
+      M3 --&gt; M4[File system]
+      M4 --&gt; M5[Drivers]
+      M5 --&gt; M6[Hardware]
+    end
+    subgraph K[Microkernel style]
+      U1[User app] --&gt; K1[Small kernel]
+      K1 --&gt; S1[Filesystem server]
+      K1 --&gt; S2[Driver server]
+      K1 --&gt; S3[Network server]
+      S1 --&gt; K1
+      S2 --&gt; K1
+      K1 --&gt; H1[Hardware]
+    end
+</div></div><p>The monolithic side keeps many OS services in privileged kernel space. The microkernel side keeps the kernel smaller and moves more services into separate servers.</p>
+<h3>Diagram 3: Virtual Machine Structure</h3>
+<div class="diagram-card"><div class="mermaid">flowchart TB
+    A[Physical hardware] --&gt; B[Hypervisor]
+    B --&gt; C[Guest OS 1]
+    B --&gt; D[Guest OS 2]
+    B --&gt; E[Guest OS 3]
+    C --&gt; C1[Apps and services]
+    D --&gt; D1[Apps and services]
+    E --&gt; E1[Apps and services]
+</div></div><p>Virtualization creates isolated guest operating systems on top of shared physical hardware. Each guest has its own OS structure, while the hypervisor controls real resources.</p>
+<h2>Practical System Relevance</h2>
+<p>In Linux, the kernel is usually described as monolithic but modular. Process scheduling, virtual memory, filesystems, networking, and many drivers run in kernel space. At the same time, Linux supports loadable kernel modules, so drivers and features can be inserted or removed dynamically. This gives performance and flexibility, but loaded modules are still trusted kernel code.</p>
+<p>In Windows, the architecture is layered and modular. It includes user-mode subsystems, system services, the executive, kernel, hardware abstraction layer, drivers, and graphical components. For interview purposes, the important point is that Windows also separates user mode and kernel mode, uses system calls for protected services, and has a structured internal design rather than one flat code pile.</p>
+<p>In Android, applications run in a managed framework environment on top of Linux-kernel foundations. App sandboxing, permissions, Binder IPC, process management, and lifecycle rules all depend on OS services and structure. Android demonstrates that an OS is not only a kernel; the full system includes frameworks, runtime components, user-space services, and security policies.</p>
+<p>In browsers, the browser itself often uses a multi-process structure. The OS provides processes, threads, virtual memory, files, sockets, timers, and sandbox controls. A browser renderer process may be restricted so a bug in web content cannot easily access files or devices. This relies on OS protection services.</p>
+<p>In databases, OS services affect real performance. Databases use file I/O, memory mapping, page cache behavior, fsync, locks, networking, and scheduling. A database may care deeply about whether writes are buffered, when data reaches durable storage, and how the OS schedules worker threads.</p>
+<p>In cloud systems, virtual machines are fundamental. A cloud provider can run many guest OSes on shared physical machines. Hypervisors isolate tenants, allocate CPU and memory, and virtualize devices. Containers provide lighter isolation by sharing the host kernel while using OS-level features such as namespaces and cgroups.</p>
+<p>In embedded systems, microkernel or small-kernel ideas can be attractive because reliability and separation are important. In real-time systems, structure may be chosen to keep timing predictable and minimize unnecessary overhead.</p>
+<h2>Code or Pseudocode Section</h2>
+<p>The following pseudocode shows the difference between a direct in-kernel service path and a microkernel-style message path. It is simplified, but it captures the design idea.</p>
+<pre><code class="language-c">// Monolithic-style simplified path
+ssize_t sys_read(int fd, void *user_buffer, size_t size) {
+    file_t *file = validate_fd(fd);
+    check_user_buffer(user_buffer, size);
+    bytes_t data = vfs_read(file, size);
+    copy_to_user(user_buffer, data);
+    return data.length;
+}
+</code></pre>
+<p>In this model, the system-call handler can directly call kernel services such as the virtual filesystem and lower-level driver paths.</p>
+<pre><code class="language-c">// Microkernel-style simplified path
+ssize_t sys_read(int fd, void *user_buffer, size_t size) {
+    request_t req = build_read_request(fd, size);
+    response_t res = ipc_send(filesystem_server, req);
+    check_response(res);
+    copy_to_user(user_buffer, res.data);
+    return res.length;
+}
+</code></pre>
+<p>In this model, the kernel coordinates communication with a separate service. The benefit is separation. The cost is extra communication and careful coordination.</p>
+<p>You can observe OS services on a Unix-like system with commands such as:</p>
+<pre><code class="language-bash">ps aux
+top
+lsmod
+uname -a
+strace -e trace=openat,read,write ls
+lsof
+</code></pre>
+<p><code>ps</code> and <code>top</code> show process-management services. <code>lsmod</code> shows loaded kernel modules on Linux. <code>strace</code> shows how ordinary commands use system calls. <code>lsof</code> shows file descriptors and open files, which are OS-managed resources.</p>
+<h2>Common Misconceptions</h2>
+<ol>
+<li>
+<p>Monolithic means messy.<br>
+Correction: monolithic means many services run in kernel space. A monolithic kernel can still be highly organized, modular, and carefully engineered.</p>
+</li>
+<li>
+<p>Microkernel always means better.<br>
+Correction: microkernels reduce the trusted kernel core and can improve isolation, but they may introduce IPC overhead and design complexity.</p>
+</li>
+<li>
+<p>A modular kernel is the same as a microkernel.<br>
+Correction: a modular kernel can load components dynamically, but those modules often still run in kernel mode. A microkernel moves many services out to user-space servers.</p>
+</li>
+<li>
+<p>Layered OS means every real OS follows strict layers.<br>
+Correction: layering is a useful design principle, but real systems often bend layers for performance, hardware access, or cross-component coordination.</p>
+</li>
+<li>
+<p>Virtual machines are the same as containers.<br>
+Correction: a VM usually runs a full guest OS on virtual hardware. A container shares the host kernel and isolates processes using OS-level mechanisms.</p>
+</li>
+<li>
+<p>OS services are only for user convenience.<br>
+Correction: OS services also protect the system, arbitrate shared resources, isolate programs, handle errors, account for usage, and enforce security.</p>
+</li>
+<li>
+<p>More isolation always means more performance.<br>
+Correction: isolation often improves safety, but it can add communication and context-switching overhead.</p>
+</li>
+<li>
+<p>Device drivers are harmless add-ons.<br>
+Correction: drivers often run with high privilege. A buggy driver can crash or compromise the system.</p>
+</li>
+</ol>
+<h2>Tricky Interview Corners</h2>
+<p>The first tricky corner is the difference between policy and mechanism. A mechanism provides a way to do something. A policy decides what should be done. For example, a scheduler mechanism can switch processes, while a scheduling policy decides which process should run next. Good OS design often separates mechanism from policy where possible.</p>
+<p>The second tricky corner is trusted code size. A large privileged kernel has a larger trusted computing base. That does not automatically make it insecure, but it means more code has the ability to damage the system if it fails.</p>
+<p>The third tricky corner is IPC overhead in microkernels. Moving services to user space improves separation, but common operations may need extra message passing. Modern microkernel designs try to make IPC extremely efficient because it is central to performance.</p>
+<p>The fourth tricky corner is that modules do not automatically reduce privilege. A loadable kernel module may be separate as a file and dynamically loaded, but once loaded it may execute with kernel privileges.</p>
+<p>The fifth tricky corner is virtualization layering. A system call inside a guest VM first enters the guest kernel, not the host kernel directly. If the operation needs real hardware, the hypervisor and host-side drivers may become involved.</p>
+<p>The sixth tricky corner is failure isolation. In a monolithic kernel, a bad driver can crash the whole OS. In a microkernel, the driver may be restartable, but only if the rest of the system is designed to tolerate that failure.</p>
+<p>The seventh tricky corner is performance measurement. A design that is slower in one operation may be better overall if it improves reliability, security, or maintainability. Interview answers should avoid one-dimensional claims.</p>
+<h2>Comparison Tables</h2>
+<h3>Monolithic Kernel vs Microkernel</h3>
+<div class="table-wrap"><table><thead>
+<tr>
+<th>Point</th>
+<th>Monolithic Kernel</th>
+<th>Microkernel</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Service location</td>
+<td>Many services in kernel space</td>
+<td>Minimal kernel, many services in user space</td>
+</tr>
+<tr>
+<td>Performance path</td>
+<td>Often direct and fast</td>
+<td>May require IPC between servers</td>
+</tr>
+<tr>
+<td>Fault isolation</td>
+<td>Lower for kernel bugs</td>
+<td>Better for separated services</td>
+</tr>
+<tr>
+<td>Trusted code size</td>
+<td>Larger</td>
+<td>Smaller kernel core</td>
+</tr>
+<tr>
+<td>Common example style</td>
+<td>Linux-like kernel organization</td>
+<td>MINIX/QNX-style design ideas</td>
+</tr>
+</tbody>
+</table></div><h3>Layered vs Modular Design</h3>
+<div class="table-wrap"><table><thead>
+<tr>
+<th>Point</th>
+<th>Layered OS</th>
+<th>Modular Kernel</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Main idea</td>
+<td>Arrange services in levels</td>
+<td>Attach replaceable components to a core</td>
+</tr>
+<tr>
+<td>Strength</td>
+<td>Easier reasoning and teaching</td>
+<td>Flexibility and extensibility</td>
+</tr>
+<tr>
+<td>Weakness</td>
+<td>Strict layers can add overhead</td>
+<td>Modules may still be privileged</td>
+</tr>
+<tr>
+<td>Example</td>
+<td>Conceptual OS design, Windows-style layering ideas</td>
+<td>Linux loadable modules</td>
+</tr>
+</tbody>
+</table></div><h3>Virtual Machine vs Container</h3>
+<div class="table-wrap"><table><thead>
+<tr>
+<th>Point</th>
+<th>Virtual Machine</th>
+<th>Container</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Kernel</td>
+<td>Guest has its own kernel</td>
+<td>Shares host kernel</td>
+</tr>
+<tr>
+<td>Isolation</td>
+<td>Stronger hardware-level abstraction</td>
+<td>OS-level process isolation</td>
+</tr>
+<tr>
+<td>Startup</td>
+<td>Usually slower</td>
+<td>Usually faster</td>
+</tr>
+<tr>
+<td>Resource cost</td>
+<td>Higher</td>
+<td>Lower</td>
+</tr>
+<tr>
+<td>Common use</td>
+<td>Cloud VMs, OS testing</td>
+<td>App deployment, microservices</td>
+</tr>
+</tbody>
+</table></div><h2>How to Explain This in an Interview</h2>
+<h3>30-second answer</h3>
+<p>OS structure is how an operating system organizes its kernel and services. OS services include process management, memory management, file systems, I/O, protection, security, and networking. Monolithic kernels keep many services in kernel space for direct performance, microkernels keep the kernel small and move services to user space for isolation, layered systems organize responsibilities by levels, modular kernels support loadable components, and virtual machines isolate full guest OSes through a hypervisor.</p>
+<h3>2-minute answer</h3>
+<p>An OS must provide services to applications while safely managing shared hardware. The structure decides where those services live and how they communicate. In a monolithic kernel, services such as scheduling, memory management, filesystems, networking, and drivers often run in kernel space. This gives efficient direct calls, but bugs in privileged code can be severe. In a microkernel, the kernel keeps only essential mechanisms such as scheduling, IPC, and address-space control, while services like filesystems or drivers may run as user-space servers. This improves separation but can add communication overhead. Layered systems make dependencies easier to reason about, modular kernels make extension easier, and virtual machines add a hypervisor layer so multiple guest OSes can share hardware safely.</p>
+<h3>Deeper follow-up answer</h3>
+<p>The deeper tradeoff is performance versus isolation and maintainability. Direct in-kernel calls are fast, but they increase trusted code size. User-space servers are safer to isolate and restart, but they require efficient IPC. Modules add flexibility, but loaded kernel modules often remain privileged. Virtualization gives strong isolation and cloud flexibility, but it introduces hypervisor scheduling, virtual memory translation, and virtual I/O overhead. A strong OS design chooses structure based on workload, reliability needs, hardware support, and security goals.</p>
+<h2>Interview Questions</h2>
+<h3>Basic Questions</h3>
+<ol>
+<li>What does OS structure mean?</li>
+<li>What are common services provided by an operating system?</li>
+<li>What is a monolithic kernel?</li>
+<li>What is a microkernel?</li>
+<li>What is a layered OS design?</li>
+</ol>
+<h3>Intermediate Questions</h3>
+<ol start="6">
+<li>Compare monolithic kernels and microkernels.</li>
+<li>Why can a monolithic kernel be faster for common OS operations?</li>
+<li>Why can microkernels provide better fault isolation?</li>
+<li>How is a modular kernel different from a microkernel?</li>
+<li>What is the role of a hypervisor in virtualization?</li>
+</ol>
+<h3>Advanced Questions</h3>
+<ol start="11">
+<li>Why is IPC performance important in a microkernel?</li>
+<li>How does trusted code size affect OS security?</li>
+<li>What happens when a guest OS performs I/O inside a virtual machine?</li>
+<li>Why do real operating systems often mix multiple structural ideas?</li>
+<li>Explain the tradeoff between mechanism and policy in OS design.</li>
+</ol>
+<h2>Follow-Up Questions</h2>
+<p>Q: What is a monolithic kernel?<br>
+Follow-ups:</p>
+<ul>
+<li>Does monolithic mean unstructured?</li>
+<li>Why can in-kernel service calls be fast?</li>
+<li>Why are driver bugs dangerous in this design?</li>
+<li>How do loadable modules change the design?</li>
+</ul>
+<p>Q: What is a microkernel?<br>
+Follow-ups:</p>
+<ul>
+<li>Which services stay in the kernel?</li>
+<li>Which services may move to user space?</li>
+<li>Why does IPC become important?</li>
+<li>Can a microkernel still be complex?</li>
+</ul>
+<p>Q: What are OS services?<br>
+Follow-ups:</p>
+<ul>
+<li>Which services are visible to applications?</li>
+<li>Which services are mainly internal?</li>
+<li>How are services exposed through system calls?</li>
+<li>Why are protection and error handling OS services?</li>
+</ul>
+<p>Q: What is the difference between a modular kernel and a microkernel?<br>
+Follow-ups:</p>
+<ul>
+<li>Where do modules usually execute?</li>
+<li>Does dynamic loading imply user-space isolation?</li>
+<li>Why are third-party kernel modules risky?</li>
+<li>How does modularity help hardware support?</li>
+</ul>
+<p>Q: What is virtualization?<br>
+Follow-ups:</p>
+<ul>
+<li>What does a hypervisor do?</li>
+<li>How is a VM different from a container?</li>
+<li>Why does virtualization need hardware support?</li>
+<li>What are virtualized I/O costs?</li>
+</ul>
+<p>Q: Why do OS designs mix ideas?<br>
+Follow-ups:</p>
+<ul>
+<li>Why is a pure layered design hard?</li>
+<li>Why might performance require shortcuts?</li>
+<li>Why might security require extra separation?</li>
+<li>How does workload influence structure?</li>
+</ul>
+<h2>Trick Questions</h2>
+<ol>
+<li>
+<p>Q: Is Linux a microkernel because it supports modules?<br>
+Expected answer: No. Linux is commonly described as monolithic with modular support. Modules can be loaded dynamically, but many still run in kernel space.</p>
+</li>
+<li>
+<p>Q: Is a microkernel always faster than a monolithic kernel because it is smaller?<br>
+Expected answer: No. A smaller kernel may improve isolation, but operations can require extra IPC and context switches.</p>
+</li>
+<li>
+<p>Q: If a driver is loaded as a module, is it automatically safe from crashing the kernel?<br>
+Expected answer: No. A kernel module often runs with kernel privilege, so a bad module can still crash or corrupt the system.</p>
+</li>
+<li>
+<p>Q: Does a virtual machine share the host kernel the same way a container does?<br>
+Expected answer: No. A VM normally runs a guest kernel on virtual hardware; a container shares the host kernel.</p>
+</li>
+<li>
+<p>Q: Are OS services only system calls?<br>
+Expected answer: No. System calls expose many services to applications, but the OS also performs internal services such as scheduling, interrupt handling, accounting, caching, and error management.</p>
+</li>
+<li>
+<p>Q: Does layered design mean higher layers never interact indirectly with lower hardware behavior?<br>
+Expected answer: No. Layers hide details, but hardware behavior such as latency, interrupts, and memory pressure still affects higher-level services.</p>
+</li>
+<li>
+<p>Q: Is a large kernel automatically insecure?<br>
+Expected answer: No. Size increases trusted code surface, but security depends on engineering, validation, isolation, updates, and design discipline.</p>
+</li>
+</ol>
+<h2>Practical Debugging / Observation</h2>
+<p>On Linux or WSL, you can observe OS structure and services with these commands:</p>
+<pre><code class="language-bash">uname -a
+ps aux
+top
+lsmod
+cat /proc/modules
+strace -e trace=openat,read,write,close ls
+lsof -p &lt;pid&gt;
+dmesg | tail
+</code></pre>
+<p>What to observe:</p>
+<ul>
+<li><code>uname -a</code> shows kernel identity and version information.</li>
+<li><code>ps aux</code> and <code>top</code> show process-management services in action.</li>
+<li><code>lsmod</code> and <code>/proc/modules</code> show kernel modules currently loaded.</li>
+<li><code>strace</code> shows that a simple command relies on system calls.</li>
+<li><code>lsof</code> shows open files and file descriptors attached to a process.</li>
+<li><code>dmesg</code> can show kernel and driver messages, which reminds you that drivers and hardware events are part of OS service handling.</li>
+</ul>
+<p>On Windows, similar observation ideas include:</p>
+<pre><code class="language-powershell">Get-Process
+Get-Service
+driverquery
+Get-ComputerInfo
+</code></pre>
+<p>What to observe:</p>
+<ul>
+<li>Processes and services are managed OS objects.</li>
+<li>Drivers are system-level components, not ordinary application code.</li>
+<li>Many user-visible actions depend on kernel and service layers underneath.</li>
+</ul>
+<h2>Mini Quiz</h2>
+<h3>MCQs</h3>
+<ol>
+<li>
+<p>Which design keeps many OS services in kernel space?
+A. Monolithic kernel<br>
+B. Pure user-level application<br>
+C. Browser sandbox only<br>
+D. Shell script<br>
+Answer: A</p>
+</li>
+<li>
+<p>What is a major advantage of a microkernel?
+A. It removes all system calls<br>
+B. It improves separation by moving many services out of the kernel<br>
+C. It makes hardware unnecessary<br>
+D. It prevents all bugs<br>
+Answer: B</p>
+</li>
+<li>
+<p>What does a hypervisor primarily provide?
+A. A text editor<br>
+B. Virtualized hardware and resource control for guest OSes<br>
+C. A filesystem directory tree only<br>
+D. A replacement for all processes<br>
+Answer: B</p>
+</li>
+<li>
+<p>Which statement about kernel modules is correct?
+A. They always run in user mode<br>
+B. They are always safer than user programs<br>
+C. They can often be loaded dynamically but may still run with kernel privilege<br>
+D. They are the same as containers<br>
+Answer: C</p>
+</li>
+<li>
+<p>Why can a strict layered OS design become inefficient?
+A. It has no structure<br>
+B. It may force requests through layers even when direct coordination would be faster<br>
+C. It cannot support files<br>
+D. It cannot run applications<br>
+Answer: B</p>
+</li>
+</ol>
+<h3>Short-answer questions</h3>
+<ol>
+<li>
+<p>Define OS services in two lines.<br>
+Answer: OS services are capabilities provided by the operating system, such as process management, memory management, file systems, I/O, protection, security, networking, accounting, and error handling.</p>
+</li>
+<li>
+<p>Why is a bad kernel driver more dangerous than a bad user program?<br>
+Answer: A kernel driver often runs with privileged access and can corrupt kernel memory or hardware state, while a user program is restricted by memory protection and OS policy.</p>
+</li>
+<li>
+<p>How is a VM different from a container?<br>
+Answer: A VM usually runs a full guest OS on virtual hardware managed by a hypervisor. A container shares the host kernel and uses OS-level isolation.</p>
+</li>
+</ol>
+<h3>Reasoning questions</h3>
+<ol>
+<li>
+<p>A file read is slower in a microkernel-style system than expected. What structural reason might explain this?<br>
+Answer: The request may require IPC between the application, kernel, filesystem server, and driver service. Extra message passing and context switching can add overhead.</p>
+</li>
+<li>
+<p>A system wants high driver fault isolation for safety-critical devices. Which design idea may help and what cost might it pay?<br>
+Answer: Microkernel-style separation can run drivers as user-space services, improving isolation and restartability. The cost may be IPC overhead and more complex service coordination.</p>
+</li>
+</ol>
+<h1>5-Minute Revision Column</h1>
+<p>Revision Targets:</p>
+<ul>
+<li>Day 03: Kernel, User Mode, and System Calls - Previous day reinforcement - R1</li>
+<li>Day 01: What is an Operating System? - Three-day spaced recall - R2</li>
+</ul>
+<h2>Day 03 - Kernel, User Mode, and System Calls (R1 Recall Revision)</h2>
+<p>Core recall: the kernel is the privileged core of the OS. Normal applications run in user mode so they cannot directly access hardware, kernel memory, privileged CPU instructions, or other process memory. When an application needs a protected service, it enters the kernel through a system call. The CPU changes privilege mode, the kernel validates the request, performs the service if allowed, and returns control to user mode.</p>
+<p>Key definitions:</p>
+<ul>
+<li>Kernel: privileged OS core responsible for protected resource management.</li>
+<li>User mode: restricted execution mode used by normal applications.</li>
+<li>System call: controlled user-to-kernel request for an OS service.</li>
+</ul>
+<p>Core example: <code>printf</code> is not itself a system call. It formats data in user space, but printing to a terminal may eventually call <code>write</code>, which enters the kernel.</p>
+<p>Pitfalls:</p>
+<ul>
+<li>System call is not the same as a normal function call.</li>
+<li>Mode switch is not the same as context switch.</li>
+<li>Kernel mode is not a physically different CPU.</li>
+</ul>
+<p>Tricky questions:</p>
+<ul>
+<li>Does every library call enter the kernel?</li>
+<li>Can a system call block and let another process run?</li>
+<li>Why must the kernel validate user pointers?</li>
+</ul>
+<p>One-line final memory: user mode protects the system, kernel mode controls protected resources, and system calls are the safe bridge between them.</p>
+<h2>Day 01 - What is an Operating System? (R2 Compression Revision)</h2>
+<p>Core recall:</p>
+<ul>
+<li>OS = resource manager plus abstraction provider.</li>
+<li>It manages CPU, memory, files, devices, I/O, networking, and security.</li>
+<li>It exposes abstractions such as processes, files, sockets, virtual memory, and system calls.</li>
+<li>The kernel is the privileged core, not always the entire OS.</li>
+<li>Applications request protected services instead of directly controlling hardware.</li>
+</ul>
+<p>Key definitions:</p>
+<ul>
+<li>Operating System: system software that manages hardware resources and provides services to applications.</li>
+<li>Kernel: privileged core that handles sensitive operations such as scheduling, memory management, system calls, and interrupt handling.</li>
+</ul>
+<p>Example: opening an app requires the OS to load executable code, create a process, assign memory, schedule CPU time, and manage I/O.</p>
+<p>Pitfalls:</p>
+<ul>
+<li>GUI is not the full OS.</li>
+<li>Abstraction does not remove hardware costs such as disk latency, memory pressure, and CPU scheduling delay.</li>
+</ul>
+<p>Tricky questions:</p>
+<ul>
+<li>If an application reads a file, does it directly command the disk?</li>
+<li>Why should two programs not freely access the same physical memory?</li>
+</ul>
+<p>One-line final memory: an OS makes shared hardware safe and usable by managing resources and exposing controlled abstractions.</p>
+<h2>Final Takeaway</h2>
+<p>OS structures explain how the operating system is organized internally, while OS services explain what it provides. Monolithic kernels prioritize direct in-kernel coordination and performance, but privileged bugs are dangerous. Microkernels reduce the privileged core and improve service isolation, but IPC and coordination become central. Layered designs improve reasoning, modular kernels improve extensibility, and virtual machines add a hypervisor layer for strong guest isolation. Good interview answers compare tradeoffs instead of declaring one structure universally best. The key lens is where services run, how they communicate, how much code is trusted, and what cost the design pays for performance, isolation, and maintainability.</p>
+<h2>What You Should Be Able To Answer Now</h2>
+<ul>
+<li>Define OS structure and OS services clearly.</li>
+<li>Explain monolithic, microkernel, layered, modular, and virtual-machine designs.</li>
+<li>Compare monolithic kernels and microkernels using performance, isolation, and trusted code size.</li>
+<li>Explain why kernel modules are not automatically safe user-space components.</li>
+<li>Describe how a system call path changes across OS structures.</li>
+<li>Explain why IPC performance matters in microkernel designs.</li>
+<li>Compare virtual machines and containers.</li>
+<li>Answer interview follow-ups about design tradeoffs without oversimplifying.</li>
+</ul>
+</article>
+    </main>
+    <script>
+      (() => {
+        const article = document.querySelector(".article");
+        if (!article) return;
+        const chapterMap = {
+          "Opening Intuition": ["01", "Opening Intuition", "Why this concept exists in real systems before formal definition."],
+          "Interview Definition": ["02", "Interview Definition", "A clean interview-ready explanation with precise language."],
+          "Mental Model": ["03", "Mental Model", "A compact analogy that maps theory to practical recall."],
+          "Layer 1: What happens at a high level?": ["04", "Core Theory", "What the OS manages and how abstraction/resource management fit together."],
+          "Layer 2: What happens inside the OS?": ["05", "System Internals", "Kernel boundaries, data structures, and service flow inside the OS."],
+          "Step-by-Step Flow": ["06", "Step-by-Step Flow", "Concrete execution sequence you can narrate in interviews."],
+          "Practical System Relevance": ["07", "Practical Examples", "How the concept appears in Linux, Windows, Android, servers, and cloud."],
+          "Common Misconceptions": ["08", "Common Misconceptions", "High-frequency mistakes and what to say instead."],
+          "Tricky Interview Corners": ["09", "Tricky Interview Corners", "Edge cases and deeper follow-up traps interviewers probe."],
+          "Interview Questions": ["10", "Interview Questions", "Layered practice questions from basic to advanced."],
+          "5-Minute Revision Column": ["11", "5-Minute Revision Column", "Compressed spaced-repetition recall from prior targets."],
+          "Final Takeaway": ["12", "Final Takeaway", "The final memory model and what you should be able to answer now."]
+        };
+
+        const wrapAfterHeading = (title, className) => {
+          const heading = Array.from(article.querySelectorAll("h2")).find((el) => el.textContent?.trim() === title);
+          if (!heading) return;
+          const wrap = document.createElement("div");
+          wrap.className = className;
+          let node = heading.nextElementSibling;
+          while (node && node.tagName !== "H2") {
+            const next = node.nextElementSibling;
+            wrap.appendChild(node);
+            node = next;
+          }
+          heading.insertAdjacentElement("afterend", wrap);
+        };
+
+        wrapAfterHeading("Interview Definition", "definition-block");
+        wrapAfterHeading("5-Minute Revision Column", "revision-block");
+        wrapAfterHeading("Final Takeaway", "takeaway-block");
+        wrapAfterHeading("What You Should Be Able To Answer Now", "takeaway-block");
+
+        article.querySelectorAll("h2").forEach((heading) => {
+          const text = heading.textContent?.trim() ?? "";
+          const chapter = chapterMap[text];
+          if (!chapter) return;
+          const opener = document.createElement("div");
+          opener.className = "section-opener";
+          opener.innerHTML = "<div class=\"section-kicker\">SECTION " + chapter[0] + " / " + chapter[1].toUpperCase() + "</div><div class=\"section-summary\">" + chapter[2] + "</div>";
+          heading.insertAdjacentElement("beforebegin", opener);
+        });
+
+        const misconceptions = Array.from(article.querySelectorAll("h2")).find(
+          (el) => el.textContent?.trim() === "Common Misconceptions"
+        );
+        if (misconceptions) {
+          let node = misconceptions.nextElementSibling;
+          while (node && node.tagName !== "H2") {
+            if (node.tagName === "OL") {
+              node.querySelectorAll("li").forEach((li) => li.classList.add("trap-item"));
+            }
+            node = node.nextElementSibling;
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>

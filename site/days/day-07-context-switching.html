@@ -1,0 +1,864 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Day 07 - Context Switching</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #070707;
+        --surface: #101010;
+        --surface-soft: #151515;
+        --border: #262626;
+        --text: #d8d8d8;
+        --muted: #8f8f8f;
+        --faint: #5f5f5f;
+        --cyan: #67e8f9;
+        --amber: #f4c95d;
+        --violet: #b79cff;
+        --green: #8ee6a3;
+      }
+
+      @page {
+        size: A4;
+        margin: 18mm 17mm 20mm 17mm;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "JetBrains Mono", "IBM Plex Mono", "Roboto Mono", monospace;
+        font-size: 9.8px;
+        line-height: 1.62;
+      }
+
+      .page {
+        width: min(980px, calc(100vw - 24px));
+        margin: 0 auto;
+        padding: 12px 0 20px;
+      }
+
+      .hero {
+        margin-bottom: 14px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 12px;
+      }
+
+      .eyebrow {
+        margin: 0 0 8px;
+        font-size: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        color: var(--faint);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 24px;
+        line-height: 1.18;
+        letter-spacing: -0.04em;
+        color: #f2f2f2;
+        break-after: avoid;
+      }
+
+      .meta-line {
+        margin-top: 8px;
+        font-size: 8.8px;
+        color: var(--muted);
+      }
+
+      .subtitle {
+        max-width: 760px;
+        margin: 8px 0 0;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .revision-strip {
+        margin-top: 10px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .revision-strip span {
+        display: inline-flex;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: rgba(142, 230, 163, 0.08);
+        border: 1px solid rgba(142, 230, 163, 0.22);
+        color: var(--green);
+        font-size: 8px;
+      }
+
+      .article h2,
+      .article h3,
+      .article h4 {
+        line-height: 1.3;
+        break-after: avoid;
+      }
+
+      .article h2 {
+        margin-top: 24px;
+        margin-bottom: 8px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 5px;
+        font-size: 15px;
+        color: #f2f2f2;
+      }
+
+      .section-opener {
+        margin-top: 30px;
+        margin-bottom: 14px;
+        padding: 12px 14px;
+        background: var(--surface);
+        border-left: 3px solid var(--cyan);
+        border-radius: 8px;
+        break-inside: avoid;
+      }
+
+      .section-kicker {
+        font-size: 8px;
+        color: var(--cyan);
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+      }
+
+      .section-summary {
+        font-size: 9.2px;
+        color: #9ca3af;
+        line-height: 1.55;
+      }
+
+      .article h3 {
+        margin-top: 16px;
+        margin-bottom: 6px;
+        font-size: 12px;
+        color: var(--cyan);
+      }
+
+      .article p,
+      .article li {
+        color: var(--text);
+      }
+
+      p {
+        orphans: 3;
+        widows: 3;
+      }
+
+      .article ul,
+      .article ol {
+        padding-left: 1.15rem;
+      }
+
+      .article blockquote {
+        margin: 12px 0;
+        padding: 10px 12px;
+        border-left: 3px solid var(--amber);
+        background: rgba(244, 201, 93, 0.06);
+        border-radius: 8px;
+        color: #ddd4bd;
+        break-inside: avoid;
+      }
+
+      .article pre,
+      .article code {
+        font-family: "JetBrains Mono", "IBM Plex Mono", monospace;
+      }
+
+      .article pre {
+        background: #030303;
+        border: 1px solid #242424;
+        border-radius: 8px;
+        padding: 12px;
+        font-size: 8.8px;
+        line-height: 1.55;
+        overflow-wrap: break-word;
+        white-space: pre-wrap;
+        break-inside: avoid;
+      }
+
+      .article code {
+        color: var(--cyan);
+        background: transparent;
+        padding: 0;
+      }
+
+      .diagram-card {
+        margin: 14px 0;
+        padding: 14px;
+        background: var(--surface);
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        overflow-x: auto;
+        break-inside: avoid;
+      }
+
+      .mermaid {
+        display: flex;
+        justify-content: center;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+        margin: 14px 0;
+        break-inside: avoid;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 8.8px;
+      }
+
+      th,
+      td {
+        padding: 7px;
+        border-bottom: 1px solid #202020;
+        text-align: left;
+      }
+
+      th {
+        color: var(--cyan);
+        font-weight: 600;
+        border-bottom: 1px solid #333;
+      }
+
+      td {
+        color: #cfcfcf;
+      }
+
+      a {
+        color: var(--cyan);
+      }
+
+      .definition-block,
+      .revision-block,
+      .takeaway-block {
+        background: var(--surface);
+        border-radius: 8px;
+        padding: 12px 14px;
+        margin: 12px 0;
+        break-inside: avoid;
+      }
+
+      .definition-block {
+        border-left: 3px solid var(--violet);
+      }
+
+      .revision-block {
+        background: rgba(142, 230, 163, 0.06);
+        border: 1px solid rgba(142, 230, 163, 0.22);
+      }
+
+      .takeaway-block {
+        border-left: 3px solid var(--green);
+      }
+
+      .trap-item {
+        background: rgba(244, 201, 93, 0.06);
+        border-left: 3px solid var(--amber);
+        border-radius: 8px;
+        padding: 10px 13px;
+        margin: 8px 0;
+        break-inside: avoid;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <p class="eyebrow">LearnOS Daily / DAY 07</p>
+        <h1>Context Switching</h1>
+        <p class="meta-line">40 min read - 5 min revision - Intermediate - Prerequisites: Days 05-06</p>
+        <p class="subtitle">Common follow-up for multitasking, overhead, and kernel execution.</p>
+        <div class="revision-strip"><span>Day 06 - Process States and Lifecycle - R1 - Previous day reinforcement</span><span>Day 04 - OS Structures and Services - R2 - Three-day spaced recall</span></div>
+      </section>
+      <article class="article"><p>Difficulty: Intermediate<br>
+Fresh Learning: 40 minutes<br>
+Revision: 5 minutes<br>
+Prerequisites: Days 05-06 - Program vs Process, PCB, process image, process states, ready and waiting queues<br>
+Why this topic matters in interviews: Context switching is the mechanism behind multitasking, preemption, CPU sharing, responsiveness, and scheduling overhead. Interviewers use it to test whether you understand what the OS really saves, why switching is not free, and how process lifecycle connects to scheduling.</p>
+<p>Imagine you are typing code while music plays, a browser downloads files, a terminal runs tests, and an antivirus scanner works in the background. Your CPU has a limited number of cores, but the system feels as if many activities are progressing together. That illusion is not magic. The operating system repeatedly pauses one execution stream, saves enough information to resume it later, chooses another execution stream, restores its saved information, and lets it run.</p>
+<p>That pause-and-resume operation is context switching.</p>
+<p>Without context switching, one process could hold the CPU until it voluntarily stopped, blocked on I/O, or finished. A buggy or CPU-heavy program could make the whole machine feel frozen. Interactive programs would be painful because the browser, editor, shell, and UI could not quickly take turns. Servers would respond poorly because one request could monopolize a worker while other ready requests waited.</p>
+<p>Context switching is the practical bridge between Day 6 process states and upcoming scheduling. The process state diagram says a process can move between running, ready, waiting, and terminated. Context switching explains the low-level operation that actually moves the CPU from one runnable execution context to another.</p>
+<h2>Interview Definition</h2>
+<p>Context switching is the operating system operation of saving the current execution context of a running process or thread and restoring the saved context of another process or thread so the CPU can continue execution from the new one.</p>
+<p>The context usually includes the program counter, CPU registers, stack pointer, processor status, and scheduling or memory-management metadata connected to the PCB or thread control block.</p>
+<p>In an interview, say: a context switch lets the OS share CPU time among multiple processes or threads, but it has overhead because the CPU stops useful user work while the kernel saves and restores execution state and may disturb caches and TLB entries.</p>
+<h2>Mental Model</h2>
+<p>Think of the CPU as a single focused interview room and the OS scheduler as the coordinator. A candidate is answering a question on the whiteboard. Suddenly, the coordinator says time is up or the candidate needs to wait for a document. Before removing the candidate from the room, the coordinator photographs the board, records the current question, stores the candidate’s notes, and marks where the candidate stopped.</p>
+<p>Then the coordinator brings in another candidate and restores that candidate’s previous board state, notes, and question. The second candidate continues as if the room had always belonged to them.</p>
+<p>The photograph and notes are the saved CPU context. The candidate file is like the PCB or TCB. The coordinator’s decision is scheduling. The act of clearing one board and restoring another is context switching.</p>
+<p>This model is useful because it makes two things clear. First, a context switch is not the same as just picking a process. Scheduling is the decision; context switching is the mechanical handoff. Second, switching has cost. During the handoff, nobody is answering interview questions. Similarly, during a context switch, the CPU is doing kernel bookkeeping instead of running the user’s application logic.</p>
+<h2>Layer 1: What happens at a high level?</h2>
+<p>At a high level, context switching happens when the CPU stops executing one process or thread and starts executing another. The currently running execution context becomes no longer running. It may move to the ready state if it was preempted, to the waiting state if it requested I/O or a lock, or to terminated if it finished. Another ready context becomes running.</p>
+<p>There are three common reasons this happens.</p>
+<p>First, a timer interrupt may occur. In a preemptive multitasking system, the OS sets a hardware timer. When the timer fires, the CPU enters kernel mode, and the OS gets a chance to decide whether the current process has used enough of its time slice. If yes, the scheduler chooses another ready process or thread, and the kernel performs a context switch.</p>
+<p>Second, the running process may block. For example, it calls <code>read()</code> for disk or network data that is not ready yet. Since the process cannot make progress, the OS marks it waiting and switches to another ready context.</p>
+<p>Third, a higher-priority or newly ready task may need CPU time. For example, an interactive UI thread wakes up after keyboard input. The OS may preempt a CPU-heavy background task so the UI remains responsive.</p>
+<p>The important interview point is that context switching is how process state transitions become real CPU behavior. Day 6 taught that a process can be ready or running. Day 7 explains how the OS physically moves the CPU from one saved execution point to another.</p>
+<h2>Layer 2: What happens inside the OS?</h2>
+<p>Inside the OS, context switching is tied to kernel data structures and scheduler code. A process or thread has a saved execution state stored in kernel-managed metadata. In textbook terms, this is often described as part of the Process Control Block. In real kernels, process and thread structures may separate process-wide information from thread-specific execution state.</p>
+<p>When a context switch starts, the CPU is already in kernel mode or is entering kernel mode because of an interrupt, trap, or system call. The kernel saves the current execution context. This typically includes general-purpose registers, program counter or instruction pointer, stack pointer, flags or status register, and sometimes architecture-specific control registers. The exact details depend on the CPU architecture.</p>
+<p>The kernel also updates scheduling metadata. It records why the current context stopped: preempted, blocked, yielded, exited, or interrupted. It may update runtime counters, priority information, time-slice accounting, and queue placement. If the context remains runnable, it goes back into a ready queue. If it is waiting for I/O, a lock, a timer, or a signal, it is attached to the appropriate wait queue.</p>
+<p>Then the scheduler selects the next runnable context. The scheduler may use priority, fairness, time slices, CPU affinity, interactive responsiveness, or other policies. After selecting the next context, the kernel loads that context’s saved registers and related state. Finally, control returns from kernel mode to the selected context, and execution continues at the exact instruction where that context previously stopped.</p>
+<p>For a clean interview distinction:</p>
+<div class="table-wrap"><table><thead>
+<tr>
+<th>Term</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Scheduling</td>
+<td>Deciding which ready process or thread should run next</td>
+</tr>
+<tr>
+<td>Dispatching</td>
+<td>Giving CPU control to the selected process or thread</td>
+</tr>
+<tr>
+<td>Context switch</td>
+<td>Saving the old context and restoring the selected context</td>
+</tr>
+<tr>
+<td>Mode switch</td>
+<td>Changing between user mode and kernel mode without necessarily changing processes</td>
+</tr>
+</tbody>
+</table></div><p>The trap is to use these terms as synonyms. They are related, but not identical.</p>
+<h2>Layer 3: What happens at hardware or kernel level?</h2>
+<p>At the hardware level, a context switch is possible because the CPU exposes registers and privileged control mechanisms that the kernel can save and restore. User programs cannot freely switch CPU ownership because that would break protection. The kernel performs the switch while running in privileged mode.</p>
+<p>A timer interrupt is a classic starting point. The hardware timer interrupts the currently running code. The CPU saves a small amount of immediate interrupt state according to the architecture and jumps to the kernel’s interrupt handler. The kernel handler can inspect the current task, update accounting, and decide whether scheduling is needed. If the current task should continue, the kernel returns from the interrupt. If another task should run, the kernel enters the scheduler and performs a context switch.</p>
+<p>During the switch, the kernel uses per-task kernel stacks and saved register areas. It may also switch address spaces. A process context switch is often more expensive than a thread switch inside the same process because different processes have different virtual address spaces. Switching processes may require changing page-table related registers and may invalidate or reduce the usefulness of TLB entries. Threads in the same process usually share the same address space, so a thread switch may avoid some memory-translation overhead, although registers and stacks still must change.</p>
+<p>Modern CPUs complicate the picture. Caches, branch predictors, TLBs, CPU affinity, and multicore scheduling all affect cost. A context switch does not always flush every cache, but it can reduce cache locality because the next task uses different code and data. If the OS moves a task to another core, that task may lose warm cache state. If the switch changes address spaces, address translation caching can be affected.</p>
+<p>This is why interviewers ask why context switching is expensive. The answer is not only “saving registers.” Saving registers is part of the direct cost. The indirect cost is that the CPU pipeline, cache locality, TLB state, and scheduler bookkeeping may all suffer.</p>
+<h2>Layer 4: What can go wrong?</h2>
+<p>Too many context switches can make a system slower even when the CPU looks busy. If a machine constantly switches among many runnable tasks, a larger fraction of CPU time is spent in kernel overhead instead of useful application work. This can happen with too many threads, very small time slices, excessive lock contention, heavy I/O wakeups, or a server design that creates far more runnable workers than the CPU can handle.</p>
+<p>A bad scheduling policy can cause unnecessary switching. If the OS switches too frequently, responsiveness may improve slightly but throughput may drop. If it switches too rarely, throughput may improve for CPU-bound jobs but interactive programs may feel laggy. This tradeoff is one reason scheduling algorithms matter.</p>
+<p>Priority problems can also interact with context switching. A high-priority task may repeatedly preempt lower-priority tasks. That can be useful for responsiveness, but it can also starve lower-priority work. Priority inversion can occur when a high-priority task waits for a lock held by a low-priority task, while medium-priority tasks keep running and prevent the low-priority task from releasing the lock.</p>
+<p>Context switching can hide bugs in concurrent programs. A race condition may appear only when a switch happens between two specific instructions. For example, one thread reads a shared counter, gets preempted, another thread updates the counter, and the first thread resumes with stale information. This is why upcoming synchronization topics depend on understanding interleavings.</p>
+<p>Finally, confusing context switches with mode switches leads to wrong answers. A system call causes a mode switch from user mode to kernel mode. It may or may not cause a context switch. If the system call completes quickly, the same process may resume immediately. If it blocks, the OS switches to another process or thread.</p>
+<h2>Step-by-Step Flow</h2>
+<p>Here is a practical flow for a timer-driven context switch:</p>
+<ol>
+<li>A user process is running on the CPU.</li>
+<li>A hardware timer interrupt occurs.</li>
+<li>The CPU enters kernel mode and jumps to the interrupt handler.</li>
+<li>The kernel saves the current process or thread’s CPU context.</li>
+<li>The scheduler checks whether the current time slice is over or another task should run.</li>
+<li>The current task is moved to the ready queue if it is still runnable.</li>
+<li>The scheduler selects the next ready task.</li>
+<li>The kernel loads the selected task’s saved context.</li>
+<li>The CPU returns from kernel mode to the selected task.</li>
+<li>The selected task continues from its saved program counter.</li>
+</ol>
+<p>Here is a blocking I/O version:</p>
+<ol>
+<li>A running process calls <code>read()</code> for data that is not currently available.</li>
+<li>The CPU enters kernel mode through a system call.</li>
+<li>The kernel validates the request and starts or waits for the I/O operation.</li>
+<li>Because the process cannot continue, the kernel marks it waiting or blocked.</li>
+<li>The scheduler selects another ready process or thread.</li>
+<li>The kernel saves the old context and restores the new one.</li>
+<li>Later, the device signals I/O completion through an interrupt.</li>
+<li>The kernel moves the blocked process back to the ready queue.</li>
+<li>The process runs only when the scheduler selects it again.</li>
+</ol>
+<h2>Diagram Section</h2>
+<div class="diagram-card"><div class="mermaid">sequenceDiagram
+    participant P1 as Running process P1
+    participant CPU as CPU
+    participant K as Kernel scheduler
+    participant P2 as Ready process P2
+    P1-&gt;&gt;CPU: Executes user instructions
+    CPU-&gt;&gt;K: Timer interrupt enters kernel mode
+    K-&gt;&gt;K: Save P1 registers, PC, stack pointer
+    K-&gt;&gt;K: Place P1 back in ready queue
+    K-&gt;&gt;K: Select next runnable context
+    K-&gt;&gt;P2: Restore P2 saved context
+    P2-&gt;&gt;CPU: Resume from saved program counter
+</div></div><p>This sequence shows the difference between the running process, the CPU interrupt, and the kernel scheduler. The process does not voluntarily hand off the CPU in preemption; the timer interrupt gives the kernel control.</p>
+<div class="diagram-card"><div class="mermaid">stateDiagram-v2
+    Running --&gt; Ready: Timer interrupt / preemption
+    Running --&gt; Waiting: Blocking I/O or lock wait
+    Waiting --&gt; Ready: I/O completion or event wakeup
+    Ready --&gt; Running: Scheduler dispatch + context restore
+    Running --&gt; Terminated: Exit or kill
+</div></div><p>This diagram connects Day 6 process states to Day 7 context switching. The transitions from running to ready and ready to running are where context saving and restoring become visible.</p>
+<div class="diagram-card"><div class="mermaid">flowchart TD
+    A[Interrupt, system call, or block] --&gt; B[Enter kernel mode]
+    B --&gt; C[Save current context]
+    C --&gt; D{Is current task runnable?}
+    D -- Yes --&gt; E[Put in ready queue]
+    D -- No --&gt; F[Put in wait or exit state]
+    E --&gt; G[Run scheduler]
+    F --&gt; G
+    G --&gt; H[Choose next ready task]
+    H --&gt; I[Restore selected context]
+    I --&gt; J[Return to user mode]
+</div></div><p>This flowchart is the interview-safe version: event, kernel entry, save, queue update, schedule, restore, return.</p>
+<h2>Practical System Relevance</h2>
+<ul>
+<li>Linux schedules tasks, where a task may represent a process or thread. Context switching is part of how the kernel moves CPU execution between runnable tasks.</li>
+<li>Windows also schedules threads rather than only whole processes. A process owns resources such as address space and handles, while threads are the schedulable execution units.</li>
+<li>Android depends heavily on context switching because UI responsiveness, background services, media playback, and app sandboxing all compete for CPU time.</li>
+<li>Browsers use multiple processes and many threads. Rendering, networking, JavaScript execution, GPU work, and extensions may be isolated or scheduled separately.</li>
+<li>Servers rely on context switching when handling many clients. A web server may use worker processes, worker threads, async event loops, or a combination.</li>
+<li>Databases care about context switching because too many worker threads can reduce throughput through scheduler overhead and cache disruption.</li>
+<li>Containers do not remove context switching. Containerized processes are still scheduled by the host kernel, often with cgroup limits influencing CPU share.</li>
+<li>Cloud systems tune CPU quotas and core placement because scheduling overhead, preemption, and cache locality affect latency-sensitive workloads.</li>
+</ul>
+<p>In Linux-style tools, context switching is visible through system counters. A high context-switch rate is not automatically bad, but it is a signal to investigate workload shape. A busy interactive desktop may switch often. A high-performance server with excessive switching may have too many threads, lock contention, or inefficient I/O behavior.</p>
+<h2>Code or Pseudocode Section</h2>
+<p>Here is simplified C-like pseudocode for a kernel context switch. Real kernels are architecture-specific and use assembly in critical parts, but the idea is:</p>
+<pre><code class="language-c">void context_switch(task_t *old, task_t *next) {
+    save_registers(&amp;old-&gt;cpu_context);
+    old-&gt;state = READY;
+
+    current = next;
+    next-&gt;state = RUNNING;
+
+    load_address_space(next-&gt;mm);
+    restore_registers(&amp;next-&gt;cpu_context);
+}
+</code></pre>
+<p>This demonstrates the shape, not real implementation detail. The OS saves state for the old task, updates states, switches the current task pointer, possibly changes address-space metadata, and restores the next task’s state.</p>
+<p>A blocking call can trigger scheduling:</p>
+<pre><code class="language-c">ssize_t kernel_read(file_t *file, char *buf, size_t n) {
+    if (!data_available(file)) {
+        current-&gt;state = WAITING;
+        add_to_wait_queue(file-&gt;wait_queue, current);
+        schedule();
+    }
+
+    return copy_data_to_user(buf, file, n);
+}
+</code></pre>
+<p>The key point: if data is unavailable, the process should not keep using the CPU. It is placed on a wait queue, and the scheduler chooses someone else.</p>
+<p>On a Linux machine, these commands help observe related behavior:</p>
+<pre><code class="language-bash">vmstat 1
+pidstat -w 1
+top
+ps -eo pid,ppid,stat,comm
+</code></pre>
+<p>In <code>vmstat</code>, the <code>cs</code> column shows context switches per second. In <code>ps</code>, process states such as running, sleeping, or stopped help connect lifecycle states to real observation. <code>top</code> shows CPU usage and task states. <code>pidstat -w</code> can show voluntary and involuntary context switches per process if the tool is installed.</p>
+<h2>Common Misconceptions</h2>
+<ol>
+<li>Context switching is the same as scheduling. Correction: scheduling chooses the next task; context switching performs the save-and-restore handoff.</li>
+<li>A system call always causes a context switch. Correction: a system call causes a mode switch. It causes a context switch only if the current task blocks, exits, yields, or is preempted.</li>
+<li>Context switching is only saving the program counter. Correction: the OS must preserve enough CPU and execution state to resume correctly, including registers, stack pointer, flags, and related scheduling or memory metadata.</li>
+<li>Thread switches are free. Correction: thread switches are often cheaper than process switches within the same address space, but they still save and restore registers, stacks, and scheduling state.</li>
+<li>More threads always improve performance. Correction: too many runnable threads can increase context switching, cache misses, lock contention, and memory use.</li>
+<li>A process waiting for I/O is still consuming CPU because it is alive. Correction: a blocked process exists but should not run until the awaited event completes.</li>
+<li>Context switching means the OS copies the whole process memory. Correction: the OS switches mappings and execution state; it does not copy the entire address space on every switch.</li>
+<li>High context-switch count is always bad. Correction: it depends on workload. It is suspicious when it correlates with poor throughput or latency.</li>
+</ol>
+<h2>Tricky Interview Corners</h2>
+<p>The first tricky corner is direct cost versus indirect cost. Direct cost includes entering the kernel, saving registers, choosing the next task, and restoring registers. Indirect cost includes cache locality loss, TLB disruption, pipeline effects, and branch prediction disturbance.</p>
+<p>The second corner is process switch versus thread switch. Threads in the same process share an address space, so switching between them may avoid changing page tables. But each thread still has its own stack and register state. A process switch usually changes both execution state and address-space context.</p>
+<p>The third corner is voluntary versus involuntary context switching. A voluntary switch happens when a task blocks or yields. An involuntary switch happens when the OS preempts it, often because a time slice expires or a higher-priority task becomes runnable.</p>
+<p>The fourth corner is mode switch versus context switch. If a program calls <code>getpid()</code>, the CPU may enter the kernel and return to the same process quickly. That is a mode switch without necessarily changing the running task. If a program calls <code>read()</code> and data is not ready, it may block, causing both a mode switch and a context switch.</p>
+<p>The fifth corner is multicore behavior. On a multicore system, one core can switch from task A to task B while another core continues running task C. Context switching is per CPU core, but scheduling decisions are system-wide enough to consider load balancing and affinity.</p>
+<p>The sixth corner is why context switching enables fairness but can hurt throughput. Fairness needs sharing. Sharing requires switching. But switching too often reduces the amount of time spent doing useful work.</p>
+<h2>Comparison Tables</h2>
+<div class="table-wrap"><table><thead>
+<tr>
+<th>Context Switch Type</th>
+<th>What changes</th>
+<th>Typical cost</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Process to process</td>
+<td>Registers, stack, task metadata, often address space</td>
+<td>Higher</td>
+<td>Browser process to editor process</td>
+</tr>
+<tr>
+<td>Thread to thread in same process</td>
+<td>Registers, stack, thread metadata</td>
+<td>Lower but not free</td>
+<td>Worker thread A to worker thread B</td>
+</tr>
+<tr>
+<td>Mode switch only</td>
+<td>CPU privilege level</td>
+<td>Usually lower than full context switch</td>
+<td>Fast system call returning to same process</td>
+</tr>
+<tr>
+<td>Interrupt handling without task switch</td>
+<td>Temporary kernel handling</td>
+<td>Usually short</td>
+<td>Timer interrupt decides same task continues</td>
+</tr>
+</tbody>
+</table></div><div class="table-wrap"><table><thead>
+<tr>
+<th>Concept</th>
+<th>Interview distinction</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ready</td>
+<td>Can run, waiting only for CPU</td>
+</tr>
+<tr>
+<td>Running</td>
+<td>Currently executing on a CPU core</td>
+</tr>
+<tr>
+<td>Waiting</td>
+<td>Cannot run until an event occurs</td>
+</tr>
+<tr>
+<td>Preempted</td>
+<td>Was running, forced back to ready</td>
+</tr>
+<tr>
+<td>Blocked</td>
+<td>Was running, moved to waiting because progress requires an event</td>
+</tr>
+</tbody>
+</table></div><h2>How to Explain This in an Interview</h2>
+<h3>30-second answer</h3>
+<p>A context switch is when the OS saves the CPU execution state of the currently running process or thread and restores the saved state of another one. It enables multitasking and preemption, but it is not free because the kernel must save and restore registers and may disturb caches, TLB state, and scheduling locality.</p>
+<h3>2-minute answer</h3>
+<p>When a timer interrupt, blocking system call, yield, or higher-priority wakeup occurs, the CPU enters kernel mode. The kernel saves the current task’s context, such as program counter, registers, stack pointer, and status flags, usually in task metadata associated with the PCB or TCB. The scheduler decides which ready task should run next. The kernel updates queues, restores the selected task’s saved state, and returns to user mode so that task continues from where it stopped. A process switch can be more expensive than a thread switch because it may involve changing address-space information and harming TLB locality. Context switching is necessary for responsiveness and fairness, but excessive switching can reduce throughput.</p>
+<h3>Deeper follow-up answer</h3>
+<p>The most important nuance is that scheduling, mode switching, and context switching are different. A scheduler decision chooses the next runnable task. A mode switch changes privilege level, such as user to kernel during a system call. A context switch changes the active execution context. A system call may only mode-switch if it returns immediately, but if it blocks on I/O, the kernel will context-switch to another ready task. The cost includes direct kernel work and indirect hardware effects such as cache warmth, TLB behavior, and CPU affinity.</p>
+<h2>Interview Questions</h2>
+<h3>Basic Questions</h3>
+<ol>
+<li>What is a context switch?</li>
+<li>Why does an operating system need context switching?</li>
+<li>What is usually saved during a context switch?</li>
+<li>How is context switching related to the PCB?</li>
+<li>What is the difference between ready and running in the context-switching story?</li>
+</ol>
+<h3>Intermediate Questions</h3>
+<ol start="6">
+<li>Why is context switching considered overhead?</li>
+<li>How can a timer interrupt cause a context switch?</li>
+<li>What is the difference between a voluntary and involuntary context switch?</li>
+<li>Is a system call always a context switch? Explain.</li>
+<li>Why is a process context switch often more expensive than a thread context switch?</li>
+</ol>
+<h3>Advanced Questions</h3>
+<ol start="11">
+<li>How can excessive context switching hurt server performance?</li>
+<li>How do cache and TLB effects contribute to context-switch cost?</li>
+<li>How does context switching relate to race conditions?</li>
+<li>What role does CPU affinity play in reducing context-switch overhead?</li>
+<li>Can context switching happen on multiple CPU cores at the same time?</li>
+</ol>
+<h2>Follow-Up Questions</h2>
+<p>Q: What is a context switch?<br>
+Follow-ups:</p>
+<ul>
+<li>Which registers or state must be saved?</li>
+<li>Where is the saved state stored?</li>
+<li>Is the whole process memory copied?</li>
+</ul>
+<p>Q: Why is context switching costly?<br>
+Follow-ups:</p>
+<ul>
+<li>What is the direct kernel cost?</li>
+<li>What are the cache and TLB effects?</li>
+<li>Why can too many threads make this worse?</li>
+</ul>
+<p>Q: How does a timer interrupt help preemption?<br>
+Follow-ups:</p>
+<ul>
+<li>Who sets the timer?</li>
+<li>Does the process know it was interrupted?</li>
+<li>What happens if the scheduler chooses the same process again?</li>
+</ul>
+<p>Q: Is a system call a context switch?<br>
+Follow-ups:</p>
+<ul>
+<li>What is a mode switch?</li>
+<li>When does a system call block?</li>
+<li>Can the same process resume after the system call?</li>
+</ul>
+<p>Q: Process switch vs thread switch?<br>
+Follow-ups:</p>
+<ul>
+<li>What state is shared by threads?</li>
+<li>Why can same-process thread switching be cheaper?</li>
+<li>Why is it still not free?</li>
+</ul>
+<p>Q: What happens when a process blocks for I/O?<br>
+Follow-ups:</p>
+<ul>
+<li>Which state does it enter?</li>
+<li>How does it become ready again?</li>
+<li>Does I/O completion immediately mean running?</li>
+</ul>
+<p>Q: How can context switching cause performance problems?<br>
+Follow-ups:</p>
+<ul>
+<li>What symptoms would you look for?</li>
+<li>Which commands can show high switch rates?</li>
+<li>How might a server reduce unnecessary switching?</li>
+</ul>
+<p>Q: How does context switching connect to synchronization bugs?<br>
+Follow-ups:</p>
+<ul>
+<li>What is an interleaving?</li>
+<li>Why can a race condition be intermittent?</li>
+<li>Why do locks change possible execution orders?</li>
+</ul>
+<h2>Trick Questions</h2>
+<ol>
+<li>
+<p>Q: Does context switching copy the entire memory of a process?<br>
+Expected answer: No. The OS saves execution state and switches mappings or metadata. Copying the full address space on every switch would be far too expensive.</p>
+</li>
+<li>
+<p>Q: If a process calls a system call, must another process run next?<br>
+Expected answer: No. The system call may return to the same process. Another process runs only if scheduling chooses a different context.</p>
+</li>
+<li>
+<p>Q: Is a thread context switch always faster than a process context switch?<br>
+Expected answer: Usually it can be cheaper within the same address space, but “always” is too strong. Actual cost depends on architecture, kernel path, cache state, and workload.</p>
+</li>
+<li>
+<p>Q: If a task is preempted, is it blocked?<br>
+Expected answer: No. A preempted task is usually still ready. It can run again when scheduled.</p>
+</li>
+<li>
+<p>Q: If context switching enables multitasking, should the OS switch as often as possible?<br>
+Expected answer: No. Frequent switching improves fairness only up to a point; beyond that it wastes CPU time and damages locality.</p>
+</li>
+<li>
+<p>Q: Does a context switch always move from user mode to user mode?<br>
+Expected answer: The handoff is managed in kernel mode. It may be triggered from user execution, kernel execution, interrupts, or blocking paths.</p>
+</li>
+<li>
+<p>Q: If a process is sleeping, is its context lost?<br>
+Expected answer: No. Its saved state and kernel metadata remain so it can resume when woken and scheduled.</p>
+</li>
+</ol>
+<h2>Practical Debugging / Observation</h2>
+<p>Use these commands on a Linux system or VM when available:</p>
+<pre><code class="language-bash">vmstat 1
+pidstat -w 1
+cat /proc/stat
+ps -eo pid,stat,comm
+top
+</code></pre>
+<p>What to observe:</p>
+<ul>
+<li>In <code>vmstat 1</code>, watch the <code>cs</code> column for context switches per second. Compare idle system behavior with heavy multitasking.</li>
+<li>In <code>pidstat -w 1</code>, look for voluntary and involuntary context switches per process. Voluntary switches often come from blocking or yielding; involuntary switches often come from preemption.</li>
+<li>In <code>/proc/stat</code>, the <code>ctxt</code> line shows total context switches since boot on Linux.</li>
+<li>In <code>ps</code>, process states help you connect ready, running, sleeping, stopped, and zombie-style states to lifecycle theory.</li>
+<li>In <code>top</code>, watch whether high CPU usage and high task counts correspond to system sluggishness.</li>
+</ul>
+<p>Do not diagnose from one number alone. A high context-switch count can be normal for interrupt-heavy or interactive workloads. It becomes a performance clue when paired with high latency, lock contention, too many runnable workers, or poor throughput.</p>
+<h2>Mini Quiz</h2>
+<h3>MCQs</h3>
+<ol>
+<li>
+<p>Which event commonly triggers preemptive context switching?<br>
+A. Timer interrupt<br>
+B. File rename only<br>
+C. HTML rendering only<br>
+D. Variable declaration<br>
+Answer: A</p>
+</li>
+<li>
+<p>Which item is most likely part of saved CPU context?<br>
+A. Program counter<br>
+B. Monitor brightness<br>
+C. File name string only<br>
+D. Desktop wallpaper<br>
+Answer: A</p>
+</li>
+<li>
+<p>A process waiting for disk I/O is usually:<br>
+A. Running continuously<br>
+B. Waiting or blocked<br>
+C. Terminated<br>
+D. Always zombie<br>
+Answer: B</p>
+</li>
+<li>
+<p>Scheduling is best described as:<br>
+A. Copying full memory<br>
+B. Choosing the next runnable task<br>
+C. Formatting the disk<br>
+D. Compiling source code<br>
+Answer: B</p>
+</li>
+<li>
+<p>A mode switch without a context switch can happen when:<br>
+A. A quick system call returns to the same process<br>
+B. The computer is unplugged<br>
+C. The process memory is copied entirely<br>
+D. The scheduler deletes all queues<br>
+Answer: A</p>
+</li>
+</ol>
+<h3>Short-answer questions</h3>
+<ol>
+<li>
+<p>Why is context switching necessary for interactive systems?<br>
+Answer: It lets the OS quickly move CPU time among UI, background, I/O, and user tasks so no single runnable program monopolizes the CPU.</p>
+</li>
+<li>
+<p>Why can process switching be costlier than thread switching?<br>
+Answer: A process switch may change address-space information and disturb TLB locality, while threads in the same process usually share the address space.</p>
+</li>
+<li>
+<p>What is the difference between blocked and preempted?<br>
+Answer: Blocked means the task cannot run until an event occurs. Preempted means the task can run but was moved back to ready so another task can use the CPU.</p>
+</li>
+</ol>
+<h3>Reasoning questions</h3>
+<ol>
+<li>
+<p>A web server creates 10,000 runnable threads on an 8-core machine. Why might throughput fall?<br>
+Answer: The scheduler may spend too much time switching among threads. Cache locality worsens, stacks consume memory, locks contend, and many threads wait for CPU rather than doing useful work.</p>
+</li>
+<li>
+<p>A program calls <code>read()</code> and the data is already in the page cache. Must the OS context-switch away?<br>
+Answer: No. The CPU enters kernel mode for the system call, but if data is ready and the call completes quickly, the same process may resume without switching to another task.</p>
+</li>
+</ol>
+<h1>5-Minute Revision Column</h1>
+<p>Revision targets for Day 7:</p>
+<ul>
+<li>Day 6: Process States and Lifecycle - R1 Recall Revision</li>
+<li>Day 4: OS Structures and Services - R2 Compression Revision</li>
+</ul>
+<h2>Day 6 - Process States and Lifecycle</h2>
+<p>Core recall: Process states describe what a process is currently able to do from the OS point of view. New means being created. Ready means it can run but does not currently have CPU time. Running means its instructions are executing on a CPU core. Waiting or blocked means it cannot continue until an event such as I/O completion, a lock release, or a signal. Terminated means execution is done and cleanup is needed.</p>
+<p>Key definitions:</p>
+<ul>
+<li>Process state: The current execution condition of a process as tracked by the OS.</li>
+<li>Ready queue: The set of runnable processes or threads waiting for CPU time.</li>
+<li>Waiting queue: A structure holding processes blocked on a specific event or resource.</li>
+</ul>
+<p>Common traps:</p>
+<ul>
+<li>Ready does not mean running. It means eligible for CPU.</li>
+<li>Waiting does not mean dead. It means blocked until an event occurs.</li>
+</ul>
+<p>Quick interview questions:</p>
+<ol>
+<li>If a process waits for disk I/O, should it stay on the CPU?</li>
+<li>Can a process move from waiting directly to running?</li>
+</ol>
+<p>Mental model: The CPU is the doctor, the ready queue is the waiting room, and the PCB is the patient file. A patient waiting for lab results should not occupy the treatment room.</p>
+<h2>Day 4 - OS Structures and Services</h2>
+<p>Core recall: OS structure is how the OS organizes kernel responsibilities, drivers, services, and communication paths. OS services are the capabilities exposed by that structure: process management, memory management, files, I/O, protection, security, networking, accounting, and error handling.</p>
+<p>Key definitions:</p>
+<ul>
+<li>Monolithic kernel: Many core services run in kernel space for direct performance.</li>
+<li>Microkernel: The kernel keeps only minimal core mechanisms, moving many services to user space.</li>
+<li>Modular kernel: A kernel can load components dynamically while still keeping them in kernel space.</li>
+</ul>
+<p>Common traps:</p>
+<ul>
+<li>Modular kernel is not automatically microkernel.</li>
+<li>Microkernel is not automatically faster; isolation can add communication overhead.</li>
+</ul>
+<p>Quick interview questions:</p>
+<ol>
+<li>Why can a monolithic design be fast but risky?</li>
+<li>Why are OS services more than just system calls?</li>
+</ol>
+<p>Mental model: A hospital can place many departments in one central building for speed, or separate departments for isolation. OS structures make similar performance, reliability, and maintainability tradeoffs.</p>
+<h2>Final Takeaway</h2>
+<p>Context switching is the operating system’s save-and-restore mechanism for moving CPU execution from one process or thread to another. It is what makes multitasking, preemption, and responsive systems possible. The OS saves the old execution context, updates process or thread state, chooses a ready task, restores that task’s context, and resumes execution from the saved program counter. The cost is not only saving registers; caches, TLBs, scheduling work, and CPU locality also matter. A strong interview answer separates scheduling, dispatching, mode switching, and context switching instead of merging them into one vague idea.</p>
+<h2>What You Should Be Able To Answer Now</h2>
+<ul>
+<li>Define context switching in a precise interview-ready way.</li>
+<li>Explain what CPU context includes and why it must be saved.</li>
+<li>Describe how timer interrupts enable preemptive multitasking.</li>
+<li>Walk through a context switch step by step.</li>
+<li>Distinguish scheduling, dispatching, mode switch, and context switch.</li>
+<li>Compare process context switches and thread context switches.</li>
+<li>Explain why excessive context switching hurts performance.</li>
+<li>Connect context switching to process states, I/O blocking, and future synchronization bugs.</li>
+</ul>
+</article>
+    </main>
+    <script>
+      (() => {
+        const article = document.querySelector(".article");
+        if (!article) return;
+        const chapterMap = {
+          "Opening Intuition": ["01", "Opening Intuition", "Why this concept exists in real systems before formal definition."],
+          "Interview Definition": ["02", "Interview Definition", "A clean interview-ready explanation with precise language."],
+          "Mental Model": ["03", "Mental Model", "A compact analogy that maps theory to practical recall."],
+          "Layer 1: What happens at a high level?": ["04", "Core Theory", "What the OS manages and how abstraction/resource management fit together."],
+          "Layer 2: What happens inside the OS?": ["05", "System Internals", "Kernel boundaries, data structures, and service flow inside the OS."],
+          "Step-by-Step Flow": ["06", "Step-by-Step Flow", "Concrete execution sequence you can narrate in interviews."],
+          "Practical System Relevance": ["07", "Practical Examples", "How the concept appears in Linux, Windows, Android, servers, and cloud."],
+          "Common Misconceptions": ["08", "Common Misconceptions", "High-frequency mistakes and what to say instead."],
+          "Tricky Interview Corners": ["09", "Tricky Interview Corners", "Edge cases and deeper follow-up traps interviewers probe."],
+          "Interview Questions": ["10", "Interview Questions", "Layered practice questions from basic to advanced."],
+          "5-Minute Revision Column": ["11", "5-Minute Revision Column", "Compressed spaced-repetition recall from prior targets."],
+          "Final Takeaway": ["12", "Final Takeaway", "The final memory model and what you should be able to answer now."]
+        };
+
+        const wrapAfterHeading = (title, className) => {
+          const heading = Array.from(article.querySelectorAll("h2")).find((el) => el.textContent?.trim() === title);
+          if (!heading) return;
+          const wrap = document.createElement("div");
+          wrap.className = className;
+          let node = heading.nextElementSibling;
+          while (node && node.tagName !== "H2") {
+            const next = node.nextElementSibling;
+            wrap.appendChild(node);
+            node = next;
+          }
+          heading.insertAdjacentElement("afterend", wrap);
+        };
+
+        wrapAfterHeading("Interview Definition", "definition-block");
+        wrapAfterHeading("5-Minute Revision Column", "revision-block");
+        wrapAfterHeading("Final Takeaway", "takeaway-block");
+        wrapAfterHeading("What You Should Be Able To Answer Now", "takeaway-block");
+
+        article.querySelectorAll("h2").forEach((heading) => {
+          const text = heading.textContent?.trim() ?? "";
+          const chapter = chapterMap[text];
+          if (!chapter) return;
+          const opener = document.createElement("div");
+          opener.className = "section-opener";
+          opener.innerHTML = "<div class=\"section-kicker\">SECTION " + chapter[0] + " / " + chapter[1].toUpperCase() + "</div><div class=\"section-summary\">" + chapter[2] + "</div>";
+          heading.insertAdjacentElement("beforebegin", opener);
+        });
+
+        const misconceptions = Array.from(article.querySelectorAll("h2")).find(
+          (el) => el.textContent?.trim() === "Common Misconceptions"
+        );
+        if (misconceptions) {
+          let node = misconceptions.nextElementSibling;
+          while (node && node.tagName !== "H2") {
+            if (node.tagName === "OL") {
+              node.querySelectorAll("li").forEach((li) => li.classList.add("trap-item"));
+            }
+            node = node.nextElementSibling;
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>

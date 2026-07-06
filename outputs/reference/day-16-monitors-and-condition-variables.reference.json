@@ -1,0 +1,93 @@
+{
+  "day": 16,
+  "topic": "Monitors and Condition Variables",
+  "difficulty": "Advanced",
+  "core_summary": [
+    "A monitor is a synchronization construct that combines shared data, the operations that access that data, and an implicit or explicit mutual-exclusion lock. A condition variable is used inside a monitor to let a thread wait until a condition over the protected shared state may become true. The standard pattern is: acquire the monitor lock, check the condition in a loop, call wait if the condition is false, perform the protected operation, update state, signal or broadcast waiting threads, and release the lock.",
+    "In an interview, say: a monitor protects shared state and condition variables coordinate waiting for state changes. wait atomically releases the monitor lock and blocks the thread; when the thread wakes up, it reacquires the lock and must re-check the condition because wakeups are not proof that the condition is now true."
+  ],
+  "key_definitions": {
+    "Monitor": "a synchronization abstraction that groups shared state, protected methods, and a lock so only one thread executes monitor code at a time.",
+    "Condition variable": "a waiting mechanism used with a lock; it lets threads sleep until another thread signals that a relevant condition may have changed.",
+    "Wait": "an operation that atomically releases the associated lock, blocks the calling thread, and later reacquires the lock before returning.",
+    "Signal": "an operation that wakes one waiting thread, if any, on a condition variable.",
+    "Broadcast": "an operation that wakes all waiting threads on a condition variable.",
+    "Predicate": "the actual boolean condition over shared state, such as queue.size() &gt; 0 or readers == 0.",
+    "Mesa monitor": "a monitor semantics where signal only makes a waiting thread ready; the signaling thread continues, and the waiter must later reacquire the lock and re-check the predicate.",
+    "Hoare monitor": "a monitor semantics where control transfers immediately from the signaling thread to the waiting thread, so the condition is guaranteed at the moment of wakeup."
+  },
+  "mental_model": "Think of a monitor as a secured service counter with one clerk window. Only one customer can stand at the window and modify the official ledger at a time. The ledger is the shared state. The counter's door lock is the monitor lock. A condition variable is not the ledger and not the rule. It is a waiting bench next to the counter. If a customer reaches the counter and sees that the required condition is not true, they step away to the proper bench and release the counter lock so someone else can change the ledger. Later, the clerk may call someone from the bench because the ledger may now allow progress. When the customer comes back to the window, they must check the ledger again. Another customer may have used the same opportunity first, or the clerk may have called everyone only to let one person proceed. The mature interview mental model is: the lock protects state; the predicate describes truth; the condition variable manages sleeping and wakeup. Confusing these three is the source of most bugs.",
+  "core_examples": [
+    {
+      "name": "Opening an application",
+      "point": "The OS loads executable code, creates a process, assigns memory, schedules CPU time, and services I/O."
+    },
+    {
+      "name": "Reading a file",
+      "point": "The app requests bytes while the OS handles permissions, metadata lookup, filesystem mapping, and device access."
+    }
+  ],
+  "practical_uses": [
+    "In Linux and POSIX-style programming, pthread_mutex_t plus pthread_cond_t is the classic way to build monitor-like code in C. The programmer manually keeps the mutex, condition variable, and predicate consistent.",
+    "In Java, every object can act as a monitor with synchronized, wait, notify, and notifyAll. Higher-level utilities such as BlockingQueue and ReentrantLock with Condition are often safer in real applications.",
+    "In C++, std::mutex, std::unique_lock, and std::condition_variable are used to express the same pattern. The standard examples intentionally use cv.wait(lock, predicate) because it handles the loop pattern.",
+    "In Windows, condition variables and slim reader-writer locks support efficient waiting and shared/exclusive coordination in user-mode applications.",
+    "In Android, the main thread event loop is not usually written with condition variables by app developers, but the same idea appears inside queues, executors, handlers, and runtime internals: threads sleep until work is available.",
+    "In browsers, rendering pipelines and worker queues use condition-style coordination internally. The JavaScript event loop hides much of this from application code, but browser engines still rely on low-level synchronization.",
+    "In databases, condition-style waiting appears in lock managers, buffer pools, transaction scheduling, worker pools, and background checkpointing. A transaction may wait until a lock, log buffer slot, or worker becomes available.",
+    "In servers and cloud systems, monitor-like queues implement bounded work submission. This creates backpressure: when the queue is full, producers block, reject, or slow down instead of allowing memory to grow without limit."
+  ],
+  "pitfalls": [
+    "&quot;A condition variable stores the condition.&quot; False. The condition is the predicate over protected shared state. The condition variable stores waiters and helps wake them.",
+    "&quot;If a thread wakes up, the condition must be true.&quot; False under Mesa-style semantics and because of spurious wakeups. Always re-check the predicate.",
+    "&quot;if before wait is enough.&quot; False. Use while because another thread may consume the state before the awakened waiter runs.",
+    "&quot;Signal gives the lock to the waiting thread immediately.&quot; Usually false in modern systems. The waiter normally competes to reacquire the lock."
+  ],
+  "misconceptions": [
+    "&quot;A condition variable stores the condition.&quot; False. The condition is the predicate over protected shared state. The condition variable stores waiters and helps wake them.",
+    "&quot;If a thread wakes up, the condition must be true.&quot; False under Mesa-style semantics and because of spurious wakeups. Always re-check the predicate.",
+    "&quot;if before wait is enough.&quot; False. Use while because another thread may consume the state before the awakened waiter runs.",
+    "&quot;Signal gives the lock to the waiting thread immediately.&quot; Usually false in modern systems. The waiter normally competes to reacquire the lock.",
+    "&quot;Broadcast is always better because it wakes everyone.&quot; False. Broadcast can create a thundering herd where many threads wake only to sleep again.",
+    "&quot;Monitors eliminate deadlock.&quot; False. A monitor protects its own state, but multiple monitors or external locks can still deadlock if acquired in inconsistent order."
+  ],
+  "tricky_questions": [
+    {
+      "question": "If signal is called, is the awakened thread guaranteed to run immediately?",
+      "answer": "No. In Mesa-style systems, it usually only becomes ready and must reacquire the lock later."
+    },
+    {
+      "question": "Can a condition variable be used without checking a predicate?",
+      "answer": "That is usually incorrect. The predicate is the actual condition; the condition variable is only the waiting mechanism."
+    },
+    {
+      "question": "If there are no waiters, does signal save a wakeup for the future?",
+      "answer": "No. A condition variable normally does not remember signals. The state predicate must remember whether progress is possible."
+    },
+    {
+      "question": "Does wait keep the mutex locked while the thread sleeps?",
+      "answer": "No. It atomically releases the mutex while blocking, then reacquires it before returning."
+    },
+    {
+      "question": "Is notifyAll or broadcast always a bad design?",
+      "answer": "No. It can be necessary when multiple waiters may have different predicates or when many threads can proceed."
+    },
+    {
+      "question": "Can a spurious wakeup cause a correct program to fail?",
+      "answer": "Not if the program uses the standard while (!predicate) wait() pattern."
+    },
+    {
+      "question": "Does a monitor make every method of an object thread-safe automatically?",
+      "answer": "Only if all shared state access consistently goes through the monitor discipline and the object does not leak unsafe references."
+    }
+  ],
+  "interview_ready_answer": {
+    "short": "### 30-second answer",
+    "medium": "A monitor is a way to protect shared state by allowing only one thread at a time to execute operations on that state. A condition variable is used inside the monitor when a thread cannot proceed until a state condition changes. The thread waits by atomically releasing the lock and sleeping, then wakes, reacquires the lock, and re-checks the condition."
+  },
+  "revision_history": {
+    "times_revised": 2,
+    "last_revised_on_day": 19,
+    "revision_strength": "R3"
+  }
+}

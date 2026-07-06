@@ -1,0 +1,54 @@
+{
+  "day": 10,
+  "topic": "Scheduling Algorithms Part 2",
+  "difficulty": "Intermediate",
+  "core_summary": [
+    "Round Robin is a preemptive time-sharing scheduling algorithm where each ready process gets a fixed time quantum; if it does not finish within that quantum, it is preempted and placed back into the ready queue. Multilevel Queue scheduling separates processes into fixed queues, often by workload type or priority, and schedules among those queues using a policy such as fixed priority or time sharing. Multilevel Feedback Queue scheduling improves this by allowing processes to move between queues based on behavior, rewarding interactive or I/O-bound tasks and demoting CPU-bound tasks."
+  ],
+  "key_definitions": {},
+  "mental_model": "Think of the CPU as a shared meeting room. Round Robin is a strict meeting timer. Each person gets, say, 10 minutes. If the person finishes early, the room goes to the next person immediately. If not, the timer rings, their notes are saved, and they return to the end of the line. This prevents one person from occupying the room all day. Multilevel Queue is a building with separate lines: emergency line, regular appointment line, and long-consultation line. People do not freely jump between lines. The building may always serve emergency first, or it may split time across lines.",
+  "core_examples": [
+    {
+      "name": "Opening an application",
+      "point": "The OS loads executable code, creates a process, assigns memory, schedules CPU time, and services I/O."
+    },
+    {
+      "name": "Reading a file",
+      "point": "The app requests bytes while the OS handles permissions, metadata lookup, filesystem mapping, and device access."
+    }
+  ],
+  "practical_uses": [],
+  "pitfalls": [],
+  "misconceptions": [],
+  "tricky_questions": [
+    {
+      "question": "If Round Robin gives everyone a fair turn, does it always minimize waiting time?",
+      "answer": ""
+    },
+    {
+      "question": "If the quantum is 1 millisecond, is the system always more responsive?",
+      "answer": ""
+    },
+    {
+      "question": "If the quantum is infinite, is it still meaningful Round Robin?",
+      "answer": ""
+    },
+    {
+      "question": "Does MLFQ require knowing the exact future CPU burst?",
+      "answer": ""
+    },
+    {
+      "question": "Can a low-priority queue starve even when there is no deadlock?",
+      "answer": ""
+    }
+  ],
+  "interview_ready_answer": {
+    "short": "### 30-second answer",
+    "medium": "Round Robin is a preemptive scheduling algorithm where each process gets a fixed time quantum. If it finishes early, it leaves; if not, it is moved to the back of the ready queue. It improves fairness and response time but depends heavily on quantum size. MLFQ extends this idea using multiple priority queues and moves tasks between them based on behavior."
+  },
+  "revision_history": {
+    "times_revised": 3,
+    "last_revised_on_day": 15,
+    "revision_strength": "R3"
+  }
+}

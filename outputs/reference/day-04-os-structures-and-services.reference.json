@@ -1,0 +1,68 @@
+{
+  "day": 4,
+  "topic": "OS Structures and Services",
+  "difficulty": "Intermediate",
+  "core_summary": [
+    "OS structure describes how an operating system organizes its kernel, services, drivers, user interfaces, system-call handlers, and resource-management components.",
+    "OS services are the functions the operating system provides to users, applications, and the system itself, such as process management, memory management, file management, I/O handling, protection, security, networking, accounting, and error handling.",
+    "In an interview, say: an OS structure is the architectural design of the operating system, while OS services are the actual capabilities exposed by that design. Monolithic, microkernel, layered, modular, and virtual-machine designs differ mainly in where services run, how they communicate, and what tradeoffs they make between performance, isolation, reliability, and maintainability."
+  ],
+  "key_definitions": {},
+  "mental_model": "Think of an operating system as a large hospital. The hospital must provide many services: emergency care, surgery, labs, pharmacy, patient records, security, billing, scheduling, and maintenance. One design could place every department in one tightly connected central building. Requests move quickly because everyone is nearby, but a fire or failure in the central building affects many critical functions. Another design could keep only emergency coordination in the central building and move labs, pharmacy, records, and maintenance into separate buildings. A lab failure may not shut down surgery, but communication takes more coordination.",
+  "core_examples": [
+    {
+      "name": "Opening an application",
+      "point": "The OS loads executable code, creates a process, assigns memory, schedules CPU time, and services I/O."
+    },
+    {
+      "name": "Reading a file",
+      "point": "The app requests bytes while the OS handles permissions, metadata lookup, filesystem mapping, and device access."
+    }
+  ],
+  "practical_uses": [],
+  "pitfalls": [
+    "Monolithic means messy.",
+    "Microkernel always means better.",
+    "A modular kernel is the same as a microkernel.",
+    "Layered OS means every real OS follows strict layers."
+  ],
+  "misconceptions": [
+    "Monolithic means messy.",
+    "Microkernel always means better.",
+    "A modular kernel is the same as a microkernel.",
+    "Layered OS means every real OS follows strict layers.",
+    "Virtual machines are the same as containers.",
+    "OS services are only for user convenience."
+  ],
+  "tricky_questions": [
+    {
+      "question": "Is Linux a microkernel because it supports modules?",
+      "answer": ""
+    },
+    {
+      "question": "Is a microkernel always faster than a monolithic kernel because it is smaller?",
+      "answer": ""
+    },
+    {
+      "question": "If a driver is loaded as a module, is it automatically safe from crashing the kernel?",
+      "answer": ""
+    },
+    {
+      "question": "Does a virtual machine share the host kernel the same way a container does?",
+      "answer": ""
+    },
+    {
+      "question": "Are OS services only system calls?",
+      "answer": ""
+    }
+  ],
+  "interview_ready_answer": {
+    "short": "### 30-second answer",
+    "medium": "OS structure is how an operating system organizes its kernel and services. OS services include process management, memory management, file systems, I/O, protection, security, and networking. Monolithic kernels keep many services in kernel space for direct performance, microkernels keep the kernel small and move services to user space for isolation, layered systems organize responsibilities by levels, modular kernels support loadable components, and virtual machines isolate full guest OSes through a hypervisor."
+  },
+  "revision_history": {
+    "times_revised": 2,
+    "last_revised_on_day": 7,
+    "revision_strength": "R3"
+  }
+}

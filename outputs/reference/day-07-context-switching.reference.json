@@ -1,0 +1,77 @@
+{
+  "day": 7,
+  "topic": "Context Switching",
+  "difficulty": "Intermediate",
+  "core_summary": [
+    "Context switching is the operating system operation of saving the current execution context of a running process or thread and restoring the saved context of another process or thread so the CPU can continue execution from the new one.",
+    "The context usually includes the program counter, CPU registers, stack pointer, processor status, and scheduling or memory-management metadata connected to the PCB or thread control block.",
+    "In an interview, say: a context switch lets the OS share CPU time among multiple processes or threads, but it has overhead because the CPU stops useful user work while the kernel saves and restores execution state and may disturb caches and TLB entries."
+  ],
+  "key_definitions": {},
+  "mental_model": "Think of the CPU as a single focused interview room and the OS scheduler as the coordinator. A candidate is answering a question on the whiteboard. Suddenly, the coordinator says time is up or the candidate needs to wait for a document. Before removing the candidate from the room, the coordinator photographs the board, records the current question, stores the candidate's notes, and marks where the candidate stopped. Then the coordinator brings in another candidate and restores that candidate's previous board state, notes, and question. The second candidate continues as if the room had always belonged to them. The photograph and notes are the saved CPU context. The candidate file is like the PCB or TCB. The coordinator's decision is scheduling. The act of clearing one board and restoring another is context switching.",
+  "core_examples": [
+    {
+      "name": "Opening an application",
+      "point": "The OS loads executable code, creates a process, assigns memory, schedules CPU time, and services I/O."
+    },
+    {
+      "name": "Reading a file",
+      "point": "The app requests bytes while the OS handles permissions, metadata lookup, filesystem mapping, and device access."
+    }
+  ],
+  "practical_uses": [
+    "Linux schedules tasks, where a task may represent a process or thread. Context switching is part of how the kernel moves CPU execution between runnable tasks.",
+    "Windows also schedules threads rather than only whole processes. A process owns resources such as address space and handles, while threads are the schedulable execution units.",
+    "Android depends heavily on context switching because UI responsiveness, background services, media playback, and app sandboxing all compete for CPU time.",
+    "Browsers use multiple processes and many threads. Rendering, networking, JavaScript execution, GPU work, and extensions may be isolated or scheduled separately.",
+    "Servers rely on context switching when handling many clients. A web server may use worker processes, worker threads, async event loops, or a combination.",
+    "Databases care about context switching because too many worker threads can reduce throughput through scheduler overhead and cache disruption.",
+    "Containers do not remove context switching. Containerized processes are still scheduled by the host kernel, often with cgroup limits influencing CPU share.",
+    "Cloud systems tune CPU quotas and core placement because scheduling overhead, preemption, and cache locality affect latency-sensitive workloads."
+  ],
+  "pitfalls": [
+    "Context switching is the same as scheduling. Correction: scheduling chooses the next task; context switching performs the save-and-restore handoff.",
+    "A system call always causes a context switch. Correction: a system call causes a mode switch. It causes a context switch only if the current task blocks, exits, yields, or is preempted.",
+    "Context switching is only saving the program counter. Correction: the OS must preserve enough CPU and execution state to resume correctly, including registers, stack pointer, flags, and related scheduling or memory metadata.",
+    "Thread switches are free. Correction: thread switches are often cheaper than process switches within the same address space, but they still save and restore registers, stacks, and scheduling state."
+  ],
+  "misconceptions": [
+    "Context switching is the same as scheduling. Correction: scheduling chooses the next task; context switching performs the save-and-restore handoff.",
+    "A system call always causes a context switch. Correction: a system call causes a mode switch. It causes a context switch only if the current task blocks, exits, yields, or is preempted.",
+    "Context switching is only saving the program counter. Correction: the OS must preserve enough CPU and execution state to resume correctly, including registers, stack pointer, flags, and related scheduling or memory metadata.",
+    "Thread switches are free. Correction: thread switches are often cheaper than process switches within the same address space, but they still save and restore registers, stacks, and scheduling state.",
+    "More threads always improve performance. Correction: too many runnable threads can increase context switching, cache misses, lock contention, and memory use.",
+    "A process waiting for I/O is still consuming CPU because it is alive. Correction: a blocked process exists but should not run until the awaited event completes."
+  ],
+  "tricky_questions": [
+    {
+      "question": "Does context switching copy the entire memory of a process?",
+      "answer": ""
+    },
+    {
+      "question": "If a process calls a system call, must another process run next?",
+      "answer": ""
+    },
+    {
+      "question": "Is a thread context switch always faster than a process context switch?",
+      "answer": ""
+    },
+    {
+      "question": "If a task is preempted, is it blocked?",
+      "answer": ""
+    },
+    {
+      "question": "If context switching enables multitasking, should the OS switch as often as possible?",
+      "answer": ""
+    }
+  ],
+  "interview_ready_answer": {
+    "short": "### 30-second answer",
+    "medium": "A context switch is when the OS saves the CPU execution state of the currently running process or thread and restores the saved state of another one. It enables multitasking and preemption, but it is not free because the kernel must save and restore registers and may disturb caches, TLB state, and scheduling locality."
+  },
+  "revision_history": {
+    "times_revised": 2,
+    "last_revised_on_day": 10,
+    "revision_strength": "R3"
+  }
+}

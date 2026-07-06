@@ -1,0 +1,91 @@
+{
+  "day": 13,
+  "topic": "Race Conditions",
+  "difficulty": "Intermediate",
+  "core_summary": [
+    "A race condition occurs when the correctness of a program depends on the relative timing or interleaving of multiple threads, processes, interrupts, or asynchronous tasks accessing shared state. It usually happens when at least one execution flow writes shared data and the access is not properly synchronized.",
+    "In an interview, say: a race condition is a concurrency bug where the final result depends on unpredictable scheduling order. The common fix is to identify the critical section and protect it using atomic operations, locks, semaphores, monitors, message passing, or another synchronization strategy."
+  ],
+  "key_definitions": {
+    "Shared data": "memory, file state, database rows, counters, queues, caches, or device state visible to more than one execution flow.",
+    "Critical section": "a region of code that accesses shared state and must not be executed concurrently in an unsafe way.",
+    "Race condition": "a correctness bug caused by timing-dependent access to shared state.",
+    "Data race": "a lower-level case where two threads access the same memory location concurrently, at least one access is a write, and there is no proper synchronization.",
+    "Atomic operation": "an operation that appears indivisible to other threads.",
+    "Interleaving": "the order in which steps from multiple execution flows are mixed by the scheduler or hardware.",
+    "Lost update": "a race where two updates are based on old values and one update overwrites the effect of the other.",
+    "Mutual exclusion": "a guarantee that only one thread enters a protected critical section at a time."
+  },
+  "mental_model": "Think of shared state as a whiteboard in a meeting room. Several people can read it, calculate something on paper, and write a new value back. If two people read the same old number before either writes, their later writes may conflict. The whiteboard itself is not wrong. The problem is that &quot;read, modify, write&quot; was treated like one action even though it is really multiple steps. The useful interview mental model is: Shared state is the whiteboard.",
+  "core_examples": [
+    {
+      "name": "Opening an application",
+      "point": "The OS loads executable code, creates a process, assigns memory, schedules CPU time, and services I/O."
+    },
+    {
+      "name": "Reading a file",
+      "point": "The app requests bytes while the OS handles permissions, metadata lookup, filesystem mapping, and device access."
+    }
+  ],
+  "practical_uses": [
+    "In Linux, threads in the same process share an address space, open file table references, signal dispositions, and other process resources. Kernel code must protect internal shared structures because many CPUs can enter kernel code at once. You see the practical effect in tools like top or ps -L, where a process can have multiple schedulable threads.",
+    "In Windows, the scheduler also schedules threads, not &quot;the process&quot; as a single running object. GUI applications often require UI state to be touched from a main UI thread because concurrent updates to widgets can create races and inconsistent state.",
+    "In Android, touching UI elements from background threads is restricted. Long work moves to workers, but UI state changes must be coordinated back to the main thread. This is a race-prevention design, not just a style rule.",
+    "In browsers, multiple processes and threads isolate work: rendering, networking, JavaScript execution, compositing, and storage may be separated. Shared caches and event queues still need ordering rules. JavaScript avoids many shared-memory races in normal single-threaded event-loop code, but Web Workers and shared buffers reintroduce explicit synchronization concerns.",
+    "In databases, race conditions appear as lost updates, dirty reads, double booking, inconsistent indexes, or incorrect inventory counts. Transactions, isolation levels, row locks, compare-and-swap updates, and optimistic concurrency checks exist because shared data correctness is difficult under concurrent requests.",
+    "In servers and cloud systems, race conditions appear in request counters, token refresh logic, distributed locks, cache invalidation, job queues, and idempotency handling. A race can happen across machines too, not only inside one process, when two services update the same external resource."
+  ],
+  "pitfalls": [
+    "&quot;Race conditions require multiple CPU cores.&quot; False. A single-core system can switch threads between instructions and create unsafe interleavings.",
+    "&quot;counter++ is one operation.&quot; False at the level that matters for concurrency. It usually involves load, modify, and store.",
+    "&quot;If I cannot reproduce it, it is not a bug.&quot; False. Race conditions are timing-sensitive and may be rare.",
+    "&quot;Locks make code correct automatically.&quot; False. The lock must protect the right data, and all access paths must follow the same rule."
+  ],
+  "misconceptions": [
+    "&quot;Race conditions require multiple CPU cores.&quot; False. A single-core system can switch threads between instructions and create unsafe interleavings.",
+    "&quot;counter++ is one operation.&quot; False at the level that matters for concurrency. It usually involves load, modify, and store.",
+    "&quot;If I cannot reproduce it, it is not a bug.&quot; False. Race conditions are timing-sensitive and may be rare.",
+    "&quot;Locks make code correct automatically.&quot; False. The lock must protect the right data, and all access paths must follow the same rule.",
+    "&quot;Atomic variables solve every race.&quot; False. Atomics help with small values and carefully designed lock-free protocols, but complex invariants often need broader synchronization.",
+    "&quot;Race condition and deadlock are the same.&quot; False. A race is unsafe timing-dependent access. A deadlock is a set of flows stuck waiting forever."
+  ],
+  "tricky_questions": [
+    {
+      "question": "If a program runs correctly 1000 times, is it free of race conditions?",
+      "answer": "No. Timing-sensitive bugs may require a rare interleaving."
+    },
+    {
+      "question": "Does a single CPU core eliminate race conditions?",
+      "answer": "No. Preemption can switch threads in the middle of a non-atomic operation."
+    },
+    {
+      "question": "If two threads only read the same variable, is that a race?",
+      "answer": "Usually no for immutable stable data. Races require conflicting access or timing-dependent correctness."
+    },
+    {
+      "question": "Is every race condition a deadlock?",
+      "answer": "No. A race often produces a wrong result; a deadlock means execution gets stuck."
+    },
+    {
+      "question": "Does making a variable volatile fix a shared counter race?",
+      "answer": "No. volatile is not a general mutual-exclusion or atomicity mechanism."
+    },
+    {
+      "question": "Can a database application have race conditions even if it has no shared memory?",
+      "answer": "Yes. Concurrent transactions can race on persistent rows, inventory counts, bookings, or uniqueness checks."
+    },
+    {
+      "question": "If you add a lock around only the write, is the race fixed?",
+      "answer": "Not necessarily. The entire read-modify-write invariant must be protected."
+    }
+  ],
+  "interview_ready_answer": {
+    "short": "### 30-second answer",
+    "medium": "A race condition happens when multiple threads or processes access shared state and the program's correctness depends on their timing. The classic example is two threads incrementing a shared counter: both read the same old value, both compute a new value, and one update is lost. We prevent it by identifying the critical section and enforcing synchronization with locks, atomics, transactions, or message passing."
+  },
+  "revision_history": {
+    "times_revised": 2,
+    "last_revised_on_day": 16,
+    "revision_strength": "R3"
+  }
+}

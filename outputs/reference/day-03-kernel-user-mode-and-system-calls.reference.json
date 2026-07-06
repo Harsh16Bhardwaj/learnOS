@@ -1,0 +1,78 @@
+{
+  "day": 3,
+  "topic": "Kernel, User Mode, and System Calls",
+  "difficulty": "Beginner",
+  "core_summary": [
+    "A kernel is the privileged core of an operating system that manages protected resources such as CPU scheduling, memory, files, devices, and security.",
+    "User mode is a restricted CPU execution mode used by normal applications. Kernel mode is a privileged CPU execution mode used by the OS kernel and trusted kernel code.",
+    "A system call is a controlled request from a user-mode program to the kernel for an OS service, usually entered through a trap or special CPU instruction that switches execution into kernel mode.",
+    "In an interview, say: applications run in user mode for safety, the kernel runs in kernel mode for protected resource control, and system calls provide the safe boundary where user programs request kernel services."
+  ],
+  "key_definitions": {},
+  "mental_model": "Think of the OS as a secured airport. Passengers can move through public areas, buy food, wait at gates, and use normal services. That is like user mode: useful, but restricted. Air traffic control, runway access, baggage control, and security checkpoints are not open to passengers. That is like kernel mode: privileged and dangerous if misused. A system call is like an official service counter. A passenger cannot walk onto the runway to load luggage. They submit a request through the counter. The staff checks permissions, follows procedure, performs the protected action, and returns a result.",
+  "core_examples": [
+    {
+      "name": "Opening an application",
+      "point": "The OS loads executable code, creates a process, assigns memory, schedules CPU time, and services I/O."
+    },
+    {
+      "name": "Reading a file",
+      "point": "The app requests bytes while the OS handles permissions, metadata lookup, filesystem mapping, and device access."
+    }
+  ],
+  "practical_uses": [
+    "Linux: User programs commonly enter the kernel through system calls such as read, write, openat, mmap, clone, execve, wait, socket, and ioctl.",
+    "Windows: Applications use Win32 APIs such as CreateFile, ReadFile, and CreateProcess; many eventually transition into native system services managed by the Windows kernel.",
+    "Android: Apps are sandboxed and rely on Linux kernel services underneath Android framework APIs; permissions and process isolation are essential to app safety.",
+    "Browsers: Browser processes use system calls for files, sockets, timers, shared memory, process creation, and sandbox enforcement.",
+    "Databases: A database uses system calls for file I/O, memory mapping, fsync, sockets, locks, and process/thread coordination.",
+    "Servers: Web servers depend on system calls for accepting connections, reading requests, writing responses, timers, and efficient event loops.",
+    "Containers: Containers are not separate kernels; they rely on kernel features such as namespaces, cgroups, capabilities, and system call filtering.",
+    "Security tools: Sandboxes and seccomp-style filters limit which system calls a process can make, reducing damage if the process is compromised."
+  ],
+  "pitfalls": [
+    "User mode means the program is unimportant. Correction: user mode is where most application work happens; it is restricted for safety, not because it is useless.",
+    "Kernel mode means the CPU is physically different. Correction: the same CPU executes instructions, but privilege checks and allowed operations change.",
+    "A system call is just a normal function call. Correction: a function call stays in the same privilege mode; a system call crosses into kernel mode through a controlled CPU mechanism.",
+    "Every library call is a system call. Correction: many library calls are pure user-space code; only protected OS services require system calls."
+  ],
+  "misconceptions": [
+    "User mode means the program is unimportant. Correction: user mode is where most application work happens; it is restricted for safety, not because it is useless.",
+    "Kernel mode means the CPU is physically different. Correction: the same CPU executes instructions, but privilege checks and allowed operations change.",
+    "A system call is just a normal function call. Correction: a function call stays in the same privilege mode; a system call crosses into kernel mode through a controlled CPU mechanism.",
+    "Every library call is a system call. Correction: many library calls are pure user-space code; only protected OS services require system calls.",
+    "printf is the system call that writes to the screen. Correction: printf is a library function; it may eventually use write or another OS-specific mechanism.",
+    "A mode switch and a context switch are the same. Correction: a mode switch changes user/kernel privilege; a context switch changes the running process or thread context."
+  ],
+  "tricky_questions": [
+    {
+      "question": "Is printf itself a system call?",
+      "answer": ""
+    },
+    {
+      "question": "Does every system call cause a context switch?",
+      "answer": ""
+    },
+    {
+      "question": "Is kernel mode a different physical CPU?",
+      "answer": ""
+    },
+    {
+      "question": "If a program runs in user mode, can it never use hardware?",
+      "answer": ""
+    },
+    {
+      "question": "Are interrupts and system calls the same because both enter the kernel?",
+      "answer": ""
+    }
+  ],
+  "interview_ready_answer": {
+    "short": "### 30-second answer",
+    "medium": "The kernel is the privileged core of the OS. Applications run in user mode so they cannot directly access hardware, kernel memory, or other processes. When an application needs a protected service, it makes a system call, which uses a trap or syscall instruction to enter kernel mode. The kernel validates the request, performs the service, and returns control to user mode."
+  },
+  "revision_history": {
+    "times_revised": 2,
+    "last_revised_on_day": 6,
+    "revision_strength": "R3"
+  }
+}
