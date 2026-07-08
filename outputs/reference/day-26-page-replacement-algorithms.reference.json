@@ -1,0 +1,90 @@
+{
+  "day": 26,
+  "topic": "Page Replacement Algorithms",
+  "difficulty": "Advanced",
+  "core_summary": [
+    "Page replacement is the operating system policy used during demand paging when a required page must be loaded into RAM but no free physical frame is available. The OS selects a victim page, writes it back if it is dirty, marks its page-table entry non-present, loads the needed page into the freed frame, updates the page table, and restarts the faulting instruction. Common algorithms include FIFO, Optimal, LRU, and Clock."
+  ],
+  "key_definitions": {
+    "Page replacement": "the process of choosing a resident page to evict from physical memory when a new page must be loaded and no free frame is available.",
+    "Victim page": "the page selected for eviction.",
+    "Page fault": "a trap that occurs when the CPU cannot complete a virtual-address translation for the attempted access, often because the page is not resident.",
+    "Dirty page": "a page whose contents have been modified in RAM and must be written back before eviction if its backing copy is stale.",
+    "Clean page": "a page that matches its backing store and can usually be discarded without a write-back.",
+    "Reference string": "a sequence of page accesses used to analyze page replacement behavior.",
+    "Frame": "a fixed-size block of physical memory that can hold one page.",
+    "FIFO": "First-In, First-Out replacement; evicts the page that has been in memory the longest."
+  },
+  "mental_model": "Think of RAM as a small desk and virtual memory as a large library. The process can refer to many books, but only a few open books fit on the desk. When the learner asks for a book that is not on the desk, someone must fetch it. If the desk is full, one open book must be removed. FIFO removes the book that has been on the desk longest, even if it is still important. Optimal would remove the book that will not be needed for the longest time, but it requires knowing the future. LRU assumes the recent past predicts the near future and removes the book ignored for the longest time. Clock walks around the desk giving recently touched books a second chance. This model is useful because page replacement is not about whether pages are valid. The pages are valid parts of the process address space. The issue is residency: which valid page is currently in physical RAM and which page can be temporarily moved out or discarded.",
+  "core_examples": [
+    {
+      "name": "Opening an application",
+      "point": "The OS loads executable code, creates a process, assigns memory, schedules CPU time, and services I/O."
+    },
+    {
+      "name": "Reading a file",
+      "point": "The app requests bytes while the OS handles permissions, metadata lookup, filesystem mapping, and device access."
+    }
+  ],
+  "practical_uses": [
+    "In Linux, page reclaim is more sophisticated than a pure textbook algorithm. The kernel tracks active and inactive pages, file-backed pages, anonymous pages, dirty pages, and unevictable pages. It uses reference information to approximate recency and tries to reclaim pages that are cheap or unlikely to be needed soon. You can observe memory pressure with tools such as free, vmstat, top, and /proc/meminfo.",
+    "In Windows, page replacement is visible through concepts such as working sets, hard faults, standby lists, modified pages, and pagefile activity. A hard fault does not always mean a bug; it often means the memory manager had to retrieve a page from disk or a mapped file.",
+    "In Android, memory pressure is especially important because devices have constrained RAM and many background apps. The system may reclaim file-backed pages, trim app memory, or kill background processes instead of allowing uncontrolled paging to destroy responsiveness.",
+    "In browsers, each tab or renderer process can create large heaps, compiled JavaScript code, images, and memory-mapped resources. If many tabs compete for memory, the system may evict pages, compress pages, discard tab resources, or suspend background work.",
+    "In databases, page replacement appears at two levels. The OS replaces virtual memory pages, while the database may also manage its own buffer pool pages. Poor coordination can cause double caching or surprising I/O. Many databases prefer explicit buffer management because they understand query access patterns better than the OS.",
+    "In cloud systems and containers, page replacement still belongs to the host kernel. Container memory limits can cause reclaim, swap activity, or out-of-memory kills. A container does not own a separate kernel page replacement algorithm; it runs under host memory policy and cgroup limits."
+  ],
+  "pitfalls": [
+    "Page replacement and page fault are the same thing. A page fault is the event; page replacement is one possible response when no free frame is available.",
+    "FIFO is good because it is fair. FIFO is simple, but fairness by arrival time does not imply low page faults.",
+    "Optimal replacement can be implemented if the OS is smart enough. Optimal needs future knowledge, so it is mainly a benchmark for comparison.",
+    "LRU always performs best in real systems. LRU is often good because of locality, but it can suffer on large scans and is expensive to implement exactly."
+  ],
+  "misconceptions": [
+    "Page replacement and page fault are the same thing. A page fault is the event; page replacement is one possible response when no free frame is available.",
+    "FIFO is good because it is fair. FIFO is simple, but fairness by arrival time does not imply low page faults.",
+    "Optimal replacement can be implemented if the OS is smart enough. Optimal needs future knowledge, so it is mainly a benchmark for comparison.",
+    "LRU always performs best in real systems. LRU is often good because of locality, but it can suffer on large scans and is expensive to implement exactly.",
+    "More frames always reduce page faults. This is true for stack algorithms such as LRU, but not for FIFO; Belady's anomaly exists.",
+    "A clean page and a dirty page cost the same to evict. Dirty pages may require write-back, so they are usually more expensive."
+  ],
+  "tricky_questions": [
+    {
+      "question": "If a page fault occurs, must the OS always evict another page?",
+      "answer": "No. If a free frame exists, the OS can load the demanded page without replacement."
+    },
+    {
+      "question": "Is Optimal replacement the algorithm used by modern operating systems?",
+      "answer": "No. It requires future knowledge. It is a theoretical benchmark, not a directly implementable policy."
+    },
+    {
+      "question": "Does adding more RAM frames always reduce page faults for FIFO?",
+      "answer": "No. FIFO can show Belady's anomaly, where more frames cause more page faults for certain reference strings."
+    },
+    {
+      "question": "Is a TLB miss the same as a page fault?",
+      "answer": "No. A TLB miss only means the translation is not cached. The page may still be resident in RAM."
+    },
+    {
+      "question": "Can a clean page be evicted without writing it to disk?",
+      "answer": "Usually yes, if the backing store already has the same contents."
+    },
+    {
+      "question": "Does LRU know which page will be used next?",
+      "answer": "No. It uses past recency as a prediction of future locality."
+    },
+    {
+      "question": "Is page replacement only a process-level decision?",
+      "answer": "No. It is system-wide policy constrained by process mappings, page types, dirty state, cgroups, pinned pages, and kernel memory rules."
+    }
+  ],
+  "interview_ready_answer": {
+    "short": "### 30-second answer",
+    "medium": "Page replacement is used in virtual memory when a needed page is not in RAM and there is no free frame. The OS chooses a victim page, writes it back if dirty, updates page tables, loads the demanded page, and restarts the instruction. FIFO, Optimal, LRU, and Clock differ mainly in how they choose the victim."
+  },
+  "revision_history": {
+    "times_revised": 0,
+    "last_revised_on_day": null,
+    "revision_strength": "R1"
+  }
+}

@@ -85,8 +85,8 @@
     "medium": "Multi-level page tables are hierarchical page tables used to avoid allocating one huge flat page table for a large virtual address space. The virtual page number is split into multiple indexes, and each index selects a level in the hierarchy. Lower-level tables are allocated only for used virtual regions, so sparse address spaces become practical."
   },
   "revision_history": {
-    "times_revised": 1,
-    "last_revised_on_day": 24,
-    "revision_strength": "R2"
+    "times_revised": 2,
+    "last_revised_on_day": 26,
+    "revision_strength": "R3"
   }
 }

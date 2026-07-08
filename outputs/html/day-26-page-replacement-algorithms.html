@@ -1,0 +1,876 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Day 26 - Page Replacement Algorithms</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #070707;
+        --surface: #101010;
+        --surface-soft: #151515;
+        --border: #262626;
+        --text: #d8d8d8;
+        --muted: #8f8f8f;
+        --faint: #5f5f5f;
+        --cyan: #67e8f9;
+        --amber: #f4c95d;
+        --violet: #b79cff;
+        --green: #8ee6a3;
+      }
+
+      @page {
+        size: A4;
+        margin: 18mm 17mm 20mm 17mm;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "JetBrains Mono", "IBM Plex Mono", "Roboto Mono", monospace;
+        font-size: 9.8px;
+        line-height: 1.62;
+      }
+
+      .page {
+        width: min(980px, calc(100vw - 24px));
+        margin: 0 auto;
+        padding: 12px 0 20px;
+      }
+
+      .hero {
+        margin-bottom: 14px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 12px;
+      }
+
+      .eyebrow {
+        margin: 0 0 8px;
+        font-size: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        color: var(--faint);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 24px;
+        line-height: 1.18;
+        letter-spacing: -0.04em;
+        color: #f2f2f2;
+        break-after: avoid;
+      }
+
+      .meta-line {
+        margin-top: 8px;
+        font-size: 8.8px;
+        color: var(--muted);
+      }
+
+      .subtitle {
+        max-width: 760px;
+        margin: 8px 0 0;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .revision-strip {
+        margin-top: 10px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .revision-strip span {
+        display: inline-flex;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: rgba(142, 230, 163, 0.08);
+        border: 1px solid rgba(142, 230, 163, 0.22);
+        color: var(--green);
+        font-size: 8px;
+      }
+
+      .article h2,
+      .article h3,
+      .article h4 {
+        line-height: 1.3;
+        break-after: avoid;
+      }
+
+      .article h2 {
+        margin-top: 24px;
+        margin-bottom: 8px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 5px;
+        font-size: 15px;
+        color: #f2f2f2;
+      }
+
+      .section-opener {
+        margin-top: 30px;
+        margin-bottom: 14px;
+        padding: 12px 14px;
+        background: var(--surface);
+        border-left: 3px solid var(--cyan);
+        border-radius: 8px;
+        break-inside: avoid;
+      }
+
+      .section-kicker {
+        font-size: 8px;
+        color: var(--cyan);
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+      }
+
+      .section-summary {
+        font-size: 9.2px;
+        color: #9ca3af;
+        line-height: 1.55;
+      }
+
+      .article h3 {
+        margin-top: 16px;
+        margin-bottom: 6px;
+        font-size: 12px;
+        color: var(--cyan);
+      }
+
+      .article p,
+      .article li {
+        color: var(--text);
+      }
+
+      p {
+        orphans: 3;
+        widows: 3;
+      }
+
+      .article ul,
+      .article ol {
+        padding-left: 1.15rem;
+      }
+
+      .article blockquote {
+        margin: 12px 0;
+        padding: 10px 12px;
+        border-left: 3px solid var(--amber);
+        background: rgba(244, 201, 93, 0.06);
+        border-radius: 8px;
+        color: #ddd4bd;
+        break-inside: avoid;
+      }
+
+      .article pre,
+      .article code {
+        font-family: "JetBrains Mono", "IBM Plex Mono", monospace;
+      }
+
+      .article pre {
+        background: #030303;
+        border: 1px solid #242424;
+        border-radius: 8px;
+        padding: 12px;
+        font-size: 8.8px;
+        line-height: 1.55;
+        overflow-wrap: break-word;
+        white-space: pre-wrap;
+        break-inside: avoid;
+      }
+
+      .article code {
+        color: var(--cyan);
+        background: transparent;
+        padding: 0;
+      }
+
+      .diagram-card {
+        margin: 14px 0;
+        padding: 14px;
+        background: var(--surface);
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        overflow-x: auto;
+        break-inside: avoid;
+      }
+
+      .mermaid {
+        display: flex;
+        justify-content: center;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+        margin: 14px 0;
+        break-inside: avoid;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 8.8px;
+      }
+
+      th,
+      td {
+        padding: 7px;
+        border-bottom: 1px solid #202020;
+        text-align: left;
+      }
+
+      th {
+        color: var(--cyan);
+        font-weight: 600;
+        border-bottom: 1px solid #333;
+      }
+
+      td {
+        color: #cfcfcf;
+      }
+
+      a {
+        color: var(--cyan);
+      }
+
+      .definition-block,
+      .revision-block,
+      .takeaway-block {
+        background: var(--surface);
+        border-radius: 8px;
+        padding: 12px 14px;
+        margin: 12px 0;
+        break-inside: avoid;
+      }
+
+      .definition-block {
+        border-left: 3px solid var(--violet);
+      }
+
+      .revision-block {
+        background: rgba(142, 230, 163, 0.06);
+        border: 1px solid rgba(142, 230, 163, 0.22);
+      }
+
+      .takeaway-block {
+        border-left: 3px solid var(--green);
+      }
+
+      .trap-item {
+        background: rgba(244, 201, 93, 0.06);
+        border-left: 3px solid var(--amber);
+        border-radius: 8px;
+        padding: 10px 13px;
+        margin: 8px 0;
+        break-inside: avoid;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <p class="eyebrow">LearnOS Daily / DAY 26</p>
+        <h1>Page Replacement Algorithms</h1>
+        <p class="meta-line">40 min read - 5 min revision - Advanced - Prerequisites: Day 25</p>
+        <p class="subtitle">Tests tradeoffs, anomalies, and approximation reasoning.</p>
+        <div class="revision-strip"><span>Day 25 - Virtual Memory - R1 - Previous day reinforcement</span><span>Day 23 - Multi-Level Page Tables - R2 - Three-day spaced recall</span></div>
+      </section>
+      <article class="article"><p>Difficulty: Advanced<br>
+Fresh Learning: 40 minutes<br>
+Revision: 5 minutes<br>
+Prerequisites: Day 25 - Virtual Memory<br>
+Why this topic matters in interviews: Page replacement tests whether you can reason about demand paging under memory pressure, compare algorithm tradeoffs, explain why the theoretical best algorithm is not implementable, and connect page faults to real system slowdown.</p>
+<h2>Opening Intuition</h2>
+<p>Imagine your laptop has a browser with many tabs, a code editor, a local database, a video call, and a few background services. Every process believes it has a large private virtual address space, but physical RAM is finite. At some point the operating system may need a free frame for a page that was just touched, while all frames are already occupied.</p>
+<p>The OS now has a hard question: which resident page should be removed from RAM so the new page can come in?</p>
+<p>That question is the job of a page replacement algorithm. It is not enough to say “remove any page.” A poor choice can cause the same page to be needed again immediately, creating extra page faults and wasting time on disk or backing-store I/O. A good choice keeps pages with strong future usefulness and evicts pages that are unlikely to be used soon.</p>
+<p>You see this in daily computer use when a system becomes slow after opening too many applications. The CPU may not be the main bottleneck. The machine may be spending time moving pages between RAM and backing storage. In Task Manager, Activity Monitor, <code>vmstat</code>, or <code>top</code>, this appears as memory pressure, high paging activity, hard faults, or swap usage.</p>
+<p>The interview-level idea is simple but deep: virtual memory lets programs run with only part of their address space in RAM, and page replacement decides what to sacrifice when RAM is full.</p>
+<h2>Interview Definition</h2>
+<p>Page replacement is the operating system policy used during demand paging when a required page must be loaded into RAM but no free physical frame is available. The OS selects a victim page, writes it back if it is dirty, marks its page-table entry non-present, loads the needed page into the freed frame, updates the page table, and restarts the faulting instruction. Common algorithms include FIFO, Optimal, LRU, and Clock.</p>
+<h2>Key Definitions</h2>
+<p>Page replacement: the process of choosing a resident page to evict from physical memory when a new page must be loaded and no free frame is available.</p>
+<p>Victim page: the page selected for eviction.</p>
+<p>Page fault: a trap that occurs when the CPU cannot complete a virtual-address translation for the attempted access, often because the page is not resident.</p>
+<p>Dirty page: a page whose contents have been modified in RAM and must be written back before eviction if its backing copy is stale.</p>
+<p>Clean page: a page that matches its backing store and can usually be discarded without a write-back.</p>
+<p>Reference string: a sequence of page accesses used to analyze page replacement behavior.</p>
+<p>Frame: a fixed-size block of physical memory that can hold one page.</p>
+<p>FIFO: First-In, First-Out replacement; evicts the page that has been in memory the longest.</p>
+<p>Optimal replacement: a theoretical algorithm that evicts the page whose next use is farthest in the future.</p>
+<p>LRU: Least Recently Used replacement; evicts the page that has not been used for the longest time in the past.</p>
+<p>Clock algorithm: a practical approximation of LRU that uses a circular scan and a reference bit.</p>
+<p>Belady’s anomaly: the counterintuitive situation where increasing the number of frames causes more page faults for some algorithms, especially FIFO.</p>
+<p>Thrashing: a state where the system spends excessive time servicing page faults rather than doing useful work.</p>
+<h2>Mental Model</h2>
+<p>Think of RAM as a small desk and virtual memory as a large library. The process can refer to many books, but only a few open books fit on the desk. When the learner asks for a book that is not on the desk, someone must fetch it. If the desk is full, one open book must be removed.</p>
+<p>FIFO removes the book that has been on the desk longest, even if it is still important. Optimal would remove the book that will not be needed for the longest time, but it requires knowing the future. LRU assumes the recent past predicts the near future and removes the book ignored for the longest time. Clock walks around the desk giving recently touched books a second chance.</p>
+<p>This model is useful because page replacement is not about whether pages are valid. The pages are valid parts of the process address space. The issue is residency: which valid page is currently in physical RAM and which page can be temporarily moved out or discarded.</p>
+<h2>Layer 1: What happens at a high level?</h2>
+<p>At a high level, page replacement begins when a process accesses a virtual page that is valid but not resident in RAM. The CPU tries to translate the address. The page-table entry says the page is not present, so the hardware raises a page fault and transfers control to the kernel.</p>
+<p>The kernel checks whether the access is legal. If the address is invalid or violates permissions, the process may be terminated or receive an exception. If the page is valid but missing, the OS must bring it into memory. When a free frame exists, the OS can use it directly. When no free frame exists, the OS must choose a victim page.</p>
+<p>The victim page is removed from RAM. If it is clean, the OS can often discard it because the same contents already exist in an executable file, mapped file, or other backing store. If it is dirty, the OS must write it back before reusing the frame. Then the needed page is read into that frame, the page table is updated, and the faulting instruction is restarted.</p>
+<p>The process usually does not know this happened, except for the performance cost. From the program’s view, it simply accessed memory. From the OS view, a memory reference triggered a trap, replacement decision, possible disk I/O, page-table update, and retry.</p>
+<h2>Layer 2: What happens inside the OS?</h2>
+<p>Inside the OS, page replacement is tied to page tables, frame tables, memory pressure, and backing storage. The page table tracks whether a virtual page is present, writable, dirty, referenced, executable, or backed by a file or swap area. The frame table tracks which physical frames are occupied and which process or mapping owns them.</p>
+<p>When free frames are plentiful, page faults are mostly allocation events. The OS takes a free frame, fills it, and maps it. Under memory pressure, free frames become scarce. The kernel may run page reclaim logic in the background or during the fault path. Reclaim tries to free frames before the system reaches an emergency state.</p>
+<p>The replacement policy needs evidence. Hardware commonly provides an accessed or reference bit and a dirty bit in page-table entries. The accessed bit tells whether the page was used recently. The dirty bit tells whether eviction requires writing data back. Algorithms such as Clock use these bits because recording a perfect timestamp for every memory access would be too expensive.</p>
+<p>The OS also distinguishes page types. A clean code page from an executable can be dropped and read again later. A clean memory-mapped file page may also be dropped. A dirty anonymous heap page must be written to swap before its frame is reused. A kernel page, pinned I/O buffer, or locked page may not be evictable at all. Real systems do not run textbook algorithms blindly; they apply policy within these constraints.</p>
+<h2>Layer 3: What happens at hardware or kernel level?</h2>
+<p>At hardware level, every memory access goes through address translation. The Translation Lookaside Buffer, or TLB, caches recent translations. On a TLB miss, hardware or the kernel walks the page table. If the final entry says the page is present and permissions allow the access, translation completes. If the entry says not present, a page fault trap occurs.</p>
+<p>During page replacement, the kernel may need to invalidate stale TLB entries after changing page tables. If a victim page was mapped in a process, the old translation must not remain usable in the TLB. On multiprocessor systems, TLB shootdowns may be needed so other CPU cores stop using stale translations. This is one reason memory management has costs beyond disk I/O.</p>
+<p>The hardware reference and dirty bits are especially important. The OS may periodically clear reference bits and later observe which pages were touched again. This lets it approximate recency without trapping on every memory access. The dirty bit helps avoid unnecessary writes. Evicting a clean page is cheaper than evicting a dirty page because a clean page can often be discarded immediately.</p>
+<p>Some systems also use page replacement together with prefetching and clustering. If one page from a file is faulted in, nearby pages might soon be useful. But aggressive prefetching can waste memory if the guess is wrong. Replacement, caching, and I/O policy are connected.</p>
+<h2>Layer 4: What can go wrong?</h2>
+<p>The biggest failure mode is choosing victims poorly. If the OS repeatedly evicts pages that will be needed again almost immediately, the page fault rate rises. The system starts doing more page-in and page-out work than useful computation.</p>
+<p>FIFO can evict heavily used pages simply because they arrived early. LRU can perform badly when access patterns scan through a data set larger than memory, because each new page pushes out the page that might be needed after the scan cycles. Clock is practical but approximate; it may choose a victim that is not truly least recently used.</p>
+<p>Another problem is dirty-page write-back. If many dirty pages must be evicted at once, the system may stall waiting for storage. This is why operating systems often write dirty pages back in the background before memory becomes critically low.</p>
+<p>The severe case is thrashing. Thrashing happens when the working sets of active processes do not fit in RAM. Adding more processes can actually reduce CPU utilization because the CPU waits while the OS handles page faults. The fix is not “use a smarter single victim choice” only. The OS may need to reduce the degree of multiprogramming, increase memory, change workload behavior, or protect each process’s working set.</p>
+<h2>Step-by-Step Flow</h2>
+<h3>Handling a Page Fault with Replacement</h3>
+<ol>
+<li>A process executes an instruction that references virtual address X.</li>
+<li>The MMU checks the TLB and page table.</li>
+<li>The page-table entry says the page is valid but not resident.</li>
+<li>Hardware raises a page fault and enters kernel mode.</li>
+<li>The kernel validates that the access is legal.</li>
+<li>The kernel looks for a free physical frame.</li>
+<li>If no free frame exists, the page replacement policy selects a victim page.</li>
+<li>If the victim page is dirty, the OS writes it back to swap or its backing file.</li>
+<li>The OS marks the victim page-table entry as not present and invalidates stale TLB entries.</li>
+<li>The OS loads the demanded page into the freed frame.</li>
+<li>The page-table entry is updated with the frame number and permissions.</li>
+<li>The process resumes, and the faulting instruction is retried.</li>
+</ol>
+<h2>Diagram Section</h2>
+<h3>Page Replacement Fault Path</h3>
+<div class="diagram-card"><div class="mermaid">flowchart TD
+    A[&quot;Process references virtual page&quot;] --&gt; B{&quot;Page present in RAM?&quot;}
+    B --&gt;|Yes| C[&quot;Translate address and continue&quot;]
+    B --&gt;|No| D[&quot;Page fault trap to kernel&quot;]
+    D --&gt; E{&quot;Access legal?&quot;}
+    E --&gt;|No| F[&quot;Raise protection error or terminate&quot;]
+    E --&gt;|Yes| G{&quot;Free frame available?&quot;}
+    G --&gt;|Yes| H[&quot;Load demanded page into free frame&quot;]
+    G --&gt;|No| I[&quot;Choose victim page&quot;]
+    I --&gt; J{&quot;Victim dirty?&quot;}
+    J --&gt;|Yes| K[&quot;Write victim to backing store&quot;]
+    J --&gt;|No| L[&quot;Discard clean victim mapping&quot;]
+    K --&gt; M[&quot;Reuse freed frame&quot;]
+    L --&gt; M
+    M --&gt; H
+    H --&gt; N[&quot;Update page table and TLB state&quot;]
+    N --&gt; O[&quot;Restart faulting instruction&quot;]
+</div></div><p>This diagram shows the difference between a legal demand-page fault and an invalid memory access. Replacement happens only after the OS confirms the missing page is valid and no free frame is available.</p>
+<h3>Clock Replacement Algorithm</h3>
+<div class="diagram-card"><div class="mermaid">flowchart LR
+    F0[&quot;Frame 0&lt;br/&gt;ref=1&quot;] --&gt; F1[&quot;Frame 1&lt;br/&gt;ref=0&quot;]
+    F1 --&gt; F2[&quot;Frame 2&lt;br/&gt;ref=1&quot;]
+    F2 --&gt; F3[&quot;Frame 3&lt;br/&gt;ref=0&quot;]
+    F3 --&gt; F0
+    H[&quot;Clock hand scans frames&quot;] --&gt; F0
+    F1 --&gt; V[&quot;First ref=0 page can be victim&quot;]
+</div></div><p>Clock approximates LRU by giving pages with the reference bit set a second chance. When the hand sees <code>ref=1</code>, it clears the bit and moves on. When it sees <code>ref=0</code>, that page has not been referenced since the last pass and becomes a reasonable victim.</p>
+<h3>Reference String Example</h3>
+<pre><code class="language-txt">Reference string: 1 2 3 4 1 2 5 1 2 3 4 5
+Frames: 3
+
+FIFO intuition:
+- Load 1, 2, 3.
+- Page 4 arrives and evicts 1, the oldest page.
+- Soon 1 and 2 are needed again, causing more faults.
+
+LRU intuition:
+- It tries to evict the page least recently touched.
+- It usually follows locality better than FIFO.
+- It still cannot know the future.
+</code></pre>
+<p>The example is useful because it separates arrival order from actual usefulness. FIFO cares about age in memory; LRU cares about recent use; Optimal cares about future use.</p>
+<h2>Practical System Relevance</h2>
+<p>In Linux, page reclaim is more sophisticated than a pure textbook algorithm. The kernel tracks active and inactive pages, file-backed pages, anonymous pages, dirty pages, and unevictable pages. It uses reference information to approximate recency and tries to reclaim pages that are cheap or unlikely to be needed soon. You can observe memory pressure with tools such as <code>free</code>, <code>vmstat</code>, <code>top</code>, and <code>/proc/meminfo</code>.</p>
+<p>In Windows, page replacement is visible through concepts such as working sets, hard faults, standby lists, modified pages, and pagefile activity. A hard fault does not always mean a bug; it often means the memory manager had to retrieve a page from disk or a mapped file.</p>
+<p>In Android, memory pressure is especially important because devices have constrained RAM and many background apps. The system may reclaim file-backed pages, trim app memory, or kill background processes instead of allowing uncontrolled paging to destroy responsiveness.</p>
+<p>In browsers, each tab or renderer process can create large heaps, compiled JavaScript code, images, and memory-mapped resources. If many tabs compete for memory, the system may evict pages, compress pages, discard tab resources, or suspend background work.</p>
+<p>In databases, page replacement appears at two levels. The OS replaces virtual memory pages, while the database may also manage its own buffer pool pages. Poor coordination can cause double caching or surprising I/O. Many databases prefer explicit buffer management because they understand query access patterns better than the OS.</p>
+<p>In cloud systems and containers, page replacement still belongs to the host kernel. Container memory limits can cause reclaim, swap activity, or out-of-memory kills. A container does not own a separate kernel page replacement algorithm; it runs under host memory policy and cgroup limits.</p>
+<h2>Code or Pseudocode Section</h2>
+<h3>FIFO Pseudocode</h3>
+<pre><code class="language-c">queue&lt;int&gt; frames;
+
+on_page_fault(page p) {
+    if (free_frame_exists()) {
+        load_into_free_frame(p);
+        frames.push(p);
+        return;
+    }
+
+    int victim = frames.front();
+    frames.pop();
+    evict(victim);
+    load_into_victim_frame(p);
+    frames.push(p);
+}
+</code></pre>
+<p>FIFO is simple, but the queue records arrival order, not usefulness. A page that arrived early but is used constantly can still be evicted.</p>
+<h3>LRU Pseudocode</h3>
+<pre><code class="language-c">on_page_access(page p) {
+    p.last_used_time = now();
+}
+
+on_page_fault(page p) {
+    page victim = page_with_oldest_last_used_time();
+    evict(victim);
+    load(p);
+}
+</code></pre>
+<p>True LRU is expensive because every memory access would need to update recency metadata. Real systems approximate it using hardware reference bits, active/inactive lists, or Clock-like behavior.</p>
+<h3>Clock Pseudocode</h3>
+<pre><code class="language-c">while (true) {
+    if (frame[hand].reference_bit == 0) {
+        evict(frame[hand]);
+        load(new_page, frame[hand]);
+        advance(hand);
+        break;
+    }
+
+    frame[hand].reference_bit = 0;
+    advance(hand);
+}
+</code></pre>
+<p>Clock is practical because it avoids perfect tracking. It asks a cheaper question: “Was this page referenced since the last time I checked?”</p>
+<h2>Common Misconceptions</h2>
+<ul>
+<li>Page replacement and page fault are the same thing. A page fault is the event; page replacement is one possible response when no free frame is available.</li>
+<li>FIFO is good because it is fair. FIFO is simple, but fairness by arrival time does not imply low page faults.</li>
+<li>Optimal replacement can be implemented if the OS is smart enough. Optimal needs future knowledge, so it is mainly a benchmark for comparison.</li>
+<li>LRU always performs best in real systems. LRU is often good because of locality, but it can suffer on large scans and is expensive to implement exactly.</li>
+<li>More frames always reduce page faults. This is true for stack algorithms such as LRU, but not for FIFO; Belady’s anomaly exists.</li>
+<li>A clean page and a dirty page cost the same to evict. Dirty pages may require write-back, so they are usually more expensive.</li>
+<li>Swap means the system has effectively extended RAM. Swap is a much slower backing store and can change performance drastically.</li>
+<li>A page replacement algorithm alone can fix thrashing. Thrashing usually means the working sets do not fit; process mix and memory demand must be controlled.</li>
+</ul>
+<h2>Tricky Interview Corners</h2>
+<p>Optimal replacement is not a real OS policy because it requires knowing the future reference string. Its value is analytical: it gives a lower bound on possible page faults for a given reference string and frame count.</p>
+<p>LRU is based on temporal locality. If a page was used recently, it may be used again soon. This is a heuristic, not a law. A streaming workload can touch many pages once and push useful pages out of memory.</p>
+<p>FIFO can show Belady’s anomaly. With some reference strings, adding frames increases page faults because FIFO’s queue order changes in a harmful way. This is counterintuitive and popular in interviews.</p>
+<p>Clock is sometimes called second-chance replacement. It improves FIFO by checking the reference bit. A page that was recently used gets another chance instead of being evicted only because it is old.</p>
+<p>Dirty pages influence replacement cost. A page that is not ideal from a recency perspective may still be cheaper to reclaim if it is clean. Real kernels often balance predicted usefulness and eviction cost.</p>
+<p>The TLB must remain consistent with page tables. If the OS evicts a page and changes a page-table entry, stale translations must not remain usable.</p>
+<p>Thrashing is a system-level symptom, not just an algorithm name. It appears when the active working sets of processes exceed available memory and page faults dominate execution.</p>
+<h2>Comparison Tables</h2>
+<h3>Page Replacement Algorithms</h3>
+<div class="table-wrap"><table><thead>
+<tr>
+<th>Algorithm</th>
+<th>Victim choice</th>
+<th>Main advantage</th>
+<th>Main weakness</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FIFO</td>
+<td>Oldest loaded page</td>
+<td>Very simple</td>
+<td>Ignores actual usage; can show Belady’s anomaly</td>
+</tr>
+<tr>
+<td>Optimal</td>
+<td>Page used farthest in future</td>
+<td>Lowest possible faults for a known string</td>
+<td>Requires future knowledge</td>
+</tr>
+<tr>
+<td>LRU</td>
+<td>Least recently used page</td>
+<td>Uses locality well</td>
+<td>Exact implementation is expensive</td>
+</tr>
+<tr>
+<td>Clock</td>
+<td>First page with reference bit 0 in circular scan</td>
+<td>Practical LRU approximation</td>
+<td>Still approximate; scan cost varies</td>
+</tr>
+</tbody>
+</table></div><h3>Clean vs Dirty Victim</h3>
+<div class="table-wrap"><table><thead>
+<tr>
+<th>Victim type</th>
+<th>What eviction requires</th>
+<th>Cost intuition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Clean file-backed page</td>
+<td>Drop mapping; reread later if needed</td>
+<td>Usually cheaper</td>
+</tr>
+<tr>
+<td>Dirty file-backed page</td>
+<td>Write modified contents back</td>
+<td>More expensive</td>
+</tr>
+<tr>
+<td>Dirty anonymous page</td>
+<td>Write to swap before reuse</td>
+<td>Often expensive</td>
+</tr>
+<tr>
+<td>Pinned page</td>
+<td>Cannot be evicted while pinned</td>
+<td>Not a candidate</td>
+</tr>
+</tbody>
+</table></div><h3>Page Fault vs TLB Miss</h3>
+<div class="table-wrap"><table><thead>
+<tr>
+<th>Event</th>
+<th>Meaning</th>
+<th>Typical handling</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TLB miss</td>
+<td>Translation not in TLB cache</td>
+<td>Walk page table; may still be in RAM</td>
+</tr>
+<tr>
+<td>Page fault</td>
+<td>Page-table state prevents immediate access</td>
+<td>Kernel handles demand load, permission error, or invalid access</td>
+</tr>
+<tr>
+<td>Replacement</td>
+<td>Free-frame shortage during valid page fault</td>
+<td>Select and evict a victim page</td>
+</tr>
+</tbody>
+</table></div><h2>How to Explain This in an Interview</h2>
+<h3>30-second answer</h3>
+<p>Page replacement is used in virtual memory when a needed page is not in RAM and there is no free frame. The OS chooses a victim page, writes it back if dirty, updates page tables, loads the demanded page, and restarts the instruction. FIFO, Optimal, LRU, and Clock differ mainly in how they choose the victim.</p>
+<h3>2-minute answer</h3>
+<p>In demand paging, not every valid virtual page is resident in physical memory. A process may touch a page that is valid but absent, causing a page fault. If a free frame exists, the OS loads the page. If memory is full, the OS must replace some resident page. FIFO evicts the oldest page, Optimal evicts the page whose next use is farthest away, LRU evicts the page unused for the longest time, and Clock approximates LRU using a reference bit. The practical goal is to reduce future page faults while considering eviction cost, especially whether a page is dirty. Bad replacement can lead to high page fault rates and eventually thrashing.</p>
+<h3>Deeper follow-up answer</h3>
+<p>Real operating systems do not implement pure textbook algorithms exactly. Exact LRU would require updating metadata on every memory access, which is too expensive. Hardware helps with reference and dirty bits, and kernels build approximations using active/inactive lists, Clock-like scans, working-set ideas, and background reclaim. The policy must also respect unevictable pages, dirty write-back, memory-mapped files, anonymous memory, page cache behavior, TLB invalidation, and process memory limits. The key tradeoff is not only “which page is least useful?” but also “which page can be reclaimed cheaply without causing more faults immediately?”</p>
+<h2>Interview Questions</h2>
+<h3>Basic Questions</h3>
+<ol>
+<li>What is page replacement?</li>
+<li>When does the OS need a page replacement algorithm?</li>
+<li>What is a victim page?</li>
+<li>What is the difference between a clean page and a dirty page?</li>
+<li>Why is Optimal replacement not implementable in a real OS?</li>
+</ol>
+<h3>Intermediate Questions</h3>
+<ol start="6">
+<li>Compare FIFO and LRU.</li>
+<li>What is the Clock algorithm, and why is it called a second-chance algorithm?</li>
+<li>What is Belady’s anomaly?</li>
+<li>Why can exact LRU be expensive?</li>
+<li>How do reference and dirty bits help page replacement?</li>
+</ol>
+<h3>Advanced Questions</h3>
+<ol start="11">
+<li>Why can adding more frames increase page faults under FIFO?</li>
+<li>How does page replacement interact with the TLB?</li>
+<li>Why might a database not rely only on the OS page replacement policy?</li>
+<li>What is thrashing, and why can CPU utilization fall during thrashing?</li>
+<li>Why might evicting a clean page be preferred over evicting a recently unused dirty page?</li>
+</ol>
+<h2>Follow-Up Questions</h2>
+<p>Q: What is page replacement?<br>
+Follow-ups:</p>
+<ul>
+<li>Is every page fault followed by replacement?</li>
+<li>What must happen if the victim page is dirty?</li>
+<li>How does the OS know where to reload the evicted page later?</li>
+</ul>
+<p>Q: Why is FIFO weak?<br>
+Follow-ups:</p>
+<ul>
+<li>What information does FIFO ignore?</li>
+<li>Can FIFO evict a frequently used page?</li>
+<li>What is its connection to Belady’s anomaly?</li>
+</ul>
+<p>Q: Why is Optimal useful if it cannot be implemented?<br>
+Follow-ups:</p>
+<ul>
+<li>How does it help compare algorithms?</li>
+<li>What future knowledge does it require?</li>
+<li>Can a compiler or runtime ever approximate future behavior?</li>
+</ul>
+<p>Q: Why is LRU popular conceptually?<br>
+Follow-ups:</p>
+<ul>
+<li>What locality assumption does it use?</li>
+<li>Why is exact LRU costly?</li>
+<li>What workload hurts LRU?</li>
+</ul>
+<p>Q: How does Clock approximate LRU?<br>
+Follow-ups:</p>
+<ul>
+<li>What does the reference bit mean?</li>
+<li>What happens when the hand sees reference bit 1?</li>
+<li>Why is this cheaper than exact timestamps?</li>
+</ul>
+<p>Q: What is Belady’s anomaly?<br>
+Follow-ups:</p>
+<ul>
+<li>Which algorithm commonly demonstrates it?</li>
+<li>Do all algorithms suffer from it?</li>
+<li>Why is it surprising?</li>
+</ul>
+<p>Q: What is thrashing?<br>
+Follow-ups:</p>
+<ul>
+<li>How is it related to working sets?</li>
+<li>Why can adding processes make throughput worse?</li>
+<li>What can an OS do to reduce it?</li>
+</ul>
+<h2>Trick Questions</h2>
+<p>Q: If a page fault occurs, must the OS always evict another page?<br>
+Expected answer: No. If a free frame exists, the OS can load the demanded page without replacement.</p>
+<p>Q: Is Optimal replacement the algorithm used by modern operating systems?<br>
+Expected answer: No. It requires future knowledge. It is a theoretical benchmark, not a directly implementable policy.</p>
+<p>Q: Does adding more RAM frames always reduce page faults for FIFO?<br>
+Expected answer: No. FIFO can show Belady’s anomaly, where more frames cause more page faults for certain reference strings.</p>
+<p>Q: Is a TLB miss the same as a page fault?<br>
+Expected answer: No. A TLB miss only means the translation is not cached. The page may still be resident in RAM.</p>
+<p>Q: Can a clean page be evicted without writing it to disk?<br>
+Expected answer: Usually yes, if the backing store already has the same contents.</p>
+<p>Q: Does LRU know which page will be used next?<br>
+Expected answer: No. It uses past recency as a prediction of future locality.</p>
+<p>Q: Is page replacement only a process-level decision?<br>
+Expected answer: No. It is system-wide policy constrained by process mappings, page types, dirty state, cgroups, pinned pages, and kernel memory rules.</p>
+<h2>Practical Debugging / Observation</h2>
+<p>On Linux, these commands help observe memory pressure and paging behavior:</p>
+<pre><code class="language-bash">free -h
+vmstat 1
+top
+cat /proc/meminfo
+cat /proc/vmstat | grep -E &quot;pgfault|pgmajfault|pswpin|pswpout&quot;
+</code></pre>
+<p>What to observe:</p>
+<ul>
+<li><code>free -h</code> shows available memory and swap usage.</li>
+<li><code>vmstat 1</code> shows swap-in and swap-out activity in the <code>si</code> and <code>so</code> columns.</li>
+<li><code>top</code> shows memory use per process and overall system load.</li>
+<li><code>/proc/meminfo</code> exposes cached, active, inactive, dirty, and swap-related memory fields.</li>
+<li><code>/proc/vmstat</code> can show page fault counters and swap counters.</li>
+</ul>
+<p>On Windows, Resource Monitor and Performance Monitor can show hard faults/sec, committed memory, standby memory, and paging file activity. A few hard faults are normal. A sustained high rate during sluggish interaction suggests memory pressure.</p>
+<p>On macOS, Activity Monitor shows memory pressure and swap used. The useful interview point is not the exact UI label; it is that operating systems expose signals when RAM is insufficient for the active workload.</p>
+<h2>Mini Quiz</h2>
+<h3>MCQs</h3>
+<ol>
+<li>
+<p>Page replacement is needed when:
+A. A process calls <code>malloc</code><br>
+B. A valid demanded page is missing and no free frame is available<br>
+C. The TLB has an entry<br>
+D. A file is opened</p>
+</li>
+<li>
+<p>FIFO evicts:
+A. The most recently used page<br>
+B. The oldest loaded page<br>
+C. The cleanest page only<br>
+D. The page farthest in the future</p>
+</li>
+<li>
+<p>Optimal replacement chooses:
+A. The oldest page<br>
+B. The least recently used page<br>
+C. The page whose next use is farthest in the future<br>
+D. The page with the smallest address</p>
+</li>
+<li>
+<p>Clock replacement mainly uses:
+A. File names<br>
+B. Reference bits<br>
+C. Process IDs only<br>
+D. CPU burst estimates</p>
+</li>
+<li>
+<p>Belady’s anomaly is associated with:
+A. FIFO<br>
+B. Exact LRU<br>
+C. Optimal<br>
+D. Address binding</p>
+</li>
+</ol>
+<h3>Short-answer questions</h3>
+<ol>
+<li>Why is dirty-page eviction more expensive than clean-page eviction?</li>
+<li>Why is exact LRU difficult to implement efficiently?</li>
+<li>What is the difference between a TLB miss and a page fault?</li>
+</ol>
+<h3>Reasoning questions</h3>
+<ol>
+<li>A program scans a huge file once and never returns to earlier pages. Why might LRU make poor choices if the scan shares memory with a hot working set?</li>
+<li>A system has high CPU idle time but feels frozen and shows heavy swap activity. Why might this indicate thrashing?</li>
+</ol>
+<h3>Answers</h3>
+<ol>
+<li>B</li>
+<li>B</li>
+<li>C</li>
+<li>B</li>
+<li>A</li>
+</ol>
+<p>Short answers:</p>
+<ol>
+<li>A dirty page contains modifications not yet reflected in backing storage, so it may need write-back before its frame can be reused.</li>
+<li>Exact LRU would require updating recency metadata on every memory access or maintaining expensive ordering information.</li>
+<li>A TLB miss means the translation is not cached; a page fault means page-table state prevents the access from completing without kernel handling.</li>
+</ol>
+<p>Reasoning answers:</p>
+<ol>
+<li>The scan can make one-time pages look recent, pushing out genuinely hot pages that will be reused soon.</li>
+<li>The CPU is waiting while the OS moves pages between RAM and backing storage; useful execution is being replaced by paging work.</li>
+</ol>
+<h1>5-Minute Revision Column</h1>
+<p>Revision Targets:</p>
+<ul>
+<li>Day 25: Virtual Memory - Previous day reinforcement - R1</li>
+<li>Day 23: Multi-Level Page Tables - Three-day spaced recall - R2</li>
+</ul>
+<h2>Day 25 - Virtual Memory (R1 Recall Revision)</h2>
+<p>Core recall:</p>
+<ul>
+<li>Virtual memory gives each process a private virtual address space while the OS and MMU translate virtual pages to physical frames.</li>
+<li>Demand paging loads pages only when touched, so a valid page can be part of the address space even when it is not resident in RAM.</li>
+<li>A page fault is not automatically a crash. It may be the normal mechanism for loading a missing valid page.</li>
+<li>Page tables carry frame numbers plus state such as present, valid, permission, accessed, and dirty bits.</li>
+<li>Swap space is backing storage for non-resident pages; it is far slower than RAM and should not be treated as free memory.</li>
+</ul>
+<p>Key definitions:</p>
+<ul>
+<li>Virtual memory: an address-space abstraction backed by page tables, hardware translation, physical frames, and sometimes disk.</li>
+<li>Demand paging: lazy loading of pages when they are actually referenced.</li>
+<li>Page fault: a trap caused when a translation cannot immediately complete because the page is absent, invalid, or permission-blocked.</li>
+</ul>
+<p>Common traps:</p>
+<ul>
+<li>Do not say virtual memory means unlimited memory.</li>
+<li>Do not confuse a TLB miss with a page fault.</li>
+</ul>
+<p>Quick interview questions:</p>
+<ol>
+<li>Why can two processes use the same virtual address without sharing data?</li>
+<li>Why is a page fault sometimes normal and sometimes fatal?</li>
+</ol>
+<p>Mental model:</p>
+<p>The process sees notebook page numbers. The MMU and page table decide whether each notebook page currently maps to a real shelf in RAM, must be fetched, or is illegal.</p>
+<h2>Day 23 - Multi-Level Page Tables (R2 Compression Revision)</h2>
+<p>Core recall:</p>
+<ul>
+<li>Multi-level page tables split the virtual page number into several indexes.</li>
+<li>The top-level table points to lower-level tables, and the final entry points to the physical frame.</li>
+<li>The main benefit is memory savings for large sparse address spaces.</li>
+<li>They are not mainly a speed optimization; the TLB is the speed layer.</li>
+<li>Empty virtual regions do not need allocated lower-level page tables.</li>
+</ul>
+<p>Key definitions:</p>
+<ul>
+<li>Page table walk: the lookup through page-table levels after a TLB miss.</li>
+<li>Sparse address space: a large virtual range where only some regions are actually mapped.</li>
+</ul>
+<p>Common traps:</p>
+<ul>
+<li>Do not say a 64-bit process needs page-table entries for every possible address.</li>
+<li>Do not say the page offset changes during translation.</li>
+</ul>
+<p>Quick interview questions:</p>
+<ol>
+<li>Why are multi-level page tables useful for 64-bit address spaces?</li>
+<li>If a TLB miss happens, does it prove the page is absent from RAM?</li>
+</ol>
+<p>Mental model:</p>
+<p>A multi-level page table is a nested directory: choose a broad region, then a smaller region, then the final page. Unused regions do not need full directories.</p>
+<h2>Final Takeaway</h2>
+<p>Page replacement is the policy decision behind memory pressure in demand-paged virtual memory. When a valid page is needed and RAM has no free frame, the OS must choose a victim page, handle dirty write-back if needed, update page tables, and resume execution. FIFO is simple but weak, Optimal is theoretical, LRU uses locality but is costly to implement exactly, and Clock is a practical approximation. The deeper interview skill is explaining why replacement decisions affect page fault rate, disk I/O, TLB consistency, working sets, and thrashing.</p>
+<h2>What You Should Be Able To Answer Now</h2>
+<ul>
+<li>Explain when page replacement is needed.</li>
+<li>Compare FIFO, Optimal, LRU, and Clock.</li>
+<li>Explain why Optimal cannot be implemented directly.</li>
+<li>Describe Belady’s anomaly and why FIFO can suffer from it.</li>
+<li>Explain why dirty pages cost more to evict than clean pages.</li>
+<li>Distinguish TLB misses, page faults, and page replacement.</li>
+<li>Explain how poor replacement can lead to thrashing.</li>
+<li>Connect page replacement to real memory pressure in Linux, Windows, Android, browsers, databases, and containers.</li>
+</ul>
+</article>
+    </main>
+    <script>
+      (() => {
+        const article = document.querySelector(".article");
+        if (!article) return;
+        const chapterMap = {
+          "Opening Intuition": ["01", "Opening Intuition", "Why this concept exists in real systems before formal definition."],
+          "Interview Definition": ["02", "Interview Definition", "A clean interview-ready explanation with precise language."],
+          "Mental Model": ["03", "Mental Model", "A compact analogy that maps theory to practical recall."],
+          "Layer 1: What happens at a high level?": ["04", "Core Theory", "What the OS manages and how abstraction/resource management fit together."],
+          "Layer 2: What happens inside the OS?": ["05", "System Internals", "Kernel boundaries, data structures, and service flow inside the OS."],
+          "Step-by-Step Flow": ["06", "Step-by-Step Flow", "Concrete execution sequence you can narrate in interviews."],
+          "Practical System Relevance": ["07", "Practical Examples", "How the concept appears in Linux, Windows, Android, servers, and cloud."],
+          "Common Misconceptions": ["08", "Common Misconceptions", "High-frequency mistakes and what to say instead."],
+          "Tricky Interview Corners": ["09", "Tricky Interview Corners", "Edge cases and deeper follow-up traps interviewers probe."],
+          "Interview Questions": ["10", "Interview Questions", "Layered practice questions from basic to advanced."],
+          "5-Minute Revision Column": ["11", "5-Minute Revision Column", "Compressed spaced-repetition recall from prior targets."],
+          "Final Takeaway": ["12", "Final Takeaway", "The final memory model and what you should be able to answer now."]
+        };
+
+        const wrapAfterHeading = (title, className) => {
+          const heading = Array.from(article.querySelectorAll("h2")).find((el) => el.textContent?.trim() === title);
+          if (!heading) return;
+          const wrap = document.createElement("div");
+          wrap.className = className;
+          let node = heading.nextElementSibling;
+          while (node && node.tagName !== "H2") {
+            const next = node.nextElementSibling;
+            wrap.appendChild(node);
+            node = next;
+          }
+          heading.insertAdjacentElement("afterend", wrap);
+        };
+
+        wrapAfterHeading("Interview Definition", "definition-block");
+        wrapAfterHeading("5-Minute Revision Column", "revision-block");
+        wrapAfterHeading("Final Takeaway", "takeaway-block");
+        wrapAfterHeading("What You Should Be Able To Answer Now", "takeaway-block");
+
+        article.querySelectorAll("h2").forEach((heading) => {
+          const text = heading.textContent?.trim() ?? "";
+          const chapter = chapterMap[text];
+          if (!chapter) return;
+          const opener = document.createElement("div");
+          opener.className = "section-opener";
+          opener.innerHTML = "<div class=\"section-kicker\">SECTION " + chapter[0] + " / " + chapter[1].toUpperCase() + "</div><div class=\"section-summary\">" + chapter[2] + "</div>";
+          heading.insertAdjacentElement("beforebegin", opener);
+        });
+
+        const misconceptions = Array.from(article.querySelectorAll("h2")).find(
+          (el) => el.textContent?.trim() === "Common Misconceptions"
+        );
+        if (misconceptions) {
+          let node = misconceptions.nextElementSibling;
+          while (node && node.tagName !== "H2") {
+            if (node.tagName === "OL") {
+              node.querySelectorAll("li").forEach((li) => li.classList.add("trap-item"));
+            }
+            node = node.nextElementSibling;
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>
