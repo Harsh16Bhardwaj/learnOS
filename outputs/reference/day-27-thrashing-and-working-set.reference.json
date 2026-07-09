@@ -1,0 +1,83 @@
+{
+  "day": 27,
+  "topic": "Thrashing and Working Set",
+  "difficulty": "Advanced",
+  "core_summary": [
+    "Thrashing is a condition in which a system spends most of its time servicing page faults and moving pages between RAM and backing storage instead of executing useful instructions. It occurs when active processes do not have enough frames to hold their current localities. A working set approximates the pages a process has referenced within a recent window and therefore the frames it currently needs."
+  ],
+  "key_definitions": {
+    "Thrashing": "sustained excessive paging in which page-fault service dominates useful execution.",
+    "Working set": "the set of distinct pages referenced by a process during a recent reference window.",
+    "Working-set window (Δ)": "the number of recent memory references, or an approximate time interval, used to define the working set.",
+    "Locality": "a relatively stable phase in which execution repeatedly accesses a limited set of code and data pages.",
+    "Resident set": "the pages of a process currently held in physical frames.",
+    "Page-fault frequency (PFF)": "the observed rate of page faults, used as feedback about whether a process has too few or more than enough frames.",
+    "Degree of multiprogramming": "the number of processes actively competing for memory and CPU.",
+    "Local replacement": "a process selects victims only from its own allocated frames."
+  },
+  "mental_model": "Think of several cooks sharing a counter. Each cook needs a small group of tools for the current recipe. If every cook has enough counter space for that active group, work proceeds quickly. If management admits too many cooks, each gets only one or two slots. A cook retrieves a knife and removes someone else's pan; that cook retrieves the pan and removes the knife. The storeroom door stays busy while meals stop progressing. The counter is RAM, the storeroom is backing storage, each tool is a page, and each cook's current recipe is its locality. A working set is the group of tools a cook has used recently. The lesson is not “keep every tool forever.” It is “keep the current recipe's tools resident.” Localities change over time, so allocation must adapt.",
+  "core_examples": [
+    {
+      "name": "Opening an application",
+      "point": "The OS loads executable code, creates a process, assigns memory, schedules CPU time, and services I/O."
+    },
+    {
+      "name": "Reading a file",
+      "point": "The app requests bytes while the OS handles permissions, metadata lookup, filesystem mapping, and device access."
+    }
+  ],
+  "practical_uses": [],
+  "pitfalls": [
+    "Any page fault means thrashing. Page faults are fundamental to demand paging. Thrashing is a sustained rate that prevents useful progress.",
+    "High RAM usage means thrashing. Healthy systems use RAM for caches. Pressure, reclaim, major faults, stalls, and throughput matter more.",
+    "Low CPU utilization means the machine needs more processes. During thrashing, processes wait for paging I/O; more work can worsen the shortage.",
+    "A better replacement algorithm always fixes thrashing. Policy helps, but no algorithm can fit active demand that exceeds capacity."
+  ],
+  "misconceptions": [
+    "Any page fault means thrashing. Page faults are fundamental to demand paging. Thrashing is a sustained rate that prevents useful progress.",
+    "High RAM usage means thrashing. Healthy systems use RAM for caches. Pressure, reclaim, major faults, stalls, and throughput matter more.",
+    "Low CPU utilization means the machine needs more processes. During thrashing, processes wait for paging I/O; more work can worsen the shortage.",
+    "A better replacement algorithm always fixes thrashing. Policy helps, but no algorithm can fit active demand that exceeds capacity.",
+    "More virtual memory is equivalent to more RAM. Backing storage expands addressable committed memory but does not provide RAM latency.",
+    "Working set means every page allocated by a process. It means recently active pages, not the entire virtual address space."
+  ],
+  "tricky_questions": [
+    {
+      "question": "If CPU utilization is low, should the OS always admit another process?",
+      "answer": "No. Low CPU use may occur because processes are blocked on paging I/O; another process can worsen thrashing."
+    },
+    {
+      "question": "Is every page fault evidence of insufficient RAM?",
+      "answer": "No. Demand paging, copy-on-write, and mapped-file access can cause normal faults. Sustained costly faults and poor progress indicate pressure."
+    },
+    {
+      "question": "If a process owns 1 GB of virtual memory, is its working set 1 GB?",
+      "answer": "No. Its working set contains pages referenced in the recent window; much of its virtual space may be inactive or nonresident."
+    },
+    {
+      "question": "Does an SSD eliminate thrashing?",
+      "answer": "No. It reduces storage latency but is still far slower than RAM and can saturate under repeated page traffic."
+    },
+    {
+      "question": "Is a TLB miss a page fault?",
+      "answer": "No. The translation may be absent from the TLB while the page remains resident and present in the page table."
+    },
+    {
+      "question": "Can global replacement make a healthy process start faulting?",
+      "answer": "Yes. Another process can take its frames, shrinking its resident set below its locality."
+    },
+    {
+      "question": "Can removing a process increase total throughput?",
+      "answer": "Yes. If the remaining working sets then fit in RAM, the reduction in paging can outweigh the lost parallelism."
+    }
+  ],
+  "interview_ready_answer": {
+    "short": "### 30-second answer",
+    "medium": "Thrashing happens when active processes have too few frames for their current localities, so they repeatedly fault and evict pages that will be needed again soon. The system spends more time paging than executing, storage activity rises, and CPU utilization may fall because processes are blocked. The OS can control it using working-set or page-fault-frequency ideas and by reducing multiprogramming."
+  },
+  "revision_history": {
+    "times_revised": 0,
+    "last_revised_on_day": null,
+    "revision_strength": "R1"
+  }
+}

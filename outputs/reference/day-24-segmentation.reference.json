@@ -83,8 +83,8 @@
     "medium": "Segmentation divides a process into logical variable-sized regions such as code, data, heap, and stack. A logical address contains a segment number and an offset. The segment table stores the base, limit, and permissions for each segment. The hardware checks the offset and permissions, then adds the base to the offset to form the physical address. Segmentation is good for logical organization, protection, and sharing, but it can suffer from external fragmentation."
   },
   "revision_history": {
-    "times_revised": 1,
-    "last_revised_on_day": 25,
-    "revision_strength": "R2"
+    "times_revised": 2,
+    "last_revised_on_day": 27,
+    "revision_strength": "R3"
   }
 }

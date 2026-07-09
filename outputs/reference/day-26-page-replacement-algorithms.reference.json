@@ -83,8 +83,8 @@
     "medium": "Page replacement is used in virtual memory when a needed page is not in RAM and there is no free frame. The OS chooses a victim page, writes it back if dirty, updates page tables, loads the demanded page, and restarts the instruction. FIFO, Optimal, LRU, and Clock differ mainly in how they choose the victim."
   },
   "revision_history": {
-    "times_revised": 0,
-    "last_revised_on_day": null,
-    "revision_strength": "R1"
+    "times_revised": 1,
+    "last_revised_on_day": 27,
+    "revision_strength": "R2"
   }
 }
