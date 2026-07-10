@@ -1,0 +1,90 @@
+{
+  "day": 28,
+  "topic": "File System Basics",
+  "difficulty": "Beginner",
+  "core_summary": [
+    "A file system is the operating system component that organizes persistent storage into files and directories, tracks metadata such as size, ownership, permissions, and timestamps, and provides controlled operations like open, read, write, seek, close, rename, and delete. It lets applications use stable names and byte streams instead of directly managing raw disk blocks. The kernel enforces file access rules and returns file descriptors or handles so programs can perform later I/O efficiently."
+  ],
+  "key_definitions": {
+    "File": "A named OS abstraction for persistent data, usually treated as a sequence of bytes plus metadata.",
+    "Directory": "A file-system object that maps names to other file-system objects such as files and subdirectories.",
+    "Metadata": "Information about a file other than its user data, such as size, owner, permissions, timestamps, and block mapping information.",
+    "File attribute": "A specific metadata field such as read-only status, hidden flag, executable permission, or creation time.",
+    "File descriptor": "A small process-local integer used on Unix-like systems to refer to an open file or file-like object.",
+    "File handle": "A general OS-managed reference to an open object, commonly used in Windows terminology.",
+    "Path": "A string naming a file or directory by walking through directory components.",
+    "File offset": "The current position used by many sequential read and write operations on an open file."
+  },
+  "mental_model": "Think of a file system as a library plus a checkout desk. The shelves are the storage device. The books are files. The catalog is the directory structure that maps human-friendly names to internal records. The book record contains metadata: title, owner, location, size, permissions, and status. The checkout desk is the kernel. A reader cannot walk into the storage room and rearrange shelves directly. The reader asks the desk to open a book. If access is allowed, the desk gives a checkout slip. That slip is like a file descriptor: it is not the book itself, but it lets the reader continue reading, writing, or closing that open file. This model separates three ideas interviewers often test:",
+  "core_examples": [
+    {
+      "name": "Opening an application",
+      "point": "The OS loads executable code, creates a process, assigns memory, schedules CPU time, and services I/O."
+    },
+    {
+      "name": "Reading a file",
+      "point": "The app requests bytes while the OS handles permissions, metadata lookup, filesystem mapping, and device access."
+    }
+  ],
+  "practical_uses": [
+    "In Linux, file descriptors are central. Standard input, output, and error are descriptors 0, 1, and 2. When a shell runs cat notes.txt, the program receives a descriptor for the opened file and reads bytes through kernel system calls. Linux also exposes many things as file-like objects: pipes, sockets, devices, and entries under /proc.",
+    "In Windows, the kernel exposes file handles rather than Unix-style integer descriptors at the lowest level. The Win32 API function CreateFile can open normal files, devices, pipes, and other objects. The conceptual pattern is similar: request access, receive a handle, use it for I/O, then close it.",
+    "In Android, application sandboxing depends heavily on file permissions and per-app storage locations. Apps do not normally get arbitrary access to each other's private files. Media files, app data, shared storage, and content providers all build on controlled storage access.",
+    "In browsers, downloads, cache files, cookies, IndexedDB, profile data, and extension storage all depend on file system behavior. Browser security depends on ensuring a web page cannot freely read arbitrary local files just because the browser process itself can access the disk.",
+    "In databases, files are not just passive storage. Databases manage large files, logs, checkpoints, and sometimes memory-mapped regions. They care about durability and ordering, so they use careful write-ahead logging and sync operations. A database cannot simply assume that a successful write call means the data is permanently safe on the device.",
+    "In cloud and container systems, the file system abstraction may point to local disks, virtual disks, overlay file systems, network volumes, or object-storage-backed mounts. Containers often see their own root file system view even though the host kernel still manages the real storage underneath."
+  ],
+  "pitfalls": [
+    "Misconception: A file name is the file.",
+    "Misconception: A file descriptor stores the file's contents.",
+    "Misconception: Closing a file is optional because the OS will clean it up.",
+    "Misconception: write always means the bytes are permanently on disk."
+  ],
+  "misconceptions": [
+    "Misconception: A file name is the file.",
+    "Misconception: A file descriptor stores the file's contents.",
+    "Misconception: Closing a file is optional because the OS will clean it up.",
+    "Misconception: write always means the bytes are permanently on disk.",
+    "Misconception: Directories are just visual folders.",
+    "Misconception: If two processes use descriptor 3, they must refer to the same file."
+  ],
+  "tricky_questions": [
+    {
+      "question": "If write returns success, is the data definitely safe after a power loss?",
+      "answer": "Not necessarily. The kernel may have accepted the bytes into cache. Durability may require sync operations and depends on file-system and device behavior."
+    },
+    {
+      "question": "If two processes both have file descriptor 3, are they using the same file?",
+      "answer": "Not necessarily. Descriptor numbers are process-local."
+    },
+    {
+      "question": "If a file is deleted, must its storage be freed immediately?",
+      "answer": "Not always. On Unix-like systems, data may remain while open descriptors still reference it."
+    },
+    {
+      "question": "Is a directory just a visual folder shown by the file manager?",
+      "answer": "No. It is a file-system object that maps names to other objects and has metadata and permissions."
+    },
+    {
+      "question": "Does a file path directly contain the disk block addresses?",
+      "answer": "No. The path is resolved through directories to metadata, and metadata or allocation structures lead to blocks."
+    },
+    {
+      "question": "Is a file descriptor the same thing as a file name?",
+      "answer": "No. A file name is used for lookup. A descriptor is returned after a successful open and refers to an open object."
+    },
+    {
+      "question": "Can reading a file affect metadata?",
+      "answer": "Sometimes. Some systems update access time metadata, although many optimize or disable frequent atime updates."
+    }
+  ],
+  "interview_ready_answer": {
+    "short": "### 30-second answer",
+    "medium": "A file system is the OS layer that organizes persistent storage into named files and directories. It tracks metadata such as size, permissions, and timestamps, maps file contents to storage blocks, and exposes operations like open, read, write, and close. Programs usually work through file descriptors or handles instead of directly controlling disk blocks."
+  },
+  "revision_history": {
+    "times_revised": 0,
+    "last_revised_on_day": null,
+    "revision_strength": "R1"
+  }
+}

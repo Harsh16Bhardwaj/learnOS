@@ -83,8 +83,8 @@
     "medium": "Virtual memory gives each process a private virtual address space. The MMU translates virtual pages to physical frames using page tables and the TLB. With demand paging, pages are loaded only when touched. If a valid page is not resident, a page fault lets the OS load it and restart the instruction. If the access is invalid, the process gets an error."
   },
   "revision_history": {
-    "times_revised": 1,
-    "last_revised_on_day": 26,
-    "revision_strength": "R2"
+    "times_revised": 2,
+    "last_revised_on_day": 28,
+    "revision_strength": "R3"
   }
 }

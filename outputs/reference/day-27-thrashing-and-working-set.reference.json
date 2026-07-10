@@ -76,8 +76,8 @@
     "medium": "Thrashing happens when active processes have too few frames for their current localities, so they repeatedly fault and evict pages that will be needed again soon. The system spends more time paging than executing, storage activity rises, and CPU utilization may fall because processes are blocked. The OS can control it using working-set or page-fault-frequency ideas and by reducing multiprogramming."
   },
   "revision_history": {
-    "times_revised": 0,
-    "last_revised_on_day": null,
-    "revision_strength": "R1"
+    "times_revised": 1,
+    "last_revised_on_day": 28,
+    "revision_strength": "R2"
   }
 }
