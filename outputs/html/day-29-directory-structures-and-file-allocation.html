@@ -1,0 +1,982 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Day 29 - Directory Structures and File Allocation</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #070707;
+        --surface: #101010;
+        --surface-soft: #151515;
+        --border: #262626;
+        --text: #d8d8d8;
+        --muted: #8f8f8f;
+        --faint: #5f5f5f;
+        --cyan: #67e8f9;
+        --amber: #f4c95d;
+        --violet: #b79cff;
+        --green: #8ee6a3;
+      }
+
+      @page {
+        size: A4;
+        margin: 18mm 17mm 20mm 17mm;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "JetBrains Mono", "IBM Plex Mono", "Roboto Mono", monospace;
+        font-size: 9.8px;
+        line-height: 1.62;
+      }
+
+      .page {
+        width: min(980px, calc(100vw - 24px));
+        margin: 0 auto;
+        padding: 12px 0 20px;
+      }
+
+      .hero {
+        margin-bottom: 14px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 12px;
+      }
+
+      .eyebrow {
+        margin: 0 0 8px;
+        font-size: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        color: var(--faint);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 24px;
+        line-height: 1.18;
+        letter-spacing: -0.04em;
+        color: #f2f2f2;
+        break-after: avoid;
+      }
+
+      .meta-line {
+        margin-top: 8px;
+        font-size: 8.8px;
+        color: var(--muted);
+      }
+
+      .subtitle {
+        max-width: 760px;
+        margin: 8px 0 0;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .revision-strip {
+        margin-top: 10px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .revision-strip span {
+        display: inline-flex;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: rgba(142, 230, 163, 0.08);
+        border: 1px solid rgba(142, 230, 163, 0.22);
+        color: var(--green);
+        font-size: 8px;
+      }
+
+      .article h2,
+      .article h3,
+      .article h4 {
+        line-height: 1.3;
+        break-after: avoid;
+      }
+
+      .article h2 {
+        margin-top: 24px;
+        margin-bottom: 8px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 5px;
+        font-size: 15px;
+        color: #f2f2f2;
+      }
+
+      .section-opener {
+        margin-top: 30px;
+        margin-bottom: 14px;
+        padding: 12px 14px;
+        background: var(--surface);
+        border-left: 3px solid var(--cyan);
+        border-radius: 8px;
+        break-inside: avoid;
+      }
+
+      .section-kicker {
+        font-size: 8px;
+        color: var(--cyan);
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+      }
+
+      .section-summary {
+        font-size: 9.2px;
+        color: #9ca3af;
+        line-height: 1.55;
+      }
+
+      .article h3 {
+        margin-top: 16px;
+        margin-bottom: 6px;
+        font-size: 12px;
+        color: var(--cyan);
+      }
+
+      .article p,
+      .article li {
+        color: var(--text);
+      }
+
+      p {
+        orphans: 3;
+        widows: 3;
+      }
+
+      .article ul,
+      .article ol {
+        padding-left: 1.15rem;
+      }
+
+      .article blockquote {
+        margin: 12px 0;
+        padding: 10px 12px;
+        border-left: 3px solid var(--amber);
+        background: rgba(244, 201, 93, 0.06);
+        border-radius: 8px;
+        color: #ddd4bd;
+        break-inside: avoid;
+      }
+
+      .article pre,
+      .article code {
+        font-family: "JetBrains Mono", "IBM Plex Mono", monospace;
+      }
+
+      .article pre {
+        background: #030303;
+        border: 1px solid #242424;
+        border-radius: 8px;
+        padding: 12px;
+        font-size: 8.8px;
+        line-height: 1.55;
+        overflow-wrap: break-word;
+        white-space: pre-wrap;
+        break-inside: avoid;
+      }
+
+      .article code {
+        color: var(--cyan);
+        background: transparent;
+        padding: 0;
+      }
+
+      .diagram-card {
+        margin: 14px 0;
+        padding: 14px;
+        background: var(--surface);
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        overflow-x: auto;
+        break-inside: avoid;
+      }
+
+      .mermaid {
+        display: flex;
+        justify-content: center;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+        margin: 14px 0;
+        break-inside: avoid;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 8.8px;
+      }
+
+      th,
+      td {
+        padding: 7px;
+        border-bottom: 1px solid #202020;
+        text-align: left;
+      }
+
+      th {
+        color: var(--cyan);
+        font-weight: 600;
+        border-bottom: 1px solid #333;
+      }
+
+      td {
+        color: #cfcfcf;
+      }
+
+      a {
+        color: var(--cyan);
+      }
+
+      .definition-block,
+      .revision-block,
+      .takeaway-block {
+        background: var(--surface);
+        border-radius: 8px;
+        padding: 12px 14px;
+        margin: 12px 0;
+        break-inside: avoid;
+      }
+
+      .definition-block {
+        border-left: 3px solid var(--violet);
+      }
+
+      .revision-block {
+        background: rgba(142, 230, 163, 0.06);
+        border: 1px solid rgba(142, 230, 163, 0.22);
+      }
+
+      .takeaway-block {
+        border-left: 3px solid var(--green);
+      }
+
+      .trap-item {
+        background: rgba(244, 201, 93, 0.06);
+        border-left: 3px solid var(--amber);
+        border-radius: 8px;
+        padding: 10px 13px;
+        margin: 8px 0;
+        break-inside: avoid;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <p class="eyebrow">LearnOS Daily / DAY 29</p>
+        <h1>Directory Structures and File Allocation</h1>
+        <p class="meta-line">40 min read - 5 min revision - Intermediate - Prerequisites: Day 28</p>
+        <p class="subtitle">Useful for file layout, lookup, and storage allocation questions.</p>
+        <div class="revision-strip"><span>Day 28 - File System Basics - R1 - Previous day reinforcement</span><span>Day 26 - Page Replacement Algorithms - R2 - Three-day spaced recall</span></div>
+      </section>
+      <article class="article"><p>Difficulty: Intermediate<br>
+Fresh Learning: 40 minutes<br>
+Revision: 5 minutes<br>
+Prerequisites: Day 28 - File System Basics<br>
+Why this topic matters in interviews: Directory structure and allocation questions test whether you understand how a file name becomes stored data, why large files need metadata structures, and why different file systems make different performance tradeoffs.</p>
+<h2>Opening Intuition</h2>
+<p>Imagine you save a movie project on your laptop:</p>
+<pre><code class="language-txt">C:\Users\You\Videos\projects\final-cut.mp4
+</code></pre>
+<p>or on Linux:</p>
+<pre><code class="language-txt">/home/you/videos/projects/final-cut.mp4
+</code></pre>
+<p>That path looks like a simple human-readable name. But the disk does not store a file as a sentence. Storage devices store blocks. A file system has to answer two practical questions every time a program opens a file:</p>
+<ol>
+<li>How do we find the file’s metadata from its path?</li>
+<li>Once we find the file, how do we find the blocks that contain its data?</li>
+</ol>
+<p>Directory structures solve the first problem. File allocation methods solve the second problem.</p>
+<p>Without directories, a storage device would become one giant list of names. Two users could not naturally organize their files, duplicate names would be difficult to manage, and lookup would become painful as the number of files grows. Without allocation structures, the file system would not know which disk blocks belong to a file, in what order they should be read, and how the file should grow.</p>
+<p>This is why file systems are not just “where files are stored.” They are naming systems plus metadata systems plus block-mapping systems. When an interviewer asks about directory structures or allocation, they are really asking whether you can connect a high-level path like <code>notes/os/day29.txt</code> to the low-level reality of directories, metadata, and storage blocks.</p>
+<h2>Interview Definition</h2>
+<p>A directory structure is the organization used by a file system to map names to files and subdirectories. It defines how paths are resolved, how users organize files, and how name conflicts are handled.</p>
+<p>File allocation is the method used by a file system to map a file’s logical byte sequence to physical storage blocks. Common methods include contiguous allocation, linked allocation, and indexed allocation.</p>
+<p>In interviews, say this clearly: directories answer “where is this file by name?” while allocation answers “where are this file’s data blocks?”</p>
+<h2>Key Definitions</h2>
+<p>Directory structure: The organization a file system uses to arrange files and directories into a namespace.</p>
+<p>Directory entry: A record inside a directory that maps a name to a file-system object or metadata identifier.</p>
+<p>Path: A sequence of directory names and a final object name used to locate a file-system object.</p>
+<p>Absolute path: A path resolved from the file-system root.</p>
+<p>Relative path: A path resolved from the process’s current working directory.</p>
+<p>Contiguous allocation: A file allocation method where a file occupies consecutive storage blocks.</p>
+<p>Linked allocation: A file allocation method where a file’s blocks are connected as a chain.</p>
+<p>Indexed allocation: A file allocation method where metadata or index blocks store pointers from logical file blocks to physical storage blocks.</p>
+<p>External fragmentation: A condition where total free space exists, but it is split into small non-contiguous regions.</p>
+<h2>Mental Model</h2>
+<p>Think of a file system as a city.</p>
+<p>Directories are the street address system. They let you say <code>sector 4 / building B / room 302</code> instead of describing a physical coordinate every time. A path is a route through named directories.</p>
+<p>File allocation is the warehouse inventory system. Once you reach the file’s record, the file system still needs to know where its contents are stored. A small file might fit in one shelf area. A large file might be spread across many shelves. The allocation method is the rule that tells the file system how to list, follow, or index those shelves.</p>
+<p>This model separates two ideas that learners often mix:</p>
+<ul>
+<li>A directory entry usually points to file metadata, not directly to every byte of data.</li>
+<li>The file metadata or allocation structure points to the data blocks.</li>
+</ul>
+<p>So the path is not the data. The directory is not the data. The allocation map is what connects the file abstraction to storage blocks.</p>
+<h2>Layer 1: What happens at a high level?</h2>
+<p>At a high level, a file system lets users and programs work with meaningful names instead of raw block numbers.</p>
+<p>When a process opens <code>docs/report.txt</code>, the OS walks the directory path:</p>
+<ol>
+<li>Start from a root directory or current working directory.</li>
+<li>Find the entry named <code>docs</code>.</li>
+<li>Confirm that <code>docs</code> is a directory and that access is allowed.</li>
+<li>Inside <code>docs</code>, find the entry named <code>report.txt</code>.</li>
+<li>Locate the file’s metadata record.</li>
+<li>Create an open-file entry and return a descriptor or handle.</li>
+</ol>
+<p>After the file is open, reads and writes use the file’s allocation information. If the process reads byte 8000, the file system calculates which logical block contains that byte and maps it to the correct physical block or extent on storage.</p>
+<p>The important interview point: path resolution and block resolution are related but different stages.</p>
+<h2>Layer 2: What happens inside the OS?</h2>
+<p>Inside the OS, directory entries usually map names to file identifiers. On Unix-like systems, that identifier is commonly an inode number. On Windows NTFS, the metadata is organized differently, but the idea is similar: the name leads to metadata, and metadata leads to data.</p>
+<p>A directory itself is often stored as a special file whose contents are name-to-record mappings. The file system interprets those contents as directory entries. This is why Unix-like systems often say “directories are files,” but with a special format and special operation rules.</p>
+<p>The OS also keeps caches:</p>
+<ul>
+<li>Directory entry cache: remembers recent name lookups.</li>
+<li>Metadata cache: remembers file metadata such as inode data.</li>
+<li>Page cache or buffer cache: remembers file contents or storage blocks.</li>
+</ul>
+<p>This caching matters because path lookup can involve multiple disk reads. A path like <code>/a/b/c/d/e.txt</code> may require checking each directory in the chain. With caching, repeated access to common directories becomes much faster.</p>
+<h2>Layer 3: What happens at hardware or kernel level?</h2>
+<p>At the kernel level, the file system driver converts logical file operations into block-device operations. Storage devices usually expose fixed-size sectors or logical blocks. The file system groups those into file-system blocks, commonly 4 KiB or larger.</p>
+<p>For reads:</p>
+<ol>
+<li>The process asks to read from an open file descriptor.</li>
+<li>The kernel checks the open-file state and current offset.</li>
+<li>The file system maps the file offset to one or more logical file blocks.</li>
+<li>The allocation method maps those logical file blocks to disk blocks or extents.</li>
+<li>The kernel serves cached data if available, or asks the storage driver to fetch it.</li>
+</ol>
+<p>For writes, the file system may need to allocate new blocks, update metadata, mark dirty cache pages, and later flush changes to storage. Journaling or copy-on-write file systems may add extra steps to protect metadata consistency after crashes.</p>
+<p>This is where allocation method matters. A contiguous file can be mapped with simple arithmetic. A linked file may require following pointers. An indexed file may require reading an index block or inode pointer structure.</p>
+<h2>Layer 4: What can go wrong?</h2>
+<p>Several problems appear if the directory or allocation design is weak.</p>
+<p>Directories can become slow if a file system searches a huge directory linearly. Modern file systems often use hashed or tree-based directory indexes to speed up lookup.</p>
+<p>Contiguous allocation can become fragmented. Even if total free space is large, there may not be one large continuous region for a growing file.</p>
+<p>Linked allocation handles growth better but makes random access slow because reaching block number 10,000 may require following many links.</p>
+<p>Indexed allocation supports direct and random access better, but it spends extra space on index blocks or pointer structures. Very large files need multi-level indexes, indirect blocks, extents, or tree structures.</p>
+<p>Crashes can leave metadata inconsistent if updates are interrupted. For example, the file system might allocate a block but crash before the directory or metadata fully records it. Journaling, checksums, and careful write ordering reduce this risk.</p>
+<h2>Step-by-Step Flow</h2>
+<p>Opening and reading a file follows this practical flow:</p>
+<ol>
+<li>A process calls <code>open(&quot;projects/final-cut.mp4&quot;)</code>.</li>
+<li>The kernel receives the system call and starts from the process’s current working directory.</li>
+<li>The file system looks for a directory entry named <code>projects</code>.</li>
+<li>It checks permissions and confirms that <code>projects</code> is a directory.</li>
+<li>It searches inside <code>projects</code> for <code>final-cut.mp4</code>.</li>
+<li>The directory entry leads to the file’s metadata record.</li>
+<li>The kernel creates an open-file table entry with access mode and file offset.</li>
+<li>The process receives a file descriptor or handle.</li>
+<li>The process calls <code>read(fd, buffer, size)</code>.</li>
+<li>The file system maps the current file offset to logical file blocks.</li>
+<li>The allocation structure maps logical blocks to physical storage blocks.</li>
+<li>Data is returned from cache or read from the storage device.</li>
+<li>The file offset is advanced unless the operation is positioned I/O.</li>
+</ol>
+<h2>Diagram Section</h2>
+<h3>Path Lookup: Name to Metadata</h3>
+<div class="diagram-card"><div class="mermaid">flowchart TD
+    A[&quot;Process opens /home/harsh/os/day29.md&quot;] --&gt; B[&quot;Start at root directory&quot;]
+    B --&gt; C[&quot;Find entry: home&quot;]
+    C --&gt; D[&quot;Find entry: harsh&quot;]
+    D --&gt; E[&quot;Find entry: os&quot;]
+    E --&gt; F[&quot;Find entry: day29.md&quot;]
+    F --&gt; G[&quot;Locate file metadata&quot;]
+    G --&gt; H[&quot;Return descriptor or handle&quot;]
+</div></div><p>This diagram shows that opening a file is not one lookup. The OS resolves each path component step by step. Each directory component must exist, be a directory, and pass permission checks.</p>
+<h3>Allocation Methods: Logical File to Blocks</h3>
+<div class="diagram-card"><div class="mermaid">flowchart LR
+    F[&quot;Logical file blocks 0,1,2,3&quot;] --&gt; C[&quot;Contiguous: start block + length&quot;]
+    F --&gt; L[&quot;Linked: each block points to next&quot;]
+    F --&gt; I[&quot;Indexed: metadata points to block list&quot;]
+    C --&gt; C2[&quot;Fast sequential and random access, hard growth&quot;]
+    L --&gt; L2[&quot;Easy growth, poor random access&quot;]
+    I --&gt; I2[&quot;Good random access, index overhead&quot;]
+</div></div><p>The same logical file can be represented differently on disk. The allocation choice changes performance, fragmentation, growth behavior, and metadata overhead.</p>
+<h3>Directory Structures Compared</h3>
+<div class="diagram-card"><div class="mermaid">flowchart TB
+    S[&quot;Single-level directory&quot;] --&gt; S1[&quot;All files in one namespace&quot;]
+    T[&quot;Two-level directory&quot;] --&gt; T1[&quot;One directory per user&quot;]
+    R[&quot;Tree directory&quot;] --&gt; R1[&quot;Hierarchical paths&quot;]
+    A[&quot;Acyclic graph directory&quot;] --&gt; A1[&quot;Shared files or subdirectories without cycles&quot;]
+</div></div><p>Directory structures evolved because real systems need users, grouping, duplicate names in different folders, and controlled sharing.</p>
+<h2>Directory Structures</h2>
+<h3>Single-Level Directory</h3>
+<p>A single-level directory stores all files in one directory.</p>
+<p>Example:</p>
+<pre><code class="language-txt">/file1.txt
+/notes.txt
+/photo.jpg
+/program.exe
+</code></pre>
+<p>This is simple, but it does not scale. Every file name must be unique across the whole system. Multiple users cannot naturally organize their own files. Searching and grouping become difficult as the number of files grows.</p>
+<p>Interview use: mention it as the simplest design, useful for understanding the problem, but not practical for general-purpose multi-user systems.</p>
+<h3>Two-Level Directory</h3>
+<p>A two-level directory gives each user a separate directory.</p>
+<p>Example:</p>
+<pre><code class="language-txt">/alice/report.txt
+/bob/report.txt
+</code></pre>
+<p>Now Alice and Bob can both have a <code>report.txt</code>. This solves user-level name conflicts. However, sharing files between users becomes less natural, and deeper project organization is still limited.</p>
+<p>This structure is better than single-level, but still too rigid for modern systems.</p>
+<h3>Tree-Structured Directory</h3>
+<p>A tree directory allows directories inside directories.</p>
+<p>Example:</p>
+<pre><code class="language-txt">/home/harsh/os/day29.md
+/home/harsh/ml/project/data.csv
+/var/log/system.log
+</code></pre>
+<p>This is the common mental model used by most operating systems. It supports grouping, nested projects, relative paths, absolute paths, and separate namespaces.</p>
+<p>Tree structures are easy to reason about because each object generally has one parent path. But pure trees do not naturally represent shared files with multiple names.</p>
+<h3>Acyclic Graph Directory</h3>
+<p>An acyclic graph directory allows sharing without cycles. For example, two users may refer to the same file or shared project directory.</p>
+<p>The key challenge is avoiding cycles. If directory links can form loops, recursive traversal becomes dangerous:</p>
+<pre><code class="language-txt">/a/b/link-to-a -&gt; /a
+</code></pre>
+<p>Now a naive recursive search could run forever. File systems use rules, link counts, symbolic links, mount boundaries, or traversal safeguards to control this.</p>
+<p>In interviews, connect this to hard links and symbolic links. Hard links give multiple names to the same underlying file metadata. Symbolic links are special files that contain a path to another location.</p>
+<h2>File Allocation Methods</h2>
+<h3>Contiguous Allocation</h3>
+<p>In contiguous allocation, a file occupies a continuous run of storage blocks. Metadata only needs the starting block and length.</p>
+<p>Example:</p>
+<pre><code class="language-txt">file A: start = 100, length = 5 blocks
+blocks: 100, 101, 102, 103, 104
+</code></pre>
+<p>Advantages:</p>
+<ul>
+<li>Very fast sequential access.</li>
+<li>Very fast random access because block <code>i</code> is <code>start + i</code>.</li>
+<li>Simple metadata.</li>
+<li>Good for read-heavy files with known size.</li>
+</ul>
+<p>Disadvantages:</p>
+<ul>
+<li>External fragmentation.</li>
+<li>Hard to grow files if the next blocks are already occupied.</li>
+<li>May require compaction or relocation.</li>
+<li>Allocating a file requires knowing or estimating size.</li>
+</ul>
+<p>Contiguous allocation is conceptually clean, but general-purpose file systems need files to grow, shrink, and coexist with many other changing files. That makes pure contiguous allocation restrictive.</p>
+<h3>Linked Allocation</h3>
+<p>In linked allocation, a file is stored as a linked list of blocks. Each block contains a pointer to the next block, or a separate table stores the chain.</p>
+<p>Example:</p>
+<pre><code class="language-txt">file A: 15 -&gt; 92 -&gt; 31 -&gt; 44 -&gt; null
+</code></pre>
+<p>Advantages:</p>
+<ul>
+<li>No external fragmentation problem like contiguous allocation.</li>
+<li>Files can grow by adding any free block.</li>
+<li>Simple allocation for sequential reads.</li>
+</ul>
+<p>Disadvantages:</p>
+<ul>
+<li>Random access is slow. To reach block 500, the system may need to follow 500 pointers.</li>
+<li>Pointer overhead consumes space.</li>
+<li>If a pointer is corrupted, part of the file can become unreachable.</li>
+<li>Blocks may be scattered, causing poor locality on HDDs and less efficient I/O patterns even on SSDs.</li>
+</ul>
+<p>The File Allocation Table design is a classic related idea: instead of storing the next pointer inside each data block, a table stores block chains. This improves some management tasks but still has scaling and caching concerns for large disks.</p>
+<h3>Indexed Allocation</h3>
+<p>In indexed allocation, each file has an index block or metadata structure that stores pointers to its data blocks.</p>
+<p>Example:</p>
+<pre><code class="language-txt">index for file A:
+logical block 0 -&gt; physical block 15
+logical block 1 -&gt; physical block 92
+logical block 2 -&gt; physical block 31
+logical block 3 -&gt; physical block 44
+</code></pre>
+<p>Advantages:</p>
+<ul>
+<li>Supports direct access much better than linked allocation.</li>
+<li>File blocks can be scattered without requiring a linked traversal.</li>
+<li>File growth is easier than pure contiguous allocation.</li>
+<li>Metadata clearly records the block mapping.</li>
+</ul>
+<p>Disadvantages:</p>
+<ul>
+<li>Index blocks consume space.</li>
+<li>Small files may waste index capacity unless optimized.</li>
+<li>Very large files need multi-level indexing or extent trees.</li>
+<li>Extra metadata reads may be needed if index data is not cached.</li>
+</ul>
+<p>Indexed allocation is the foundation behind many real-world designs. Unix inode structures, indirect blocks, and modern extent-based trees all build on the idea that metadata maps logical file positions to storage locations.</p>
+<h2>Comparison Tables</h2>
+<h3>Directory Structure Comparison</h3>
+<div class="table-wrap"><table><thead>
+<tr>
+<th>Structure</th>
+<th>Main idea</th>
+<th>Strength</th>
+<th>Weakness</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Single-level</td>
+<td>One directory for all files</td>
+<td>Very simple</td>
+<td>Name conflicts and poor organization</td>
+</tr>
+<tr>
+<td>Two-level</td>
+<td>One directory per user</td>
+<td>Solves user name conflicts</td>
+<td>Weak sharing and shallow organization</td>
+</tr>
+<tr>
+<td>Tree</td>
+<td>Directories inside directories</td>
+<td>Natural hierarchy and paths</td>
+<td>Sharing needs links or mounts</td>
+</tr>
+<tr>
+<td>Acyclic graph</td>
+<td>Shared objects without cycles</td>
+<td>Supports controlled sharing</td>
+<td>More complex traversal and deletion</td>
+</tr>
+</tbody>
+</table></div><h3>File Allocation Comparison</h3>
+<div class="table-wrap"><table><thead>
+<tr>
+<th>Method</th>
+<th>Metadata</th>
+<th>Random access</th>
+<th>Growth</th>
+<th>Main problem</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Contiguous</td>
+<td>Start block + length</td>
+<td>Excellent</td>
+<td>Difficult</td>
+<td>External fragmentation</td>
+</tr>
+<tr>
+<td>Linked</td>
+<td>First block + next pointers</td>
+<td>Poor</td>
+<td>Easy</td>
+<td>Pointer chasing and reliability</td>
+</tr>
+<tr>
+<td>Indexed</td>
+<td>Index of block pointers</td>
+<td>Good</td>
+<td>Good</td>
+<td>Index overhead</td>
+</tr>
+</tbody>
+</table></div><h2>Practical System Relevance</h2>
+<p>In Unix-like systems, directories map names to inode numbers. The inode contains metadata and pointers or extent information that map the file to data blocks. This is why renaming a file within the same file system can be cheap: the file data does not move; a directory entry changes.</p>
+<p>In Linux ext-family file systems, older designs used direct and indirect block pointers, while newer designs such as ext4 use extents for efficient representation of contiguous block ranges. An extent says, in effect, “this logical range maps to this physical range,” which is more compact than listing every block separately.</p>
+<p>In Windows NTFS, file metadata lives in the Master File Table. Small file data can sometimes be resident inside metadata, while larger files use mapping information. Directories can be indexed for faster lookup.</p>
+<p>In databases, file allocation interacts with database page management. A database often stores tables and indexes in large files and manages its own internal pages. The OS sees files and blocks, while the database sees relations, pages, records, and B-trees.</p>
+<p>In browsers, cache directories can contain thousands of small files or database-like stores. Directory lookup performance and metadata overhead can affect startup time, cache cleanup, and profile operations.</p>
+<p>In containers, overlay file systems add another layer. A container may see a normal directory tree, but writes may go to an upper writable layer while reads may come from lower image layers. The path abstraction stays familiar, but the mapping underneath is more complex.</p>
+<p>In cloud systems, virtual disks and network file systems can make allocation less directly tied to physical disk locations. Still, the file system must maintain metadata and logical-to-storage mappings. The underlying storage service may perform additional mapping, replication, and caching.</p>
+<h2>Code or Pseudocode Section</h2>
+<h3>Path Lookup Pseudocode</h3>
+<pre><code class="language-c">inode* resolve_path(inode* start, char** components) {
+    inode* current = start;
+
+    for each name in components {
+        if (!is_directory(current)) {
+            return ERROR_NOT_DIRECTORY;
+        }
+
+        if (!has_execute_permission(current)) {
+            return ERROR_PERMISSION_DENIED;
+        }
+
+        current = lookup_directory_entry(current, name);
+        if (current == NULL) {
+            return ERROR_NOT_FOUND;
+        }
+    }
+
+    return current;
+}
+</code></pre>
+<p>This shows why path lookup is iterative. Each component depends on the previous directory being found and searchable.</p>
+<h3>Allocation Mapping Pseudocode</h3>
+<pre><code class="language-c">block_no map_indexed_file(file_metadata* file, int logical_block) {
+    index_block* index = read_index(file-&gt;index_block);
+    return index-&gt;entries[logical_block];
+}
+</code></pre>
+<p>In a real file system, this may involve direct blocks, indirect blocks, extents, B-trees, caching, permissions, and locking. The core idea is still logical file block to physical storage block mapping.</p>
+<h3>Commands to Observe the Concept</h3>
+<pre><code class="language-bash">pwd
+ls -li
+stat file.txt
+find . -maxdepth 2 -type f
+du -h file.txt
+df -h
+</code></pre>
+<p>What to observe:</p>
+<ul>
+<li><code>pwd</code> shows the current directory used for relative path lookup.</li>
+<li><code>ls -li</code> on Unix-like systems shows inode numbers, making it visible that names point to metadata identifiers.</li>
+<li><code>stat</code> shows metadata such as size, permissions, timestamps, and sometimes block counts.</li>
+<li><code>find</code> walks directory structures recursively.</li>
+<li><code>du</code> reports space used, which may differ from logical file size because allocation works in blocks.</li>
+<li><code>df</code> reports file system level free and used space.</li>
+</ul>
+<h2>Common Misconceptions</h2>
+<ol>
+<li>
+<p>A directory is just a visual folder.
+Correction: A directory is a file-system object that maps names to file metadata or object identifiers.</p>
+</li>
+<li>
+<p>A path directly stores the data location.
+Correction: A path is resolved through directories. Metadata and allocation structures lead to data blocks.</p>
+</li>
+<li>
+<p>Contiguous allocation is always best because it is fastest.
+Correction: It is fast for access, but poor for growth and vulnerable to external fragmentation.</p>
+</li>
+<li>
+<p>Linked allocation completely solves fragmentation.
+Correction: It avoids needing contiguous free space, but blocks can be scattered and random access becomes slow.</p>
+</li>
+<li>
+<p>Indexed allocation has no cost.
+Correction: Index blocks or pointer structures consume space and may require extra I/O.</p>
+</li>
+<li>
+<p>Deleting a directory entry always deletes the data immediately.
+Correction: Deletion usually removes a name and updates metadata. Actual data blocks may be freed later or remain until no links and open handles reference the file.</p>
+</li>
+<li>
+<p>File size and disk space used are always the same.
+Correction: Files are allocated in blocks, can be sparse, can have metadata overhead, and may be compressed or deduplicated.</p>
+</li>
+</ol>
+<h2>Tricky Interview Corners</h2>
+<h3>Why directories are often treated as files</h3>
+<p>A directory needs to be stored persistently, just like a file. The difference is that the file system interprets its contents as entries rather than user data. Programs usually cannot write raw bytes into directories because corrupting the directory format would break name lookup.</p>
+<h3>Why random access is bad in linked allocation</h3>
+<p>If the file is a chain, logical block 1000 is not found by simple arithmetic. The system has to follow the chain, unless it has auxiliary tables or cached chain information. This is the same reason linked lists have poor random indexing compared with arrays.</p>
+<h3>Why contiguous allocation causes external fragmentation</h3>
+<p>External fragmentation means free space exists, but not in the required continuous region. A 1 GB file may fail to allocate contiguously even when total free space exceeds 1 GB, if the free blocks are split into small holes.</p>
+<h3>Why indexed allocation still needs scaling tricks</h3>
+<p>One index block has finite capacity. Large files need multi-level indexes, extents, or trees. Otherwise the metadata becomes too large or too slow to manage.</p>
+<h3>Why hard links complicate deletion</h3>
+<p>If two directory entries point to the same metadata, deleting one name should not necessarily delete the data. The file system needs a link count or equivalent metadata to know when the file object is no longer named.</p>
+<h2>How to Explain This in an Interview</h2>
+<h3>30-second answer</h3>
+<p>Directory structures organize file names into namespaces such as single-level, two-level, tree, or acyclic graph structures. File allocation methods decide how a file’s logical blocks are placed on storage. Contiguous allocation is fast but hard to grow, linked allocation grows easily but has poor random access, and indexed allocation supports direct access with metadata overhead.</p>
+<h3>2-minute answer</h3>
+<p>When a program opens a path, the OS resolves each directory component until it reaches the file’s metadata. That metadata then tells the file system how to map file offsets to storage blocks. Directory structures solve naming and organization; allocation methods solve data placement. Single-level directories are simple but do not scale. Two-level directories separate users. Tree directories support natural hierarchy. Acyclic graph directories support sharing but must avoid cycles. For allocation, contiguous allocation stores a file in consecutive blocks, linked allocation stores blocks as a chain, and indexed allocation stores block pointers in an index structure. The tradeoffs are access speed, fragmentation, growth, reliability, and metadata overhead.</p>
+<h3>Deeper follow-up answer</h3>
+<p>Real file systems often combine these ideas. Directories may be indexed with hashes or B-trees for fast lookup. Files may use extents instead of one pointer per block, because a single extent can represent many contiguous blocks. Metadata updates may be journaled so that a crash does not leave directories or allocation structures inconsistent. The interview-level skill is to separate name lookup from block mapping and then explain the tradeoffs of each design.</p>
+<h2>Interview Questions</h2>
+<h3>Basic Questions</h3>
+<ol>
+<li>What problem does a directory structure solve?</li>
+<li>What is the difference between a file path and file metadata?</li>
+<li>Why is a tree directory better than a single-level directory?</li>
+<li>What is contiguous file allocation?</li>
+<li>What is linked file allocation?</li>
+</ol>
+<h3>Intermediate Questions</h3>
+<ol start="6">
+<li>Compare contiguous, linked, and indexed allocation.</li>
+<li>Why does contiguous allocation suffer from external fragmentation?</li>
+<li>Why is random access slow in linked allocation?</li>
+<li>How does indexed allocation improve random access?</li>
+<li>Why do file systems need metadata in addition to file contents?</li>
+</ol>
+<h3>Advanced Questions</h3>
+<ol start="11">
+<li>How can hard links make deletion more complex?</li>
+<li>Why can recursive directory traversal become unsafe in graph-like directory structures?</li>
+<li>Why do modern file systems use extents or trees instead of only simple block pointers?</li>
+<li>How does path lookup interact with permissions?</li>
+<li>What can go wrong if a crash occurs while directory metadata is being updated?</li>
+</ol>
+<h2>Follow-Up Questions</h2>
+<p>Q: What happens when a process opens <code>/home/user/a.txt</code>?<br>
+Follow-ups:</p>
+<ul>
+<li>Which directory is searched first?</li>
+<li>What permission checks are needed?</li>
+<li>Does the path directly identify disk blocks?</li>
+<li>What might be cached during lookup?</li>
+</ul>
+<p>Q: Why is contiguous allocation fast?<br>
+Follow-ups:</p>
+<ul>
+<li>How do you calculate the physical block for logical block <code>i</code>?</li>
+<li>What happens when the file grows?</li>
+<li>What is external fragmentation?</li>
+<li>Where might contiguous ranges still be useful?</li>
+</ul>
+<p>Q: Why is linked allocation poor for random access?<br>
+Follow-ups:</p>
+<ul>
+<li>How do you reach the 1000th block?</li>
+<li>What happens if a pointer is corrupted?</li>
+<li>How does a file allocation table change the design?</li>
+<li>Is sequential access still reasonable?</li>
+</ul>
+<p>Q: What does indexed allocation store?<br>
+Follow-ups:</p>
+<ul>
+<li>Where is the index kept?</li>
+<li>What is the cost of index blocks?</li>
+<li>How are very large files supported?</li>
+<li>Why is it better for random access?</li>
+</ul>
+<p>Q: What is an acyclic graph directory?<br>
+Follow-ups:</p>
+<ul>
+<li>Why allow sharing?</li>
+<li>Why avoid cycles?</li>
+<li>How do symbolic links complicate traversal?</li>
+<li>How should deletion behave when multiple names point to one file?</li>
+</ul>
+<h2>Trick Questions</h2>
+<p>Q: If two paths refer to the same file data, must they be identical strings?<br>
+Expected answer: No. Hard links, symbolic links, mounts, or aliases can make different paths reach the same object or content.</p>
+<p>Q: Does deleting a filename always erase the file contents immediately?<br>
+Expected answer: No. It may remove a directory entry while metadata, open handles, or data blocks remain until safe to reclaim.</p>
+<p>Q: Is linked allocation always better than contiguous allocation because it avoids external fragmentation?<br>
+Expected answer: No. It improves growth flexibility but hurts random access and locality.</p>
+<p>Q: In indexed allocation, does the index contain the file’s actual user data?<br>
+Expected answer: Usually no. It contains pointers or mappings to data blocks, though some file systems may store tiny files inside metadata as an optimization.</p>
+<p>Q: Can a directory contain another directory?<br>
+Expected answer: Yes in hierarchical file systems. The containing directory has an entry that points to the subdirectory’s metadata.</p>
+<p>Q: Is a file’s logical block number the same as its physical disk block number?<br>
+Expected answer: No. Allocation structures map logical file blocks to physical storage blocks.</p>
+<p>Q: If total free space is enough, can contiguous allocation still fail?<br>
+Expected answer: Yes. It may fail if there is no sufficiently large continuous free region.</p>
+<h2>Practical Debugging / Observation</h2>
+<p>Use these commands on a Unix-like system or Git Bash where available:</p>
+<pre><code class="language-bash">mkdir -p demo/a/b
+echo &quot;hello&quot; &gt; demo/a/b/file.txt
+ls -li demo/a/b/file.txt
+stat demo/a/b/file.txt
+du -h demo/a/b/file.txt
+find demo -maxdepth 3 -type f -print
+</code></pre>
+<p>Observe that the path is hierarchical, while <code>ls -li</code> exposes an inode-like identifier. <code>stat</code> shows metadata. <code>du</code> may show allocated disk usage, which can differ from the five logical bytes in <code>hello</code>.</p>
+<p>To observe sparse allocation:</p>
+<pre><code class="language-bash">truncate -s 1G sparse.bin
+ls -lh sparse.bin
+du -h sparse.bin
+</code></pre>
+<p>The logical size may be 1 GB, while actual disk usage may be much smaller. This is a strong example showing that logical file size and allocated physical storage are not always the same.</p>
+<h2>Mini Quiz</h2>
+<h3>MCQs</h3>
+<ol>
+<li>
+<p>What does a directory primarily map?
+A. CPU registers to memory<br>
+B. Names to file-system objects<br>
+C. Network packets to ports<br>
+D. Processes to threads<br>
+Answer: B</p>
+</li>
+<li>
+<p>Which allocation method gives the simplest random access formula?
+A. Contiguous<br>
+B. Linked<br>
+C. Pure chain-based allocation<br>
+D. Single-level directory<br>
+Answer: A</p>
+</li>
+<li>
+<p>Which allocation method suffers most directly from pointer chasing?
+A. Indexed<br>
+B. Contiguous<br>
+C. Linked<br>
+D. Tree directory<br>
+Answer: C</p>
+</li>
+<li>
+<p>What is a major cost of indexed allocation?
+A. It cannot support random access<br>
+B. It needs metadata space for indexes<br>
+C. It requires every user to have one directory<br>
+D. It forbids large files<br>
+Answer: B</p>
+</li>
+<li>
+<p>What problem does an acyclic graph directory try to support?
+A. CPU scheduling<br>
+B. File sharing without directory cycles<br>
+C. Page replacement<br>
+D. Interrupt handling<br>
+Answer: B</p>
+</li>
+</ol>
+<h3>Short-Answer Questions</h3>
+<ol>
+<li>
+<p>Why is path lookup a step-by-step process?<br>
+Answer: Each path component must be resolved inside the directory found by the previous component, with type and permission checks along the way.</p>
+</li>
+<li>
+<p>Why can contiguous allocation become difficult for growing files?<br>
+Answer: The blocks immediately after the file may already be allocated, so the file cannot expand contiguously without relocation or a new extent.</p>
+</li>
+<li>
+<p>Why does indexed allocation support random access better than linked allocation?<br>
+Answer: The index can directly map a logical block number to a physical block pointer instead of requiring traversal through earlier blocks.</p>
+</li>
+</ol>
+<h3>Reasoning Questions</h3>
+<ol>
+<li>
+<p>A file system has 10 GB free, but a 2 GB contiguous file allocation fails. How is that possible?<br>
+Answer: The free space may be split into many smaller holes, so no single 2 GB continuous region exists.</p>
+</li>
+<li>
+<p>A user deletes one path to a file, but another path still opens the same content. What concept explains this?<br>
+Answer: Multiple directory entries may reference the same underlying file metadata, such as with hard links, so removing one name does not necessarily remove the file object.</p>
+</li>
+</ol>
+<h1>5-Minute Revision Column</h1>
+<h2>Revision Targets</h2>
+<ul>
+<li>Day 28: File System Basics - R1 Recall Revision</li>
+<li>Day 26: Page Replacement Algorithms - R2 Compression Revision</li>
+</ul>
+<h2>Day 28 - File System Basics (R1)</h2>
+<p>Core recall: A file system is the OS layer that organizes persistent storage into files and directories. It tracks metadata such as size, permissions, ownership, timestamps, and block mapping information. Programs usually do not directly control disk sectors. They ask the kernel to open, read, write, seek, close, rename, or delete file-system objects.</p>
+<p>Key definitions:</p>
+<ul>
+<li>File: a named abstraction for persistent data plus metadata.</li>
+<li>Directory: a file-system object that maps names to other objects.</li>
+<li>File descriptor: a small process-local integer used by Unix-like systems to refer to an open file or file-like object.</li>
+</ul>
+<p>Practical example: When a program reads <code>notes.txt</code>, the OS checks permissions, finds metadata, maps file data to storage blocks, uses cache if possible, and returns bytes through the file descriptor.</p>
+<p>Common traps:</p>
+<ul>
+<li>A file name is not the file itself.</li>
+<li>A descriptor does not store the file contents; it refers to an open object.</li>
+</ul>
+<p>Quick interview questions:</p>
+<ol>
+<li>Why can two processes both have descriptor 3 but refer to different files?</li>
+<li>If <code>write</code> returns successfully, is the data definitely safe after power loss?</li>
+</ol>
+<p>Mental model: The file system is a library catalog plus checkout desk. Names help locate records; descriptors are checkout slips; metadata tells the system where and how the real data is stored.</p>
+<h2>Day 26 - Page Replacement Algorithms (R2)</h2>
+<p>Core recall:</p>
+<ul>
+<li>Page replacement runs when a needed page is not in RAM and no free frame is available.</li>
+<li>The OS chooses a victim page, writes it back if dirty, updates page tables, loads the demanded page, and restarts the faulting instruction.</li>
+<li>FIFO evicts the oldest resident page, but can show Belady’s anomaly.</li>
+<li>Optimal is a benchmark because it needs future knowledge.</li>
+<li>LRU and Clock use recent access behavior to approximate useful eviction choices.</li>
+</ul>
+<p>Key definitions:</p>
+<ul>
+<li>Victim page: the resident page selected for eviction.</li>
+<li>Dirty page: a modified page that may need write-back before eviction.</li>
+</ul>
+<p>Common traps:</p>
+<ul>
+<li>A TLB miss is not the same as a page fault.</li>
+<li>A page fault does not always require eviction if a free frame exists.</li>
+</ul>
+<p>Quick interview questions:</p>
+<ol>
+<li>Why can a clean page be cheaper to evict than a dirty page?</li>
+<li>Why is true Optimal replacement not implementable by a real OS?</li>
+</ol>
+<p>Mental model: RAM is a small desk, virtual memory is a large library, and page replacement decides which open book leaves the desk when a new one must be brought in.</p>
+<h2>Final Takeaway</h2>
+<p>Directory structures and file allocation solve two different parts of file-system design. Directories turn names and paths into metadata records. Allocation methods turn logical file blocks into physical storage locations. Single-level and two-level directories are simple but limited; tree directories are practical; acyclic graph directories support sharing with extra complexity. Contiguous allocation is fast but fragile for growth, linked allocation grows easily but hurts random access, and indexed allocation balances flexibility with metadata overhead. Strong interview answers separate path lookup from block mapping and then explain the tradeoffs.</p>
+<h2>What You Should Be Able To Answer Now</h2>
+<ul>
+<li>Explain how a file path is resolved through directories.</li>
+<li>Compare single-level, two-level, tree, and acyclic graph directory structures.</li>
+<li>Explain contiguous allocation and why it suffers from external fragmentation.</li>
+<li>Explain linked allocation and why random access is slow.</li>
+<li>Explain indexed allocation and why it needs extra metadata.</li>
+<li>Compare allocation methods using access speed, growth, fragmentation, and overhead.</li>
+<li>Describe why deleting a name may not immediately erase file data.</li>
+<li>Connect real file systems to inodes, directories, extents, and metadata.</li>
+</ul>
+</article>
+    </main>
+    <script>
+      (() => {
+        const article = document.querySelector(".article");
+        if (!article) return;
+        const chapterMap = {
+          "Opening Intuition": ["01", "Opening Intuition", "Why this concept exists in real systems before formal definition."],
+          "Interview Definition": ["02", "Interview Definition", "A clean interview-ready explanation with precise language."],
+          "Mental Model": ["03", "Mental Model", "A compact analogy that maps theory to practical recall."],
+          "Layer 1: What happens at a high level?": ["04", "Core Theory", "What the OS manages and how abstraction/resource management fit together."],
+          "Layer 2: What happens inside the OS?": ["05", "System Internals", "Kernel boundaries, data structures, and service flow inside the OS."],
+          "Step-by-Step Flow": ["06", "Step-by-Step Flow", "Concrete execution sequence you can narrate in interviews."],
+          "Practical System Relevance": ["07", "Practical Examples", "How the concept appears in Linux, Windows, Android, servers, and cloud."],
+          "Common Misconceptions": ["08", "Common Misconceptions", "High-frequency mistakes and what to say instead."],
+          "Tricky Interview Corners": ["09", "Tricky Interview Corners", "Edge cases and deeper follow-up traps interviewers probe."],
+          "Interview Questions": ["10", "Interview Questions", "Layered practice questions from basic to advanced."],
+          "5-Minute Revision Column": ["11", "5-Minute Revision Column", "Compressed spaced-repetition recall from prior targets."],
+          "Final Takeaway": ["12", "Final Takeaway", "The final memory model and what you should be able to answer now."]
+        };
+
+        const wrapAfterHeading = (title, className) => {
+          const heading = Array.from(article.querySelectorAll("h2")).find((el) => el.textContent?.trim() === title);
+          if (!heading) return;
+          const wrap = document.createElement("div");
+          wrap.className = className;
+          let node = heading.nextElementSibling;
+          while (node && node.tagName !== "H2") {
+            const next = node.nextElementSibling;
+            wrap.appendChild(node);
+            node = next;
+          }
+          heading.insertAdjacentElement("afterend", wrap);
+        };
+
+        wrapAfterHeading("Interview Definition", "definition-block");
+        wrapAfterHeading("5-Minute Revision Column", "revision-block");
+        wrapAfterHeading("Final Takeaway", "takeaway-block");
+        wrapAfterHeading("What You Should Be Able To Answer Now", "takeaway-block");
+
+        article.querySelectorAll("h2").forEach((heading) => {
+          const text = heading.textContent?.trim() ?? "";
+          const chapter = chapterMap[text];
+          if (!chapter) return;
+          const opener = document.createElement("div");
+          opener.className = "section-opener";
+          opener.innerHTML = "<div class=\"section-kicker\">SECTION " + chapter[0] + " / " + chapter[1].toUpperCase() + "</div><div class=\"section-summary\">" + chapter[2] + "</div>";
+          heading.insertAdjacentElement("beforebegin", opener);
+        });
+
+        const misconceptions = Array.from(article.querySelectorAll("h2")).find(
+          (el) => el.textContent?.trim() === "Common Misconceptions"
+        );
+        if (misconceptions) {
+          let node = misconceptions.nextElementSibling;
+          while (node && node.tagName !== "H2") {
+            if (node.tagName === "OL") {
+              node.querySelectorAll("li").forEach((li) => li.classList.add("trap-item"));
+            }
+            node = node.nextElementSibling;
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>

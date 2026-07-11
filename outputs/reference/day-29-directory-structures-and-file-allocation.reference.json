@@ -1,0 +1,93 @@
+{
+  "day": 29,
+  "topic": "Directory Structures and File Allocation",
+  "difficulty": "Intermediate",
+  "core_summary": [
+    "A directory structure is the organization used by a file system to map names to files and subdirectories. It defines how paths are resolved, how users organize files, and how name conflicts are handled.",
+    "File allocation is the method used by a file system to map a file's logical byte sequence to physical storage blocks. Common methods include contiguous allocation, linked allocation, and indexed allocation.",
+    "In interviews, say this clearly: directories answer &quot;where is this file by name?&quot; while allocation answers &quot;where are this file's data blocks?&quot;"
+  ],
+  "key_definitions": {
+    "Directory structure": "The organization a file system uses to arrange files and directories into a namespace.",
+    "Directory entry": "A record inside a directory that maps a name to a file-system object or metadata identifier.",
+    "Path": "A sequence of directory names and a final object name used to locate a file-system object.",
+    "Absolute path": "A path resolved from the file-system root.",
+    "Relative path": "A path resolved from the process's current working directory.",
+    "Contiguous allocation": "A file allocation method where a file occupies consecutive storage blocks.",
+    "Linked allocation": "A file allocation method where a file's blocks are connected as a chain.",
+    "Indexed allocation": "A file allocation method where metadata or index blocks store pointers from logical file blocks to physical storage blocks."
+  },
+  "mental_model": "Think of a file system as a city. Directories are the street address system. They let you say sector 4 / building B / room 302 instead of describing a physical coordinate every time. A path is a route through named directories. File allocation is the warehouse inventory system. Once you reach the file's record, the file system still needs to know where its contents are stored. A small file might fit in one shelf area. A large file might be spread across many shelves. The allocation method is the rule that tells the file system how to list, follow, or index those shelves.",
+  "core_examples": [
+    {
+      "name": "Opening an application",
+      "point": "The OS loads executable code, creates a process, assigns memory, schedules CPU time, and services I/O."
+    },
+    {
+      "name": "Reading a file",
+      "point": "The app requests bytes while the OS handles permissions, metadata lookup, filesystem mapping, and device access."
+    }
+  ],
+  "practical_uses": [
+    "In Unix-like systems, directories map names to inode numbers. The inode contains metadata and pointers or extent information that map the file to data blocks. This is why renaming a file within the same file system can be cheap: the file data does not move; a directory entry changes.",
+    "In Linux ext-family file systems, older designs used direct and indirect block pointers, while newer designs such as ext4 use extents for efficient representation of contiguous block ranges. An extent says, in effect, &quot;this logical range maps to this physical range,&quot; which is more compact than listing every block separately.",
+    "In Windows NTFS, file metadata lives in the Master File Table. Small file data can sometimes be resident inside metadata, while larger files use mapping information. Directories can be indexed for faster lookup.",
+    "In databases, file allocation interacts with database page management. A database often stores tables and indexes in large files and manages its own internal pages. The OS sees files and blocks, while the database sees relations, pages, records, and B-trees.",
+    "In browsers, cache directories can contain thousands of small files or database-like stores. Directory lookup performance and metadata overhead can affect startup time, cache cleanup, and profile operations.",
+    "In containers, overlay file systems add another layer. A container may see a normal directory tree, but writes may go to an upper writable layer while reads may come from lower image layers. The path abstraction stays familiar, but the mapping underneath is more complex.",
+    "In cloud systems, virtual disks and network file systems can make allocation less directly tied to physical disk locations. Still, the file system must maintain metadata and logical-to-storage mappings. The underlying storage service may perform additional mapping, replication, and caching."
+  ],
+  "pitfalls": [
+    "A directory is just a visual folder.",
+    "A path directly stores the data location.",
+    "Contiguous allocation is always best because it is fastest.",
+    "Linked allocation completely solves fragmentation."
+  ],
+  "misconceptions": [
+    "A directory is just a visual folder.",
+    "A path directly stores the data location.",
+    "Contiguous allocation is always best because it is fastest.",
+    "Linked allocation completely solves fragmentation.",
+    "Indexed allocation has no cost.",
+    "Deleting a directory entry always deletes the data immediately."
+  ],
+  "tricky_questions": [
+    {
+      "question": "If two paths refer to the same file data, must they be identical strings?",
+      "answer": "No. Hard links, symbolic links, mounts, or aliases can make different paths reach the same object or content."
+    },
+    {
+      "question": "Does deleting a filename always erase the file contents immediately?",
+      "answer": "No. It may remove a directory entry while metadata, open handles, or data blocks remain until safe to reclaim."
+    },
+    {
+      "question": "Is linked allocation always better than contiguous allocation because it avoids external fragmentation?",
+      "answer": "No. It improves growth flexibility but hurts random access and locality."
+    },
+    {
+      "question": "In indexed allocation, does the index contain the file's actual user data?",
+      "answer": "Usually no. It contains pointers or mappings to data blocks, though some file systems may store tiny files inside metadata as an optimization."
+    },
+    {
+      "question": "Can a directory contain another directory?",
+      "answer": "Yes in hierarchical file systems. The containing directory has an entry that points to the subdirectory's metadata."
+    },
+    {
+      "question": "Is a file's logical block number the same as its physical disk block number?",
+      "answer": "No. Allocation structures map logical file blocks to physical storage blocks."
+    },
+    {
+      "question": "If total free space is enough, can contiguous allocation still fail?",
+      "answer": "Yes. It may fail if there is no sufficiently large continuous free region."
+    }
+  ],
+  "interview_ready_answer": {
+    "short": "### 30-second answer",
+    "medium": "Directory structures organize file names into namespaces such as single-level, two-level, tree, or acyclic graph structures. File allocation methods decide how a file's logical blocks are placed on storage. Contiguous allocation is fast but hard to grow, linked allocation grows easily but has poor random access, and indexed allocation supports direct access with metadata overhead."
+  },
+  "revision_history": {
+    "times_revised": 0,
+    "last_revised_on_day": null,
+    "revision_strength": "R1"
+  }
+}
