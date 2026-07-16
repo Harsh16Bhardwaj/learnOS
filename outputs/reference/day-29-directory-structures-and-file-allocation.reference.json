@@ -86,8 +86,8 @@
     "medium": "Directory structures organize file names into namespaces such as single-level, two-level, tree, or acyclic graph structures. File allocation methods decide how a file's logical blocks are placed on storage. Contiguous allocation is fast but hard to grow, linked allocation grows easily but has poor random access, and indexed allocation supports direct access with metadata overhead."
   },
   "revision_history": {
-    "times_revised": 0,
-    "last_revised_on_day": null,
-    "revision_strength": "R1"
+    "times_revised": 1,
+    "last_revised_on_day": 30,
+    "revision_strength": "R2"
   }
 }

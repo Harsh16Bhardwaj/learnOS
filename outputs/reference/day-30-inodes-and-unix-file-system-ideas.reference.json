@@ -1,0 +1,91 @@
+{
+  "day": 30,
+  "topic": "Inodes and Unix File System Ideas",
+  "difficulty": "Intermediate",
+  "core_summary": [
+    "An inode is a Unix-style file-system data structure that stores metadata about a file-system object and points to the blocks or block mappings that contain its data. A directory entry maps a human-readable name to an inode number. The inode usually stores type, permissions, owner, size, timestamps, link count, and data-block pointers, but not the file name itself.",
+    "Interview-ready version: a filename is just an entry in a directory; the inode is the file's real metadata record."
+  ],
+  "key_definitions": {
+    "Inode": "A file-system metadata record that identifies a file-system object and stores metadata plus data-block mapping information.",
+    "Directory entry": "A mapping from a name inside a directory to an inode number.",
+    "Data block": "A storage block that contains actual file content or, for some metadata structures, pointers to more blocks.",
+    "Direct pointer": "A pointer in the inode that refers directly to a data block.",
+    "Indirect pointer": "A pointer in the inode that refers to a block containing more pointers.",
+    "Double indirect pointer": "A pointer to a block of pointers, where each pointer leads to another pointer block that finally points to data blocks.",
+    "Hard link": "Another directory entry that points to the same inode as an existing file.",
+    "Symbolic link": "A special file that stores a path string to another file or directory."
+  },
+  "mental_model": "Think of a Unix file system as a library. The directory is the public catalog shelf. It contains names like notes.txt and tells you the catalog ID for each item. The inode is the catalog card for the actual item. It says who owns it, what permissions apply, how large it is, when it changed, how many catalog names point to it, and where the pages are stored. The data blocks are the pages or boxes where the content actually lives. A hard link is like adding another catalog name that points to the same catalog card. A symbolic link is different: it is a note saying &quot;go look at this path.&quot; If the target path changes or disappears, the note may become stale.",
+  "core_examples": [
+    {
+      "name": "Opening an application",
+      "point": "The OS loads executable code, creates a process, assigns memory, schedules CPU time, and services I/O."
+    },
+    {
+      "name": "Reading a file",
+      "point": "The app requests bytes while the OS handles permissions, metadata lookup, filesystem mapping, and device access."
+    }
+  ],
+  "practical_uses": [
+    "In Linux, commands make inode behavior visible:",
+    "In Unix-like file systems such as ext2/ext3, the classic teaching model uses direct and indirect pointers. In ext4, extents are a major optimization, but the inode is still the metadata anchor. In XFS and Btrfs, implementation details differ, but the high-level idea remains: names resolve to metadata objects, and metadata maps logical file regions to storage.",
+    "In Windows NTFS, the exact structure is not called a Unix inode, but the Master File Table plays a related role. NTFS records store metadata and mapping information. This is a useful comparison: &quot;inode&quot; is Unix vocabulary, but all real file systems need some metadata record that plays a similar responsibility.",
+    "In containers, the process may see a normal Unix path, but overlay file systems can layer read-only image files and writable container changes. The inode numbers and link behavior can become less intuitive across layers, but the same separation of names, metadata, and data remains essential.",
+    "In servers, inode behavior matters for log rotation. A common safe pattern is to rename the current log and signal the server to reopen logs. If you simply delete a large log file while the server still has it open, disk space may not return until that file descriptor closes.",
+    "In backup systems, hard links are often used to make incremental snapshots efficient. Multiple snapshot directories may contain names pointing to the same unchanged file inode. A naive copy tool can accidentally duplicate data or break hard-link relationships."
+  ],
+  "pitfalls": [
+    "Misconception: The filename is stored inside the inode.",
+    "Misconception: Deleting a file always deletes data immediately.",
+    "Misconception: A hard link is just a shortcut.",
+    "Misconception: A symbolic link and hard link behave the same."
+  ],
+  "misconceptions": [
+    "Misconception: The filename is stored inside the inode.",
+    "Misconception: Deleting a file always deletes data immediately.",
+    "Misconception: A hard link is just a shortcut.",
+    "Misconception: A symbolic link and hard link behave the same.",
+    "Misconception: Inode numbers are globally unique across the entire machine.",
+    "Misconception: Free disk space guarantees new files can be created."
+  ],
+  "tricky_questions": [
+    {
+      "question": "If two filenames have the same inode number, are they two separate file contents?",
+      "answer": "On the same file system, they are hard links to the same inode and same file content."
+    },
+    {
+      "question": "If you delete the &quot;original&quot; name of a hard-linked file, is the file gone?",
+      "answer": "No. There is no special original at the inode level. The file remains while another hard link or open reference exists."
+    },
+    {
+      "question": "Can a symbolic link point to a file that does not exist?",
+      "answer": "Yes. The symlink can store a path even if the target is missing; then it is dangling."
+    },
+    {
+      "question": "Does a file descriptor store the filename?",
+      "answer": "No. It is a process handle to kernel open-file state. The original path may be gone or renamed."
+    },
+    {
+      "question": "If df -h shows free space, can file creation still fail?",
+      "answer": "Yes. The file system may be out of inodes, or permissions/quotas may block creation."
+    },
+    {
+      "question": "Can hard links usually point to directories?",
+      "answer": "Ordinary hard links to directories are usually restricted to avoid cycles and consistency problems."
+    },
+    {
+      "question": "Does mv file newname always copy data blocks?",
+      "answer": "No. Within the same file system, it may only update directory entries. Across file systems, it generally requires copying data."
+    }
+  ],
+  "interview_ready_answer": {
+    "short": "### 30-second answer",
+    "medium": "An inode is the Unix file-system metadata record for a file-system object. A directory maps names to inode numbers. The inode stores metadata such as permissions, owner, size, timestamps, link count, and mappings to data blocks. Hard links are multiple names for the same inode, while symbolic links are separate files that store a path to another object."
+  },
+  "revision_history": {
+    "times_revised": 0,
+    "last_revised_on_day": null,
+    "revision_strength": "R1"
+  }
+}
