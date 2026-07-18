@@ -84,8 +84,8 @@
     "medium": "An inode is the Unix file-system metadata record for a file-system object. A directory maps names to inode numbers. The inode stores metadata such as permissions, owner, size, timestamps, link count, and mappings to data blocks. Hard links are multiple names for the same inode, while symbolic links are separate files that store a path to another object."
   },
   "revision_history": {
-    "times_revised": 0,
-    "last_revised_on_day": null,
-    "revision_strength": "R1"
+    "times_revised": 1,
+    "last_revised_on_day": 31,
+    "revision_strength": "R2"
   }
 }

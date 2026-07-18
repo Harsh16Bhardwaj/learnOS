@@ -1,0 +1,933 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Day 31 - Disk Scheduling</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #070707;
+        --surface: #101010;
+        --surface-soft: #151515;
+        --border: #262626;
+        --text: #d8d8d8;
+        --muted: #8f8f8f;
+        --faint: #5f5f5f;
+        --cyan: #67e8f9;
+        --amber: #f4c95d;
+        --violet: #b79cff;
+        --green: #8ee6a3;
+      }
+
+      @page {
+        size: A4;
+        margin: 18mm 17mm 20mm 17mm;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "JetBrains Mono", "IBM Plex Mono", "Roboto Mono", monospace;
+        font-size: 9.8px;
+        line-height: 1.62;
+      }
+
+      .page {
+        width: min(980px, calc(100vw - 24px));
+        margin: 0 auto;
+        padding: 12px 0 20px;
+      }
+
+      .hero {
+        margin-bottom: 14px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 12px;
+      }
+
+      .eyebrow {
+        margin: 0 0 8px;
+        font-size: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        color: var(--faint);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 24px;
+        line-height: 1.18;
+        letter-spacing: -0.04em;
+        color: #f2f2f2;
+        break-after: avoid;
+      }
+
+      .meta-line {
+        margin-top: 8px;
+        font-size: 8.8px;
+        color: var(--muted);
+      }
+
+      .subtitle {
+        max-width: 760px;
+        margin: 8px 0 0;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .revision-strip {
+        margin-top: 10px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .revision-strip span {
+        display: inline-flex;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: rgba(142, 230, 163, 0.08);
+        border: 1px solid rgba(142, 230, 163, 0.22);
+        color: var(--green);
+        font-size: 8px;
+      }
+
+      .article h2,
+      .article h3,
+      .article h4 {
+        line-height: 1.3;
+        break-after: avoid;
+      }
+
+      .article h2 {
+        margin-top: 24px;
+        margin-bottom: 8px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 5px;
+        font-size: 15px;
+        color: #f2f2f2;
+      }
+
+      .section-opener {
+        margin-top: 30px;
+        margin-bottom: 14px;
+        padding: 12px 14px;
+        background: var(--surface);
+        border-left: 3px solid var(--cyan);
+        border-radius: 8px;
+        break-inside: avoid;
+      }
+
+      .section-kicker {
+        font-size: 8px;
+        color: var(--cyan);
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+      }
+
+      .section-summary {
+        font-size: 9.2px;
+        color: #9ca3af;
+        line-height: 1.55;
+      }
+
+      .article h3 {
+        margin-top: 16px;
+        margin-bottom: 6px;
+        font-size: 12px;
+        color: var(--cyan);
+      }
+
+      .article p,
+      .article li {
+        color: var(--text);
+      }
+
+      p {
+        orphans: 3;
+        widows: 3;
+      }
+
+      .article ul,
+      .article ol {
+        padding-left: 1.15rem;
+      }
+
+      .article blockquote {
+        margin: 12px 0;
+        padding: 10px 12px;
+        border-left: 3px solid var(--amber);
+        background: rgba(244, 201, 93, 0.06);
+        border-radius: 8px;
+        color: #ddd4bd;
+        break-inside: avoid;
+      }
+
+      .article pre,
+      .article code {
+        font-family: "JetBrains Mono", "IBM Plex Mono", monospace;
+      }
+
+      .article pre {
+        background: #030303;
+        border: 1px solid #242424;
+        border-radius: 8px;
+        padding: 12px;
+        font-size: 8.8px;
+        line-height: 1.55;
+        overflow-wrap: break-word;
+        white-space: pre-wrap;
+        break-inside: avoid;
+      }
+
+      .article code {
+        color: var(--cyan);
+        background: transparent;
+        padding: 0;
+      }
+
+      .diagram-card {
+        margin: 14px 0;
+        padding: 14px;
+        background: var(--surface);
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        overflow-x: auto;
+        break-inside: avoid;
+      }
+
+      .mermaid {
+        display: flex;
+        justify-content: center;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+        margin: 14px 0;
+        break-inside: avoid;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 8.8px;
+      }
+
+      th,
+      td {
+        padding: 7px;
+        border-bottom: 1px solid #202020;
+        text-align: left;
+      }
+
+      th {
+        color: var(--cyan);
+        font-weight: 600;
+        border-bottom: 1px solid #333;
+      }
+
+      td {
+        color: #cfcfcf;
+      }
+
+      a {
+        color: var(--cyan);
+      }
+
+      .definition-block,
+      .revision-block,
+      .takeaway-block {
+        background: var(--surface);
+        border-radius: 8px;
+        padding: 12px 14px;
+        margin: 12px 0;
+        break-inside: avoid;
+      }
+
+      .definition-block {
+        border-left: 3px solid var(--violet);
+      }
+
+      .revision-block {
+        background: rgba(142, 230, 163, 0.06);
+        border: 1px solid rgba(142, 230, 163, 0.22);
+      }
+
+      .takeaway-block {
+        border-left: 3px solid var(--green);
+      }
+
+      .trap-item {
+        background: rgba(244, 201, 93, 0.06);
+        border-left: 3px solid var(--amber);
+        border-radius: 8px;
+        padding: 10px 13px;
+        margin: 8px 0;
+        break-inside: avoid;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <p class="eyebrow">LearnOS Daily / DAY 31</p>
+        <h1>Disk Scheduling</h1>
+        <p class="meta-line">40 min read - 5 min revision - Intermediate - Prerequisites: Days 28-30</p>
+        <p class="subtitle">Still valuable for understanding HDD behavior and algorithm comparisons.</p>
+        <div class="revision-strip"><span>Day 30 - Inodes and Unix File System Ideas - R1 - Previous day reinforcement</span><span>Day 28 - File System Basics - R2 - Three-day spaced recall</span></div>
+      </section>
+      <article class="article"><p>Difficulty: Intermediate<br>
+Fresh Learning: 40 minutes<br>
+Revision: 5 minutes<br>
+Prerequisites: Days 28-30: file systems, metadata, file allocation, inodes, and block-level storage intuition<br>
+Why this topic matters in interviews: Disk scheduling is a classic OS topic for reasoning about seek time, rotational latency, algorithm tradeoffs, starvation, and why storage hardware changes OS design priorities.</p>
+<h2>Opening Intuition</h2>
+<p>Imagine a mechanical hard disk receiving requests for blocks near cylinder 15, then cylinder 180, then cylinder 22, then cylinder 170. If the disk head jumps back and forth in arrival order, most of the time is wasted moving the arm instead of transferring useful data. The CPU might be fast, the file system might know exactly which blocks it wants, and the process might be ready to continue, but the storage device becomes the bottleneck because physical movement is slow.</p>
+<p>Disk scheduling exists because secondary storage is not just an abstract array of bytes. On a traditional HDD, reading a block depends on where the disk head currently is, which track the target block is on, how long the platter takes to rotate the right sector under the head, and how much data must be transferred. The OS or disk firmware can improve total performance by choosing a smarter order for pending I/O requests.</p>
+<p>You see the result indirectly whenever a system feels slow even though the CPU is not fully used. A database scan, a log-heavy server, a virtual machine image, a browser cache, or a build tool may issue many storage requests. If those requests force random disk movement, latency can explode. On SSDs, mechanical seek time is gone, but scheduling still matters for fairness, batching, request merging, queue depth, and write behavior. The interview value is not memorizing every algorithm name; it is explaining what each algorithm optimizes and what it sacrifices.</p>
+<h2>Interview Definition</h2>
+<p>Disk scheduling is the OS or storage-controller policy for ordering pending disk I/O requests so the device can serve them efficiently and fairly. In HDDs, the main goal is to reduce seek movement and rotational waiting while keeping response time acceptable. Classic algorithms include FCFS, SSTF, SCAN, C-SCAN, LOOK, and C-LOOK.</p>
+<p>Interview-ready version: disk scheduling decides which disk request to serve next; on HDDs, good ordering reduces head movement, but aggressive optimization can hurt fairness or cause starvation.</p>
+<h2>Key Definitions</h2>
+<p>Seek time: The time needed to move the disk arm/head to the target track or cylinder.</p>
+<p>Rotational latency: The waiting time until the desired sector rotates under the head.</p>
+<p>Transfer time: The time needed to actually move bytes between the disk and memory after positioning is ready.</p>
+<p>Disk service time: The total time for a request, usually approximated as seek time plus rotational latency plus transfer time plus controller overhead.</p>
+<p>FCFS: First-Come, First-Served; requests are handled in arrival order.</p>
+<p>SSTF: Shortest Seek Time First; the next request is the one closest to the current head position.</p>
+<p>SCAN: The elevator algorithm; the head moves in one direction servicing requests, reaches an end, then reverses.</p>
+<p>C-SCAN: Circular SCAN; the head services requests in one direction, jumps back to the beginning, and repeats.</p>
+<p>LOOK: Like SCAN, but the head reverses at the last pending request in a direction instead of going all the way to the physical end.</p>
+<p>C-LOOK: Like C-SCAN, but it jumps from the last pending request in one direction back to the lowest pending request instead of the physical disk end.</p>
+<h2>Mental Model</h2>
+<p>Think of a disk head like an elevator in a very tall building where people request floors. If the elevator handles requests strictly in arrival order, it might go from floor 5 to 90 to 6 to 88. Everyone eventually gets served, but the movement is wasteful. A smarter elevator continues in one direction, picks up people along the way, then reverses or loops.</p>
+<p>The mature version of the mental model is this: disk scheduling is a tradeoff between movement efficiency and waiting fairness. FCFS is fair by arrival order but may waste movement. SSTF minimizes the next local movement but can keep far-away requests waiting. SCAN-style algorithms reduce movement while giving a more predictable sweep pattern. Circular variants make wait time more uniform by treating the disk as a one-way cycle.</p>
+<h2>Layer 1: What happens at a high level?</h2>
+<p>A process rarely says, “move the disk head to cylinder 120.” It asks for file bytes. The file system translates a pathname, inode, and file offset into logical or physical block requests. Those requests enter a queue. The block layer, disk scheduler, device driver, or storage firmware decides the order in which pending requests are submitted to the device.</p>
+<p>For a mechanical disk, the current head location strongly affects request cost. Suppose the head is at cylinder 50 and pending requests are at 10, 55, 58, and 180. Serving 55 and 58 before 10 is likely cheaper than going backward to 10 first, because the head is already near 55. This is the basic idea behind seek-aware scheduling.</p>
+<p>The OS also cares about user experience. A desktop system should not let one large backup job make every small interactive read wait forever. A database server may prefer throughput and batching. A real-time system may care about deadlines. Therefore, production schedulers are usually more complex than textbook algorithms, but the textbook algorithms give the vocabulary for the tradeoffs.</p>
+<h2>Layer 2: What happens inside the OS?</h2>
+<p>Inside the OS, disk I/O sits below the file-system abstraction and above the device hardware. A read path may look like this:</p>
+<ol>
+<li>A process calls <code>read</code> on a file descriptor.</li>
+<li>The virtual file system layer identifies the file object and offset.</li>
+<li>The concrete file system maps the file offset to storage blocks.</li>
+<li>The page cache may satisfy the request immediately if data is already cached.</li>
+<li>If storage access is needed, a block I/O request is created.</li>
+<li>The block layer may merge adjacent requests, sort requests, or apply a scheduling policy.</li>
+<li>The device driver submits commands to the storage device.</li>
+<li>The disk or SSD firmware may reorder internally using its own command queue.</li>
+<li>Completion interrupts or polling notify the kernel that data is ready.</li>
+<li>The blocked process wakes up and continues.</li>
+</ol>
+<p>Historically, OS disk schedulers had a very visible role because HDD head movement dominated latency. Modern systems often rely more on device firmware, NVMe queues, and simpler OS policies, especially for SSDs. Still, the OS must manage fairness, latency classes, writeback, cgroups, and I/O isolation. The interview bridge is: the same request queue idea remains, but the cost model changes when storage hardware changes.</p>
+<h2>Layer 3: What happens at hardware or kernel level?</h2>
+<p>An HDD stores data on rotating platters divided into tracks and sectors. Tracks at the same radius across platters form a cylinder. A request becomes expensive when the head must move to a distant track. Once the head reaches the track, the disk may still wait for the desired sector to rotate under the head. Only then does transfer begin.</p>
+<p>The rough HDD cost model is:</p>
+<pre><code class="language-txt">service time = seek time + rotational latency + transfer time + controller overhead
+</code></pre>
+<p>Seek time is often the largest and most variable part for random access. Rotational latency depends on RPM. Transfer time depends on data size and sequentiality. Sequential reads are fast because the head stays near the same track and the disk streams data. Random reads are slow because every request may need new positioning.</p>
+<p>At kernel level, a disk scheduler may use the request’s block number as a proxy for physical position. Real disks hide some geometry, remap sectors, cache data, and perform internal scheduling, so the OS often sees logical block addresses rather than exact cylinders. But logical proximity is still a useful idea, especially for explaining why adjacent I/O can be merged and why random I/O is expensive on HDDs.</p>
+<p>For SSDs, there is no moving arm and no rotational latency. Random reads are much cheaper than HDD random reads. However, SSDs still have queues, parallel channels, erase blocks, garbage collection, write amplification, and firmware-level scheduling. That is why the classic algorithms are mostly a teaching model for HDDs, while modern production scheduling focuses on latency control, fairness, queue depth, and device characteristics.</p>
+<h2>Layer 4: What can go wrong?</h2>
+<p>The first failure mode is terrible seek behavior. FCFS can bounce the head across the disk if requests arrive in an unlucky order. The system is technically fair by arrival time, but throughput is poor.</p>
+<p>The second failure mode is starvation. SSTF can keep choosing nearby requests while a far-away request waits for a long time. This is especially likely under continuous load where new nearby requests keep arriving.</p>
+<p>The third failure mode is poor tail latency. A policy may optimize average movement but cause some requests to wait much longer than expected. User-visible systems often care about the slowest requests, not only average throughput.</p>
+<p>The fourth failure mode is using an outdated mental model for SSDs. If you explain modern SSD performance purely in terms of head movement, the answer sounds memorized. The correct answer is: disk scheduling algorithms were designed around HDD mechanics; modern storage still schedules I/O, but for different reasons.</p>
+<p>The fifth failure mode is ignoring caches. Many reads never reach the disk because the page cache satisfies them. Many writes return before bytes are physically durable because they are buffered. Disk scheduling operates on the I/O requests that actually reach the block layer or device queue.</p>
+<h2>Step-by-Step Flow</h2>
+<p>Here is a concrete HDD-oriented flow for a read that misses the page cache:</p>
+<ol>
+<li>A process calls <code>read(fd, buffer, 4096)</code>.</li>
+<li>The kernel checks the open file state and current file offset.</li>
+<li>The file system maps the file offset to one or more logical block addresses.</li>
+<li>The page cache is checked; the target page is missing.</li>
+<li>The kernel creates a block I/O request.</li>
+<li>The request enters the block-device queue.</li>
+<li>The scheduler compares pending requests using its policy.</li>
+<li>The chosen request is submitted to the disk driver.</li>
+<li>The HDD moves the head to the target track if needed.</li>
+<li>The platter rotates until the target sector arrives under the head.</li>
+<li>The disk transfers data to memory, often using DMA.</li>
+<li>The device signals completion.</li>
+<li>The kernel marks the page cache page up to date.</li>
+<li>The blocked process wakes and receives the requested bytes.</li>
+</ol>
+<h2>Diagram Section</h2>
+<h3>HDD request path from file read to device</h3>
+<div class="diagram-card"><div class="mermaid">flowchart TD
+    A[&quot;Process calls read(fd)&quot;] --&gt; B[&quot;VFS checks open file state&quot;]
+    B --&gt; C[&quot;File system maps offset to blocks&quot;]
+    C --&gt; D{&quot;Page cache hit?&quot;}
+    D -- &quot;Yes&quot; --&gt; E[&quot;Copy cached bytes to process&quot;]
+    D -- &quot;No&quot; --&gt; F[&quot;Create block I/O request&quot;]
+    F --&gt; G[&quot;Block queue / disk scheduler&quot;]
+    G --&gt; H[&quot;Device driver submits command&quot;]
+    H --&gt; I[&quot;HDD seek + rotation + transfer&quot;]
+    I --&gt; J[&quot;Completion interrupt or poll&quot;]
+    J --&gt; K[&quot;Wake blocked process&quot;]
+</div></div><p>This diagram shows where disk scheduling fits. It does not choose file names or parse directories; it orders the lower-level block requests that survive cache lookup.</p>
+<h3>Comparing head movement for FCFS and SCAN</h3>
+<div class="diagram-card"><div class="mermaid">flowchart LR
+    Start[&quot;Head at 50&quot;] --&gt; F1[&quot;FCFS: 82&quot;]
+    F1 --&gt; F2[&quot;170&quot;]
+    F2 --&gt; F3[&quot;43&quot;]
+    F3 --&gt; F4[&quot;140&quot;]
+    F4 --&gt; F5[&quot;24&quot;]
+    F5 --&gt; F6[&quot;16&quot;]
+    F6 --&gt; F7[&quot;190&quot;]
+
+    Start2[&quot;Head at 50&quot;] --&gt; S1[&quot;SCAN upward: 82&quot;]
+    S1 --&gt; S2[&quot;140&quot;]
+    S2 --&gt; S3[&quot;170&quot;]
+    S3 --&gt; S4[&quot;190&quot;]
+    S4 --&gt; S5[&quot;reverse: 43&quot;]
+    S5 --&gt; S6[&quot;24&quot;]
+    S6 --&gt; S7[&quot;16&quot;]
+</div></div><p>FCFS follows arrival order and may jump back and forth. SCAN groups movement by direction, which usually reduces total head movement and produces a more predictable service pattern.</p>
+<h3>Algorithm behavior at a glance</h3>
+<div class="diagram-card"><div class="mermaid">flowchart TD
+    Q[&quot;Pending disk requests&quot;] --&gt; A[&quot;FCFS: arrival order&quot;]
+    Q --&gt; B[&quot;SSTF: nearest next&quot;]
+    Q --&gt; C[&quot;SCAN: sweep then reverse&quot;]
+    Q --&gt; D[&quot;C-SCAN: one-way sweep then jump&quot;]
+    Q --&gt; E[&quot;LOOK: sweep only to last request&quot;]
+    Q --&gt; F[&quot;C-LOOK: one-way sweep between request extremes&quot;]
+</div></div><p>The family relationship matters: LOOK optimizes SCAN by not traveling to an empty physical end; C-LOOK similarly optimizes C-SCAN.</p>
+<h2>Practical System Relevance</h2>
+<p>In Linux, disk I/O travels through the page cache, file system, block layer, scheduler, driver, and storage device. Depending on the kernel, device type, and configuration, schedulers such as <code>mq-deadline</code>, <code>bfq</code>, <code>kyber</code>, or <code>none</code> may be available. The exact scheduler names are less important for interviews than the reason they exist: balancing throughput, latency, fairness, and device characteristics.</p>
+<p>On Windows, the storage stack also queues and reorders I/O. The user usually does not choose textbook algorithms directly. The practical idea is the same: the OS and storage stack try to avoid unnecessary work, batch requests, honor priorities, and keep applications responsive.</p>
+<p>In databases, random disk I/O is a major reason indexes, buffer pools, sequential scans, write-ahead logs, and checkpoint strategies matter. A database that turns a workload into many small random reads behaves very differently on HDDs than one that performs mostly sequential I/O. This is why older database tuning advice strongly emphasized reducing random seeks.</p>
+<p>In browsers and build tools, caches create many small files. On HDDs, scanning many tiny files can be slow because metadata and data may be scattered. On SSDs, the same workload improves significantly, but still has overhead from system calls, file-system metadata, and queueing.</p>
+<p>In cloud systems, storage may be virtualized. A VM may see a virtual disk while the host maps requests to network storage, SSD-backed volumes, or replicated block devices. The guest OS scheduling policy is only one layer; the hypervisor, host, and storage service may also queue and reorder operations.</p>
+<p>In containers, multiple containers share the host kernel and storage stack. I/O scheduling and cgroup controls can prevent one container from overwhelming storage and harming others. This connects disk scheduling to resource isolation, not just mechanical disks.</p>
+<h2>Code or Pseudocode Section</h2>
+<h3>Simple scheduling example</h3>
+<p>Suppose the head starts at cylinder <code>50</code>, and pending requests are:</p>
+<pre><code class="language-txt">82, 170, 43, 140, 24, 16, 190
+</code></pre>
+<p>FCFS order is exactly:</p>
+<pre><code class="language-txt">50 -&gt; 82 -&gt; 170 -&gt; 43 -&gt; 140 -&gt; 24 -&gt; 16 -&gt; 190
+</code></pre>
+<p>That creates long jumps. If SCAN is moving upward, it might serve:</p>
+<pre><code class="language-txt">50 -&gt; 82 -&gt; 140 -&gt; 170 -&gt; 190 -&gt; 43 -&gt; 24 -&gt; 16
+</code></pre>
+<p>SCAN avoids alternating direction for every request. The improvement comes from reducing direction changes and grouping nearby requests.</p>
+<h3>C-like SSTF pseudocode</h3>
+<pre><code class="language-c">int choose_sstf(int head, int requests[], int n, bool done[]) {
+    int best = -1;
+    int best_distance = INT_MAX;
+
+    for (int i = 0; i &lt; n; i++) {
+        if (done[i]) continue;
+
+        int distance = abs(requests[i] - head);
+        if (distance &lt; best_distance) {
+            best_distance = distance;
+            best = i;
+        }
+    }
+
+    return best;
+}
+</code></pre>
+<p>This captures the core SSTF idea: choose the nearest pending request. The trap is visible too. If new nearby requests keep arriving, a far request may wait too long.</p>
+<h3>Linux observation commands</h3>
+<pre><code class="language-bash">lsblk
+cat /sys/block/sda/queue/scheduler
+iostat -x 1
+vmstat 1
+pidstat -d 1
+</code></pre>
+<p>What to observe:</p>
+<ul>
+<li><code>lsblk</code> shows block devices and helps distinguish disks, partitions, and virtual devices.</li>
+<li><code>/sys/block/.../queue/scheduler</code> can show the active scheduler for a block device on many Linux systems.</li>
+<li><code>iostat -x</code> helps observe utilization, wait time, request rates, and queue behavior.</li>
+<li><code>vmstat</code> can show blocked processes and I/O wait signals.</li>
+<li><code>pidstat -d</code> connects I/O activity to processes.</li>
+</ul>
+<p>Do not treat these commands as proof of a specific textbook algorithm. They are practical tools for observing storage pressure.</p>
+<h2>Common Misconceptions</h2>
+<ol>
+<li>
+<p>Misconception: Disk scheduling decides which process runs next.<br>
+Correction: CPU scheduling chooses runnable processes or threads. Disk scheduling orders storage I/O requests.</p>
+</li>
+<li>
+<p>Misconception: FCFS is always bad.<br>
+Correction: FCFS is simple and fair by arrival order. It performs poorly when arrival order causes large head movement.</p>
+</li>
+<li>
+<p>Misconception: SSTF is always optimal.<br>
+Correction: SSTF optimizes the next local seek, not global fairness. It can starve far-away requests.</p>
+</li>
+<li>
+<p>Misconception: SCAN always goes to the physical end of the disk because useful work exists there.<br>
+Correction: SCAN may travel to an end by definition, but LOOK avoids unnecessary travel by reversing at the last pending request.</p>
+</li>
+<li>
+<p>Misconception: C-SCAN and SCAN are the same.<br>
+Correction: SCAN services in both directions. C-SCAN services in one direction and wraps around, which can make waiting time more uniform.</p>
+</li>
+<li>
+<p>Misconception: SSDs need the same scheduling algorithms as HDDs.<br>
+Correction: SSDs do not have mechanical seek or rotational latency. They still need I/O management, but the cost model is different.</p>
+</li>
+<li>
+<p>Misconception: A successful <code>write</code> means the disk physically completed the write.<br>
+Correction: Writes may be buffered in OS cache or device cache. Durability requires stronger guarantees such as sync operations.</p>
+</li>
+</ol>
+<h2>Tricky Interview Corners</h2>
+<h3>Why is SSTF vulnerable to starvation?</h3>
+<p>SSTF chooses the request nearest to the current head. If the disk is busy and new nearby requests keep arriving, the head may keep serving the middle region while an old request near the edge waits. It improves local seek time but does not inherently enforce fairness.</p>
+<h3>Why does C-SCAN often give more uniform wait time than SCAN?</h3>
+<p>In SCAN, requests near the middle can be served from either direction, while requests near the ends may see different wait patterns. C-SCAN treats service as a one-way circular sweep. After reaching the high end, it jumps back to the low end and begins again. This makes the service pattern more like a circular queue.</p>
+<h3>Why does LOOK improve on SCAN?</h3>
+<p>SCAN may continue to a physical end even if there are no pending requests there. LOOK reverses at the last request in the current direction. It keeps the elevator idea but avoids empty travel.</p>
+<h3>Why is rotational latency not solved by reducing seek time?</h3>
+<p>The head can reach the correct track, but the desired sector may have just passed. The disk must wait for rotation. Scheduling can sometimes improve this by considering sector position, but textbook algorithms usually simplify the model to cylinder movement.</p>
+<h3>Why are modern storage stacks more complex than textbook algorithms?</h3>
+<p>Modern disks and SSDs hide geometry, perform internal caching, support command queues, and may reorder requests. The OS also manages priorities, cgroups, writeback, latency targets, and fairness. Textbook algorithms teach the mechanical tradeoff, not the full implementation.</p>
+<h3>Why can a system have high I/O wait and low CPU usage?</h3>
+<p>Processes may be blocked waiting for storage. The CPU is available, but useful work cannot continue until data arrives. This is a storage bottleneck, not proof that the CPU scheduler is failing.</p>
+<h2>Comparison Tables</h2>
+<h3>Disk Scheduling Algorithms</h3>
+<div class="table-wrap"><table><thead>
+<tr>
+<th>Algorithm</th>
+<th>Main idea</th>
+<th>Strength</th>
+<th>Weakness</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FCFS</td>
+<td>Serve in arrival order</td>
+<td>Simple and arrival-fair</td>
+<td>Can cause huge head movement</td>
+</tr>
+<tr>
+<td>SSTF</td>
+<td>Serve nearest request next</td>
+<td>Reduces local seek time</td>
+<td>Can starve far requests</td>
+</tr>
+<tr>
+<td>SCAN</td>
+<td>Sweep in one direction, then reverse</td>
+<td>Predictable and efficient</td>
+<td>May travel to empty ends</td>
+</tr>
+<tr>
+<td>C-SCAN</td>
+<td>Sweep one direction, then wrap</td>
+<td>More uniform wait pattern</td>
+<td>Return jump is not servicing work</td>
+</tr>
+<tr>
+<td>LOOK</td>
+<td>Sweep to last pending request, then reverse</td>
+<td>Avoids empty end travel</td>
+<td>Still direction-dependent</td>
+</tr>
+<tr>
+<td>C-LOOK</td>
+<td>One-way sweep between request extremes</td>
+<td>Efficient circular behavior</td>
+<td>Wrap request may wait</td>
+</tr>
+</tbody>
+</table></div><h3>HDD vs SSD Scheduling Concerns</h3>
+<div class="table-wrap"><table><thead>
+<tr>
+<th>Concern</th>
+<th>HDD</th>
+<th>SSD</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Seek time</td>
+<td>Major cost</td>
+<td>Not mechanical</td>
+</tr>
+<tr>
+<td>Rotational latency</td>
+<td>Major cost</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Sequential vs random gap</td>
+<td>Very large</td>
+<td>Smaller but still exists</td>
+</tr>
+<tr>
+<td>Request ordering goal</td>
+<td>Reduce movement and latency</td>
+<td>Manage queues, fairness, parallelism, writes</td>
+</tr>
+<tr>
+<td>Textbook algorithms</td>
+<td>Directly motivated</td>
+<td>Mostly historical/teaching context</td>
+</tr>
+</tbody>
+</table></div><h3>Seek Time vs Rotational Latency vs Transfer Time</h3>
+<div class="table-wrap"><table><thead>
+<tr>
+<th>Component</th>
+<th>Meaning</th>
+<th>Interview note</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Seek time</td>
+<td>Move head to target track</td>
+<td>Dominates random HDD I/O</td>
+</tr>
+<tr>
+<td>Rotational latency</td>
+<td>Wait for sector under head</td>
+<td>Depends on RPM</td>
+</tr>
+<tr>
+<td>Transfer time</td>
+<td>Move data after positioning</td>
+<td>Better for large sequential reads</td>
+</tr>
+<tr>
+<td>Queueing time</td>
+<td>Wait behind other requests</td>
+<td>Controlled by scheduling and load</td>
+</tr>
+</tbody>
+</table></div><h2>How to Explain This in an Interview</h2>
+<h3>30-second answer</h3>
+<p>Disk scheduling orders pending disk I/O requests. On HDDs, the goal is to reduce seek time and rotational latency by avoiding unnecessary head movement. FCFS is simple but can be inefficient, SSTF chooses the nearest request but may starve far requests, and SCAN/C-SCAN/LOOK-style algorithms improve predictability by sweeping across the disk.</p>
+<h3>2-minute answer</h3>
+<p>When a process reads a file, the OS eventually turns file offsets into block I/O requests. If several requests are pending, the storage stack can choose an order. On a mechanical disk, request order matters because the head has to move to tracks and wait for sectors to rotate. FCFS handles requests in arrival order, which is fair but can bounce the head around. SSTF chooses the closest request to reduce immediate seek cost, but it can starve requests far away. SCAN behaves like an elevator: it moves in one direction, serves requests along the way, then reverses. C-SCAN services in one direction and wraps around, which can make waiting more uniform. LOOK and C-LOOK avoid traveling to empty physical ends.</p>
+<p>The modern caveat is important: SSDs do not have mechanical seek or rotational latency, so the old algorithms are less directly relevant. But scheduling still matters for queueing, fairness, request merging, latency, and write behavior.</p>
+<h3>Deeper follow-up answer</h3>
+<p>The main performance terms are seek time, rotational latency, transfer time, and queueing time. For random HDD workloads, seek and rotation dominate, so reordering requests can greatly improve throughput. But optimizing only total movement can hurt fairness. A strong answer should connect algorithms to their failure modes: FCFS can waste movement, SSTF can starve, SCAN can do unnecessary end travel, LOOK improves that, and circular variants aim for more uniform wait time. Then connect it to real systems: page cache may avoid disk I/O entirely, storage devices have internal queues, and cloud or SSD-backed storage changes the cost model.</p>
+<h2>Interview Questions</h2>
+<h3>Basic Questions</h3>
+<ol>
+<li>What is disk scheduling?</li>
+<li>What are seek time, rotational latency, and transfer time?</li>
+<li>Why is random access expensive on HDDs?</li>
+<li>What does FCFS disk scheduling do?</li>
+<li>Why is disk scheduling different from CPU scheduling?</li>
+</ol>
+<h3>Intermediate Questions</h3>
+<ol start="6">
+<li>How does SSTF choose the next request?</li>
+<li>Why can SSTF cause starvation?</li>
+<li>How does SCAN differ from FCFS?</li>
+<li>What is the difference between SCAN and C-SCAN?</li>
+<li>Why do LOOK and C-LOOK avoid unnecessary movement?</li>
+</ol>
+<h3>Advanced Questions</h3>
+<ol start="11">
+<li>Why are textbook disk scheduling algorithms less important for SSDs?</li>
+<li>How can page cache behavior affect whether a disk request is scheduled at all?</li>
+<li>Why can a system show high I/O wait while CPU utilization is low?</li>
+<li>How do storage queues affect tail latency?</li>
+<li>Why might a database prefer sequential I/O patterns?</li>
+</ol>
+<h2>Follow-Up Questions</h2>
+<p>Q: What is disk scheduling?<br>
+Follow-ups:</p>
+<ul>
+<li>Which layer creates block I/O requests?</li>
+<li>Why does request order matter more on HDDs?</li>
+<li>Is this the same as CPU scheduling?</li>
+</ul>
+<p>Q: Explain FCFS disk scheduling.<br>
+Follow-ups:</p>
+<ul>
+<li>Why is it simple?</li>
+<li>When can it perform badly?</li>
+<li>Does it prevent starvation by arrival order?</li>
+</ul>
+<p>Q: Explain SSTF.<br>
+Follow-ups:</p>
+<ul>
+<li>What does “shortest” mean here?</li>
+<li>Why is local optimization not the same as global fairness?</li>
+<li>Give a starvation scenario.</li>
+</ul>
+<p>Q: Explain SCAN.<br>
+Follow-ups:</p>
+<ul>
+<li>Why is it called the elevator algorithm?</li>
+<li>How does it reduce back-and-forth movement?</li>
+<li>What weakness does LOOK address?</li>
+</ul>
+<p>Q: SCAN vs C-SCAN?<br>
+Follow-ups:</p>
+<ul>
+<li>Which services requests in both directions?</li>
+<li>Why can C-SCAN have more uniform wait time?</li>
+<li>What does the wrap-around represent?</li>
+</ul>
+<p>Q: HDD vs SSD scheduling?<br>
+Follow-ups:</p>
+<ul>
+<li>Which HDD costs disappear on SSDs?</li>
+<li>Why does scheduling still matter on SSDs?</li>
+<li>What should you not say about SSDs in an interview?</li>
+</ul>
+<p>Q: What causes high I/O wait?<br>
+Follow-ups:</p>
+<ul>
+<li>Are blocked processes using CPU?</li>
+<li>How can storage bottlenecks make the CPU look idle?</li>
+<li>Which commands might help observe it?</li>
+</ul>
+<p>Q: How does disk scheduling connect to file systems?<br>
+Follow-ups:</p>
+<ul>
+<li>Does the scheduler understand filenames?</li>
+<li>How do inodes and allocation metadata create block requests?</li>
+<li>Can the page cache avoid disk access?</li>
+</ul>
+<h2>Trick Questions</h2>
+<p>Q: Is SSTF always the best disk scheduling algorithm because it minimizes seek time?<br>
+Expected answer: No. It minimizes the next seek locally, but it can starve far-away requests and may not optimize fairness.</p>
+<p>Q: Does FCFS mean the disk head moves efficiently?<br>
+Expected answer: No. FCFS is fair by arrival order, but arrival order may cause excessive head movement.</p>
+<p>Q: Is disk scheduling the same as CPU scheduling?<br>
+Expected answer: No. CPU scheduling chooses runnable execution units. Disk scheduling orders storage I/O requests.</p>
+<p>Q: Does SCAN always need to travel to the physical end even when no requests exist there?<br>
+Expected answer: Classic SCAN may move to the end, but LOOK improves this by reversing at the last pending request.</p>
+<p>Q: Do SSDs have seek time and rotational latency?<br>
+Expected answer: No mechanical seek or rotational latency exists, but SSDs still have queueing, controller behavior, and write-management costs.</p>
+<p>Q: If a process is waiting for disk I/O, is it actively using the CPU?<br>
+Expected answer: Usually no. It is blocked or waiting while the device completes the request.</p>
+<p>Q: If <code>write</code> returns successfully, has disk scheduling definitely completed physical storage?<br>
+Expected answer: Not necessarily. The write may have reached OS cache or device cache, not durable media.</p>
+<h2>Practical Debugging / Observation</h2>
+<p>Use these commands on Linux-like systems when exploring storage behavior:</p>
+<pre><code class="language-bash">lsblk
+cat /sys/block/sda/queue/scheduler
+iostat -x 1
+vmstat 1
+pidstat -d 1
+iotop
+</code></pre>
+<p>What to observe:</p>
+<ul>
+<li>Device type matters. HDD, SATA SSD, NVMe SSD, virtual disk, and network block device have different behavior.</li>
+<li>High <code>%util</code>, long await times, or growing queues can indicate storage pressure.</li>
+<li><code>vmstat</code> can show blocked processes and I/O wait.</li>
+<li>Per-process tools can reveal which workload is issuing heavy reads or writes.</li>
+<li>Scheduler files under <code>/sys/block</code> show practical Linux scheduler configuration on many systems.</li>
+</ul>
+<p>Small reasoning experiment:</p>
+<pre><code class="language-txt">Head starts at 50.
+Requests arrive: 82, 170, 43, 140, 24, 16, 190.
+</code></pre>
+<p>Try writing the service order for FCFS, SSTF, SCAN upward, and C-SCAN upward. Then compare total head movement and ask which request waits longest. This exercise is more useful than memorizing definitions because it exposes the tradeoff between movement and fairness.</p>
+<h2>Mini Quiz</h2>
+<h3>MCQs</h3>
+<ol>
+<li>
+<p>Disk scheduling mainly orders:
+A. Runnable processes<br>
+B. Pending disk I/O requests<br>
+C. Page table entries<br>
+D. Network packets only</p>
+</li>
+<li>
+<p>On an HDD, seek time means:
+A. Waiting for the sector to rotate<br>
+B. Moving the head to the target track<br>
+C. Copying bytes after the head is positioned<br>
+D. Waking a blocked process</p>
+</li>
+<li>
+<p>Which algorithm can starve far-away requests?
+A. FCFS<br>
+B. SSTF<br>
+C. C-SCAN only<br>
+D. LOOK only</p>
+</li>
+<li>
+<p>The elevator algorithm usually refers to:
+A. FCFS<br>
+B. SSTF<br>
+C. SCAN<br>
+D. Random scheduling</p>
+</li>
+<li>
+<p>LOOK improves SCAN by:
+A. Ignoring all nearby requests<br>
+B. Reversing at the last pending request instead of an empty physical end<br>
+C. Removing all queues<br>
+D. Using CPU priority directly</p>
+</li>
+</ol>
+<h3>Short-answer questions</h3>
+<ol>
+<li>Why can FCFS create poor HDD performance?</li>
+<li>Why is C-SCAN often described as more uniform than SCAN?</li>
+<li>Why are classic disk scheduling algorithms less central for SSDs?</li>
+</ol>
+<h3>Reasoning questions</h3>
+<ol>
+<li>A disk head is at cylinder 100. Requests are at 20, 95, 105, and 180. Which request would SSTF choose first, and what risk does this policy have under continuous load?</li>
+<li>A system has low CPU usage but many processes are stuck waiting for reads. Explain why adding CPU cores may not help.</li>
+</ol>
+<h3>Answers</h3>
+<ol>
+<li>B</li>
+<li>B</li>
+<li>B</li>
+<li>C</li>
+<li>B</li>
+</ol>
+<p>Short answers:</p>
+<ol>
+<li>FCFS may force the head to jump across the disk in arrival order, wasting seek time.</li>
+<li>C-SCAN services in one direction and wraps around, making the service pattern more like a circular sweep.</li>
+<li>SSDs have no mechanical head or rotational latency; scheduling still matters, but for queues, fairness, parallelism, and writes.</li>
+</ol>
+<p>Reasoning answers:</p>
+<ol>
+<li>SSTF chooses 95 first because it is 5 cylinders away. Under continuous load, far requests like 20 or 180 may wait if nearby requests keep arriving.</li>
+<li>The processes are blocked on storage, not CPU. More cores do not make the disk return data faster unless the bottleneck is elsewhere.</li>
+</ol>
+<h1>5-Minute Revision Column</h1>
+<p>Revision targets from <code>prepare:day</code>: Day 30 Inodes and Unix File System Ideas (R1), Day 28 File System Basics (R2).</p>
+<h2>Day 30 - Inodes and Unix File System Ideas - R1 Recall Revision</h2>
+<p>Core recall: an inode is the Unix-style metadata record for a file-system object. A directory entry maps a human-readable name to an inode number; the inode stores metadata such as type, permissions, owner, size, timestamps, link count, and block mapping information. The filename usually lives in the directory entry, not inside the inode. This separation explains why hard links work, why renaming can be cheap, and why deleting a visible name may not free data immediately.</p>
+<p>Key definitions:</p>
+<ul>
+<li>Inode: metadata and block-mapping record for a file-system object.</li>
+<li>Directory entry: a name-to-inode mapping inside a directory.</li>
+<li>Hard link: another directory entry pointing to the same inode.</li>
+</ul>
+<p>Practical memory: <code>ls -li</code> can show two names sharing the same inode; <code>stat</code> shows link count and metadata; <code>df -i</code> checks inode availability. A symbolic link is different from a hard link because it is a separate file storing a path string.</p>
+<p>Common traps:</p>
+<ul>
+<li>The “original” hard-link name is not special once multiple names point to the same inode.</li>
+<li><code>rm file</code> removes a directory entry; storage is reclaimed only when no hard links and no open references remain.</li>
+</ul>
+<p>Quick questions:</p>
+<ul>
+<li>Why can a deleted log file still consume disk space?</li>
+<li>Why can a symlink become dangling while a hard link remains valid?</li>
+</ul>
+<p>Mental model: directory entry to inode, inode to metadata and block map, block map to file data.</p>
+<h2>Day 28 - File System Basics - R2 Compression Revision</h2>
+<p>Core recall:</p>
+<ul>
+<li>A file system organizes persistent storage into files, directories, metadata, and operations.</li>
+<li>A file is a named abstraction over persistent bytes plus metadata.</li>
+<li>A directory maps names to file-system objects.</li>
+<li>A file descriptor or handle is an open reference, not the file’s contents.</li>
+<li><code>write</code> success may mean the OS accepted bytes into cache, not that power-loss durability is guaranteed.</li>
+</ul>
+<p>Key definitions:</p>
+<ul>
+<li>Metadata: information about a file other than user data, such as size, permissions, owner, timestamps, and block mapping.</li>
+<li>File descriptor: a process-local integer used on Unix-like systems to refer to an open file or file-like object.</li>
+</ul>
+<p>Example: when a program opens <code>notes.txt</code>, the OS resolves the path, checks permissions, creates open-file state, and returns a descriptor for later reads or writes.</p>
+<p>Common traps:</p>
+<ul>
+<li>A file name is not the same as the file object.</li>
+<li>Descriptor number <code>3</code> in two processes does not necessarily refer to the same file.</li>
+</ul>
+<p>Quick questions:</p>
+<ul>
+<li>Why is a directory more than a visual folder?</li>
+<li>Why might a database call <code>fsync</code> after writing important data?</li>
+</ul>
+<p>Mental model: the file system is a library plus checkout desk; paths find items, metadata describes them, and descriptors are checkout slips for open access.</p>
+<h2>Final Takeaway</h2>
+<p>Disk scheduling is about ordering storage requests so the device can serve them efficiently without ignoring fairness. For HDDs, the central costs are seek time, rotational latency, and transfer time, so reducing head movement matters a lot. FCFS is simple but can waste movement; SSTF reduces local movement but can starve; SCAN and C-SCAN add predictable sweep behavior; LOOK and C-LOOK avoid unnecessary travel to empty physical ends. In modern systems, SSDs and virtualized storage change the cost model, but the broader lesson remains: storage performance depends on queues, locality, latency, fairness, and device behavior.</p>
+<h2>What You Should Be Able To Answer Now</h2>
+<ul>
+<li>Define disk scheduling and distinguish it from CPU scheduling.</li>
+<li>Explain seek time, rotational latency, transfer time, and queueing time.</li>
+<li>Compare FCFS, SSTF, SCAN, C-SCAN, LOOK, and C-LOOK.</li>
+<li>Explain why SSTF can cause starvation.</li>
+<li>Explain why SCAN is called the elevator algorithm.</li>
+<li>Discuss why SSDs change the importance of classic HDD algorithms.</li>
+<li>Connect file-system block requests to storage queues.</li>
+<li>Reason about high I/O wait, low CPU usage, and storage bottlenecks.</li>
+</ul>
+</article>
+    </main>
+    <script>
+      (() => {
+        const article = document.querySelector(".article");
+        if (!article) return;
+        const chapterMap = {
+          "Opening Intuition": ["01", "Opening Intuition", "Why this concept exists in real systems before formal definition."],
+          "Interview Definition": ["02", "Interview Definition", "A clean interview-ready explanation with precise language."],
+          "Mental Model": ["03", "Mental Model", "A compact analogy that maps theory to practical recall."],
+          "Layer 1: What happens at a high level?": ["04", "Core Theory", "What the OS manages and how abstraction/resource management fit together."],
+          "Layer 2: What happens inside the OS?": ["05", "System Internals", "Kernel boundaries, data structures, and service flow inside the OS."],
+          "Step-by-Step Flow": ["06", "Step-by-Step Flow", "Concrete execution sequence you can narrate in interviews."],
+          "Practical System Relevance": ["07", "Practical Examples", "How the concept appears in Linux, Windows, Android, servers, and cloud."],
+          "Common Misconceptions": ["08", "Common Misconceptions", "High-frequency mistakes and what to say instead."],
+          "Tricky Interview Corners": ["09", "Tricky Interview Corners", "Edge cases and deeper follow-up traps interviewers probe."],
+          "Interview Questions": ["10", "Interview Questions", "Layered practice questions from basic to advanced."],
+          "5-Minute Revision Column": ["11", "5-Minute Revision Column", "Compressed spaced-repetition recall from prior targets."],
+          "Final Takeaway": ["12", "Final Takeaway", "The final memory model and what you should be able to answer now."]
+        };
+
+        const wrapAfterHeading = (title, className) => {
+          const heading = Array.from(article.querySelectorAll("h2")).find((el) => el.textContent?.trim() === title);
+          if (!heading) return;
+          const wrap = document.createElement("div");
+          wrap.className = className;
+          let node = heading.nextElementSibling;
+          while (node && node.tagName !== "H2") {
+            const next = node.nextElementSibling;
+            wrap.appendChild(node);
+            node = next;
+          }
+          heading.insertAdjacentElement("afterend", wrap);
+        };
+
+        wrapAfterHeading("Interview Definition", "definition-block");
+        wrapAfterHeading("5-Minute Revision Column", "revision-block");
+        wrapAfterHeading("Final Takeaway", "takeaway-block");
+        wrapAfterHeading("What You Should Be Able To Answer Now", "takeaway-block");
+
+        article.querySelectorAll("h2").forEach((heading) => {
+          const text = heading.textContent?.trim() ?? "";
+          const chapter = chapterMap[text];
+          if (!chapter) return;
+          const opener = document.createElement("div");
+          opener.className = "section-opener";
+          opener.innerHTML = "<div class=\"section-kicker\">SECTION " + chapter[0] + " / " + chapter[1].toUpperCase() + "</div><div class=\"section-summary\">" + chapter[2] + "</div>";
+          heading.insertAdjacentElement("beforebegin", opener);
+        });
+
+        const misconceptions = Array.from(article.querySelectorAll("h2")).find(
+          (el) => el.textContent?.trim() === "Common Misconceptions"
+        );
+        if (misconceptions) {
+          let node = misconceptions.nextElementSibling;
+          while (node && node.tagName !== "H2") {
+            if (node.tagName === "OL") {
+              node.querySelectorAll("li").forEach((li) => li.classList.add("trap-item"));
+            }
+            node = node.nextElementSibling;
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>

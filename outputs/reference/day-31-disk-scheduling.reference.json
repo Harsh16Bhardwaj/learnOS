@@ -1,0 +1,90 @@
+{
+  "day": 31,
+  "topic": "Disk Scheduling",
+  "difficulty": "Intermediate",
+  "core_summary": [
+    "Disk scheduling is the OS or storage-controller policy for ordering pending disk I/O requests so the device can serve them efficiently and fairly. In HDDs, the main goal is to reduce seek movement and rotational waiting while keeping response time acceptable. Classic algorithms include FCFS, SSTF, SCAN, C-SCAN, LOOK, and C-LOOK.",
+    "Interview-ready version: disk scheduling decides which disk request to serve next; on HDDs, good ordering reduces head movement, but aggressive optimization can hurt fairness or cause starvation."
+  ],
+  "key_definitions": {
+    "Seek time": "The time needed to move the disk arm/head to the target track or cylinder.",
+    "Rotational latency": "The waiting time until the desired sector rotates under the head.",
+    "Transfer time": "The time needed to actually move bytes between the disk and memory after positioning is ready.",
+    "Disk service time": "The total time for a request, usually approximated as seek time plus rotational latency plus transfer time plus controller overhead.",
+    "FCFS": "First-Come, First-Served; requests are handled in arrival order.",
+    "SSTF": "Shortest Seek Time First; the next request is the one closest to the current head position.",
+    "SCAN": "The elevator algorithm; the head moves in one direction servicing requests, reaches an end, then reverses.",
+    "C-SCAN": "Circular SCAN; the head services requests in one direction, jumps back to the beginning, and repeats."
+  },
+  "mental_model": "Think of a disk head like an elevator in a very tall building where people request floors. If the elevator handles requests strictly in arrival order, it might go from floor 5 to 90 to 6 to 88. Everyone eventually gets served, but the movement is wasteful. A smarter elevator continues in one direction, picks up people along the way, then reverses or loops. The mature version of the mental model is this: disk scheduling is a tradeoff between movement efficiency and waiting fairness. FCFS is fair by arrival order but may waste movement. SSTF minimizes the next local movement but can keep far-away requests waiting. SCAN-style algorithms reduce movement while giving a more predictable sweep pattern. Circular variants make wait time more uniform by treating the disk as a one-way cycle.",
+  "core_examples": [
+    {
+      "name": "Opening an application",
+      "point": "The OS loads executable code, creates a process, assigns memory, schedules CPU time, and services I/O."
+    },
+    {
+      "name": "Reading a file",
+      "point": "The app requests bytes while the OS handles permissions, metadata lookup, filesystem mapping, and device access."
+    }
+  ],
+  "practical_uses": [
+    "In Linux, disk I/O travels through the page cache, file system, block layer, scheduler, driver, and storage device. Depending on the kernel, device type, and configuration, schedulers such as mq-deadline, bfq, kyber, or none may be available. The exact scheduler names are less important for interviews than the reason they exist: balancing throughput, latency, fairness, and device characteristics.",
+    "In databases, random disk I/O is a major reason indexes, buffer pools, sequential scans, write-ahead logs, and checkpoint strategies matter. A database that turns a workload into many small random reads behaves very differently on HDDs than one that performs mostly sequential I/O. This is why older database tuning advice strongly emphasized reducing random seeks.",
+    "In browsers and build tools, caches create many small files. On HDDs, scanning many tiny files can be slow because metadata and data may be scattered. On SSDs, the same workload improves significantly, but still has overhead from system calls, file-system metadata, and queueing.",
+    "In cloud systems, storage may be virtualized. A VM may see a virtual disk while the host maps requests to network storage, SSD-backed volumes, or replicated block devices. The guest OS scheduling policy is only one layer; the hypervisor, host, and storage service may also queue and reorder operations.",
+    "In containers, multiple containers share the host kernel and storage stack. I/O scheduling and cgroup controls can prevent one container from overwhelming storage and harming others. This connects disk scheduling to resource isolation, not just mechanical disks."
+  ],
+  "pitfalls": [
+    "Misconception: Disk scheduling decides which process runs next.",
+    "Misconception: FCFS is always bad.",
+    "Misconception: SSTF is always optimal.",
+    "Misconception: SCAN always goes to the physical end of the disk because useful work exists there."
+  ],
+  "misconceptions": [
+    "Misconception: Disk scheduling decides which process runs next.",
+    "Misconception: FCFS is always bad.",
+    "Misconception: SSTF is always optimal.",
+    "Misconception: SCAN always goes to the physical end of the disk because useful work exists there.",
+    "Misconception: C-SCAN and SCAN are the same.",
+    "Misconception: SSDs need the same scheduling algorithms as HDDs."
+  ],
+  "tricky_questions": [
+    {
+      "question": "Is SSTF always the best disk scheduling algorithm because it minimizes seek time?",
+      "answer": "No. It minimizes the next seek locally, but it can starve far-away requests and may not optimize fairness."
+    },
+    {
+      "question": "Does FCFS mean the disk head moves efficiently?",
+      "answer": "No. FCFS is fair by arrival order, but arrival order may cause excessive head movement."
+    },
+    {
+      "question": "Is disk scheduling the same as CPU scheduling?",
+      "answer": "No. CPU scheduling chooses runnable execution units. Disk scheduling orders storage I/O requests."
+    },
+    {
+      "question": "Does SCAN always need to travel to the physical end even when no requests exist there?",
+      "answer": "Classic SCAN may move to the end, but LOOK improves this by reversing at the last pending request."
+    },
+    {
+      "question": "Do SSDs have seek time and rotational latency?",
+      "answer": "No mechanical seek or rotational latency exists, but SSDs still have queueing, controller behavior, and write-management costs."
+    },
+    {
+      "question": "If a process is waiting for disk I/O, is it actively using the CPU?",
+      "answer": "Usually no. It is blocked or waiting while the device completes the request."
+    },
+    {
+      "question": "If write returns successfully, has disk scheduling definitely completed physical storage?",
+      "answer": "Not necessarily. The write may have reached OS cache or device cache, not durable media."
+    }
+  ],
+  "interview_ready_answer": {
+    "short": "### 30-second answer",
+    "medium": "Disk scheduling orders pending disk I/O requests. On HDDs, the goal is to reduce seek time and rotational latency by avoiding unnecessary head movement. FCFS is simple but can be inefficient, SSTF chooses the nearest request but may starve far requests, and SCAN/C-SCAN/LOOK-style algorithms improve predictability by sweeping across the disk."
+  },
+  "revision_history": {
+    "times_revised": 0,
+    "last_revised_on_day": null,
+    "revision_strength": "R1"
+  }
+}
